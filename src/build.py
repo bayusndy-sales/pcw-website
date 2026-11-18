@@ -137,7 +137,7 @@ def home(lang):
     return f'''
 <section class="hero"><div class="wrap">
 <h1>{"International express from Indonesia, door to door." if E else "Pengiriman ekspres internasional dari Indonesia, door to door."}</h1>
-<p class="lead">{"Documents and parcels to 23 destination countries in our published table, with two speeds. You see the full price before you book, and a real person answers on WhatsApp." if E else "Dokumen dan paket ke 23 negara tujuan dalam tabel publikasi kami, dengan dua pilihan kecepatan. Total harga terlihat sebelum Anda booking, dan tim kami membalas langsung di WhatsApp."}</p>
+<p class="lead">{"Documents and parcels to more than 220 destination countries in our published table, with two speeds. You see the full price before you book, and a real person answers on WhatsApp." if E else "Dokumen dan paket ke lebih dari 220 negara tujuan dalam tabel publikasi kami, dengan dua pilihan kecepatan. Total harga terlihat sebelum Anda booking, dan tim kami membalas langsung di WhatsApp."}</p>
 <div class="hubtabs" data-hub>
 <div class="hubbar" role="tablist">
 <button type="button" role="tab" class="on" data-tab="rate">{"Get rate" if E else "Cek tarif"}</button>
