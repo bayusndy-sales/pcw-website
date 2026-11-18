@@ -9,7 +9,7 @@ SITE = 'https://pcwfreight.com/'
 
 import hashlib as _h, os as _o
 _AD = _o.path.join(_o.path.dirname(_o.path.abspath(__file__)), 'assets')
-ASSET_V = {n: _h.md5(open(_o.path.join(_AD, n), 'rb').read()).hexdigest()[:8] for n in ('style.css', 'app.js')}
+ASSET_V = {n: _h.md5(open(_o.path.join(_AD, n), 'rb').read()).hexdigest()[:8] for n in ('style.css', 'app.js', 'portal.js')}
 
 def wa(text):
     from urllib.parse import quote
@@ -560,6 +560,52 @@ def grow(lang):
     c = ''.join(f'<a class="card tile" href="{h}"><span class="tag">{i+1}</span><h3>{a if E else b}</h3><p>{x if E else y}</p></a>' for i, (a, b, x, y, h) in enumerate(st))
     return f'<section class="s alt"><div class="wrap"><h2>{"Grow with PCW" if E else "Bertumbuh bersama PCW"}</h2><p class="sub">{"From your first parcel to full freight, one team." if E else "Dari paket pertama hingga freight penuh, satu tim."}</p><div class="grid g3 tiles">{c}</div></div></section>'
 
+def portal(lang):
+    E = lang == 'en'
+    def f(n, label, typ='text', req=True, extra=''):
+        return f'<div><label class="{"req" if req else ""}">{label}</label><input name="{n}" type="{typ}"{" required" if req else ""} {extra}></div>'
+    return head(lang, "Member portal" if E else "Portal member", "Sign in to create shipment requests and follow your shipments." if E else "Masuk untuk membuat permintaan booking dan memantau kiriman Anda.", "Portal") + f'''
+<section class="s"><div class="wrap" style="max-width:960px">
+<div id="pMsg"></div>
+<form id="pLogin" class="box" style="max-width:460px"><h2 style="margin-top:0">{"Sign in" if E else "Masuk"}</h2>
+<div><label class="req">Email</label><input name="email" type="email" required autocomplete="username"></div>
+<div style="margin-top:14px"><label class="req">{"Access code" if E else "Kode akses"}</label><input name="code" type="password" required autocomplete="current-password"></div>
+<p class="hint">{"Access is by invitation. To become a member, see the Member page or contact us." if E else "Akses melalui undangan. Untuk menjadi member, lihat halaman Member atau hubungi kami."}</p>
+<button class="btn btn-a" type="submit">{"Sign in" if E else "Masuk"}</button></form>
+<div id="pApp" class="hidden">
+<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px"><h2 style="margin:0" id="pCo"></h2><div style="display:flex;gap:10px"><button id="pNew" class="btn btn-a" type="button">{"New shipment" if E else "Kiriman baru"}</button><button id="pOff" class="btn btn-o" type="button">{"Sign out" if E else "Keluar"}</button></div></div>
+<form id="pForm" class="box hidden" style="margin-top:18px" novalidate><input class="hp" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
+<div class="row r2"><div><label class="req">{"Service" if E else "Layanan"}</label><select name="product"><option value="Priority">PCW Priority Express</option><option value="Economy">PCW Economy Express</option></select></div>
+<div><label class="req">{"Destination country" if E else "Negara tujuan"}</label><select name="dest_country" required><option value="">…</option></select></div></div>
+<div class="row r3" style="margin-top:14px"><div><label>{"Type" if E else "Jenis"}</label><select name="shipment_type"><option value="Parcel">{"Parcel" if E else "Paket"}</option><option value="Document">{"Document" if E else "Dokumen"}</option></select></div>
+{f("pieces","Pieces" if E else "Jumlah koli","number",True,'min="1" max="50" value="1"')}{f("actual_kg","Total weight (kg)" if E else "Total berat (kg)","number",True,'min="0.1" step="0.1"')}</div>
+<div class="row r3" style="margin-top:14px">{f("l","Length (cm)" if E else "Panjang (cm)","number",False,'min="0" step="0.1"')}{f("w","Width (cm)" if E else "Lebar (cm)","number",False,'min="0" step="0.1"')}{f("h","Height (cm)" if E else "Tinggi (cm)","number",False,'min="0" step="0.1"')}</div>
+<h3 style="margin:22px 0 10px">{"Shipper and handover" if E else "Pengirim dan serah terima"}</h3>
+<div class="row r2">{f("shipper_name","Contact name" if E else "Nama kontak")}{f("shipper_whatsapp","WhatsApp number" if E else "Nomor WhatsApp","tel",True,'placeholder="0811…"')}</div>
+<div class="row r2" style="margin-top:14px"><div><label>{"Handover" if E else "Serah terima"}</label><select name="pickup_or_dropoff"><option value="Pickup">Pickup</option><option value="Drop-off">Drop-off</option></select></div>{f("pickup_date","Preferred pickup date" if E else "Tanggal pickup","date",False)}</div>
+<div style="margin-top:14px"><label>{"Pickup address (if Pickup)" if E else "Alamat pickup (jika Pickup)"}</label><textarea name="pickup_address"></textarea></div>
+<div class="row r2" style="margin-top:14px">{f("pickup_city","Pickup city" if E else "Kota pickup","text",False)}{f("pickup_postcode","Postcode" if E else "Kode pos","text",False)}</div>
+<h3 style="margin:22px 0 10px">{"Receiver" if E else "Penerima"}</h3>
+<div class="row r2">{f("consignee_name","Receiver name" if E else "Nama penerima")}{f("consignee_company","Company" if E else "Perusahaan","text",False)}</div>
+<div style="margin-top:14px"><label class="req">{"Receiver address (no PO Box)" if E else "Alamat penerima (bukan PO Box)"}</label><textarea name="consignee_address" required></textarea></div>
+<div class="row r3" style="margin-top:14px">{f("consignee_city","City" if E else "Kota")}{f("consignee_postcode","Postcode" if E else "Kode pos","text",False)}{f("consignee_phone","Receiver phone" if E else "Telepon penerima","tel")}</div>
+<div style="margin-top:14px">{f("consignee_email","Receiver email","email")}</div>
+<h3 style="margin:22px 0 10px">{"Contents" if E else "Isi kiriman"}</h3>
+<div><label class="req">{"Contents description (in English)" if E else "Deskripsi isi (bahasa Inggris)"}</label><textarea name="contents" required maxlength="200"></textarea></div>
+<div style="margin-top:14px">{f("declared_value","Total declared value (IDR)" if E else "Total nilai barang (IDR)","text",True,'inputmode="numeric"')}</div>
+<label class="check" style="margin-top:14px"><input type="checkbox" name="opt_insurance"><span>{"Insurance" if E else "Asuransi"}</span></label>
+<label class="check"><input type="checkbox" name="opt_signature"><span>{"Signature on delivery" if E else "Tanda tangan saat pengantaran"}</span></label>
+<label class="check"><input type="checkbox" name="opt_ddp"><span>DDP</span></label>
+<div style="margin-top:14px">
+<label class="check"><input type="checkbox" name="no_prohibited"><span>{'No <a href="prohibited-items.html" target="_blank">prohibited or restricted items</a>; description and value are true.' if E else 'Tidak ada <a href="prohibited-items.html" target="_blank">barang terlarang atau terbatas</a>; deskripsi dan nilai benar.'}</span></label>
+<label class="check"><input type="checkbox" name="terms_accepted"><span>{'I accept the <a href="terms.html" target="_blank">Terms &amp; Conditions</a>.' if E else 'Saya menyetujui <a href="terms.html" target="_blank">Syarat &amp; Ketentuan</a>.'}</span></label>
+<label class="check"><input type="checkbox" name="privacy_consent"><span>{'I agree to the <a href="privacy.html" target="_blank">Privacy Policy</a>.' if E else 'Saya setuju dengan <a href="privacy.html" target="_blank">Kebijakan Privasi</a>.'}</span></label></div>
+<button class="btn btn-a" type="submit" style="margin-top:18px;padding:15px">{"Send booking request" if E else "Kirim permintaan booking"}</button>
+<p class="hint">{"Your price follows your member agreement. Our team confirms weight and price, then issues the AWB." if E else "Harga mengikuti kesepakatan member Anda. Tim kami mengonfirmasi berat dan harga, lalu menerbitkan AWB."}</p></form>
+<div id="pOut" style="margin-top:16px"></div>
+<h3 style="margin:26px 0 10px">{"Your shipments" if E else "Kiriman Anda"}</h3><div id="pList"></div>
+</div></div></section><script src="{'../' if lang=='id' else ''}assets/portal.js?v={ASSET_V["portal.js"]}" defer></script>'''
+
 
 PAGES = [
  ('index.html', home, ('PCW Freight | International Express from Indonesia','PCW Freight | Ekspres Internasional dari Indonesia'), ('Door-to-door international express for documents and parcels from Indonesia. Instant published rates, online booking and tracking.','Pengiriman ekspres internasional door to door untuk dokumen dan paket dari Indonesia. Cek tarif, booking online, dan lacak kiriman.')),
@@ -585,6 +631,7 @@ PAGES = [
  ('prohibited-items.html', prohibited, ('Prohibited Items | PCW Freight','Barang Terlarang | PCW Freight'), ('Items we do not accept and items that need checking before shipping.','Barang yang tidak kami terima dan barang yang perlu diperiksa sebelum dikirim.')),
  ('terms.html', terms, ('Terms & Conditions | PCW Freight','Syarat & Ketentuan | PCW Freight'), ('Terms and conditions of PCW International Express.','Syarat dan ketentuan layanan PCW International Express.')),
  ('privacy.html', privacy, ('Privacy Policy | PCW Freight','Kebijakan Privasi | PCW Freight'), ('How PCW Freight handles personal data.','Cara PCW Freight mengelola data pribadi.')),
+ ('portal.html', portal, ('Member Portal | PCW Freight','Portal Member | PCW Freight'), ('Member sign-in.','Masuk member.')),
  ('404.html', notfound, ('Page not found | PCW Freight','Halaman tidak ditemukan | PCW Freight'), ('Page not found.','Halaman tidak ditemukan.')),
 ]
 
@@ -594,9 +641,9 @@ def build():
     for slug, fn, titles, descs in PAGES:
         for i, lang in enumerate(['en', 'id']):
             path = os.path.join(DIST, 'id' if lang == 'id' else '', slug)
-            open(path, 'w', encoding='utf-8').write(page(lang, slug, titles[i], descs[i], fn(lang)))
+            open(path, 'w', encoding='utf-8').write(page(lang, slug, titles[i], descs[i], fn(lang), '<meta name="robots" content="noindex">' if slug == 'portal.html' else ''))
     open(os.path.join(DIST, 'robots.txt'), 'w').write(f'User-agent: *\nAllow: /\nSitemap: {SITE}sitemap.xml\n')
-    urls = ''.join(f'<url><loc>{SITE}{p}{"" if s=="index.html" else s}</loc></url>' for s, *_ in PAGES if s != '404.html' for p in ['', 'id/'])
+    urls = ''.join(f'<url><loc>{SITE}{p}{"" if s=="index.html" else s}</loc></url>' for s, *_ in PAGES if s not in ('404.html', 'portal.html') for p in ['', 'id/'])
     open(os.path.join(DIST, 'sitemap.xml'), 'w').write(f'<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">{urls}</urlset>')
     HT = """ErrorDocument 404 /404.html
 DirectoryIndex index.html
