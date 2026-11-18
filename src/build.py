@@ -16,8 +16,8 @@ def wa(text):
     return f'https://wa.me/{WA}?text={quote(text)}'
 
 NAV = {
- 'en': [('international-express.html','Express'),('rates.html','Rates'),('book.html','Book'),('track.html','Track'),('other-services.html','Services'),('about.html','About'),('contact.html','Contact')],
- 'id': [('international-express.html','Express'),('rates.html','Tarif'),('book.html','Booking'),('track.html','Lacak'),('other-services.html','Layanan'),('about.html','Tentang'),('contact.html','Kontak')],
+ 'en': [('international-express.html','Express'),('rates.html','Rates'),('book.html','Book'),('track.html','Track'),('other-services.html','Services'),('member.html','Member'),('about.html','About'),('contact.html','Contact')],
+ 'id': [('international-express.html','Express'),('rates.html','Tarif'),('book.html','Booking'),('track.html','Lacak'),('other-services.html','Layanan'),('member.html','Member'),('about.html','Tentang'),('contact.html','Kontak')],
 }
 L = {
  'en': dict(getrate='Get a rate', hours='Mon–Fri 08:30–17:30 · Sat 08:30–12:30 WIB', chat='Chat on WhatsApp', wa_txt='Hello PCW, I would like a shipping quotation.',
@@ -39,7 +39,7 @@ def page(lang, slug, title, desc, body, head_extra=''):
     canon = SITE + ('id/' if lang == 'id' else '') + ('' if slug == 'index.html' else slug)
     alt_en = SITE + ('' if slug == 'index.html' else slug); alt_id = SITE + 'id/' + ('' if slug == 'index.html' else slug)
     fs = [('international-express.html','PCW International Express'),('priority-express.html','PCW Priority Express'),('economy-express.html','PCW Economy Express'),('other-services.html', 'Other services' if lang=='en' else 'Layanan lain')]
-    fh = [('rates.html', 'Rates' if lang=='en' else 'Tarif'),('track.html','Track' if lang=='en' else 'Lacak kiriman'),('faq.html','FAQ'),('surcharges-customs.html','Surcharges & customs' if lang=='en' else 'Surcharge & kepabeanan'),('prohibited-items.html','Prohibited items' if lang=='en' else 'Barang terlarang'),('terms.html','Terms & Conditions' if lang=='en' else 'Syarat & Ketentuan'),('privacy.html','Privacy Policy' if lang=='en' else 'Kebijakan Privasi')]
+    fh = [('rates.html', 'Rates' if lang=='en' else 'Tarif'),('track.html','Track' if lang=='en' else 'Lacak kiriman'),('help.html','Help center' if lang=='en' else 'Pusat Bantuan'),('faq.html','FAQ'),('surcharges-customs.html','Surcharges & customs' if lang=='en' else 'Surcharge & kepabeanan'),('prohibited-items.html','Prohibited items' if lang=='en' else 'Barang terlarang'),('terms.html','Terms & Conditions' if lang=='en' else 'Syarat & Ketentuan'),('privacy.html','Privacy Policy' if lang=='en' else 'Kebijakan Privasi')]
     flinks = lambda items: ''.join(f'<a href="{base}{h}">{n}</a>' for h, n in items)
     return f'''<!DOCTYPE html>
 <html lang="{lang}">
@@ -147,7 +147,7 @@ def home(lang):
 <div class="hubpane" data-pane="rate">{rate_form(lang, quick=True)}</div>
 <div class="hubpane hidden" data-pane="track">{track_form(lang, quick=True)}</div>
 <div class="hubpane hidden" data-pane="book"><div class="box"><p style="margin:0 0 12px">{"Send your shipment details in one short form. You get a PCW reference number at once, and our team confirms price and pickup." if E else "Kirim detail kiriman lewat satu formulir singkat. Anda langsung mendapat nomor referensi PCW, dan tim kami mengonfirmasi harga serta pickup."}</p><a class="btn btn-a" href="book.html">{"Start booking" if E else "Mulai booking"}</a></div></div>
-<div class="who"><span>{"I am a:" if E else "Saya:"}</span><a class="on" href="book.html">{"Guest / one-off shipper" if E else "Pengirim sekali-kali"}</a><a href="{wa(L[lang]['wa_txt'])}">{"Business shipper: ask for business rates" if E else "Pengirim bisnis: minta tarif bisnis"}</a></div>
+<div class="who"><span>{"I am a:" if E else "Saya:"}</span><a class="on" href="book.html">{"Guest / one-off shipper" if E else "Pengirim sekali-kali"}</a><a href="member.html">{"Regular shipper: become a member" if E else "Pengirim rutin: jadi member"}</a></div>
 </div>
 </div></section>
 
@@ -190,6 +190,7 @@ def home(lang):
 <div class="card"><h3>{"Business rates" if E else "Tarif bisnis"}</h3><p>{"Regular shippers get their own discounted rates." if E else "Pengirim rutin mendapat tarif khusus."}</p></div>
 </div></div></section>
 
+{grow(lang)}
 <section class="band"><div class="wrap"><h2>{"Ready to ship?" if E else "Siap mengirim?"}</h2>
 <div style="display:flex;gap:10px;flex-wrap:wrap"><a class="btn btn-a" href="book.html">{"Book now" if E else "Booking sekarang"}</a><a class="btn btn-wa" href="{wa(L[lang]['wa_txt'])}">{L[lang]['chat']}</a></div></div></section>'''
 
@@ -480,6 +481,86 @@ def notfound(lang):
     E = lang == 'en'
     return head(lang, "Page not found" if E else "Halaman tidak ditemukan", "The page you looked for does not exist." if E else "Halaman yang Anda cari tidak ada.", "404") + f'<section class="s"><div class="wrap" style="display:flex;gap:10px;flex-wrap:wrap"><a class="btn btn-a" href="rates.html">{L[lang]["getrate"]}</a><a class="btn btn-o" href="track.html">{"Track" if E else "Lacak"}</a><a class="btn btn-wa" href="{wa(L[lang]["wa_txt"])}">{L[lang]["chat"]}</a></div></section>'
 
+HELP = {
+ 'basics': ("Shipping basics","Dasar pengiriman","Booking, chargeable weight and choosing a service.","Booking, berat tagih, dan memilih layanan.", [
+  ("How do I ship with PCW?","Bagaimana cara mengirim dengan PCW?","1) Check the rate by destination and weight. 2) Book online with the 4-step form. 3) Our team weighs, confirms the final price and arranges pickup or drop-off. 4) Track with your PCW reference number.","1) Cek tarif berdasarkan tujuan dan berat. 2) Booking online dengan formulir 4 langkah. 3) Tim kami menimbang, mengonfirmasi harga final, dan mengatur pickup atau drop-off. 4) Lacak dengan nomor referensi PCW."),
+  ("What is chargeable weight?","Apa itu berat tagih (chargeable weight)?","It is the higher of the actual weight and the volumetric weight. Volumetric weight = length × width × height (cm) / 5000. Light but bulky boxes are charged on volume.","Berat tagih adalah yang lebih besar antara berat aktual dan berat volumetrik. Berat volumetrik = panjang × lebar × tinggi (cm) / 5000. Kardus ringan tetapi besar ditagih berdasarkan volume."),
+  ("Priority or Economy: which should I choose?","Priority atau Economy: mana yang sebaiknya dipilih?","Choose Priority for documents, samples and urgent goods. Choose Economy for parcels that are not urgent and where the lowest all-in price matters most.","Pilih Priority untuk dokumen, sampel, dan barang mendesak. Pilih Economy untuk paket yang tidak mendesak dan harga all-in terendah lebih penting."),
+  ("What is a PCW reference number?","Apa itu nomor referensi PCW?","The number you receive when you book, for example PCW-PX-2611-0001. Use it to track your shipment and when you contact us.","Nomor yang Anda terima saat booking, contohnya PCW-PX-2611-0001. Gunakan untuk melacak kiriman dan saat menghubungi kami."),
+ ]),
+ 'customs': ("Customs & duties","Kepabeanan & bea masuk","Duties, taxes, DDP/DDU and documents.","Bea masuk, pajak, DDP/DDU, dan dokumen.", [
+  ("Who pays duties and taxes abroad?","Siapa yang membayar bea masuk dan pajak di negara tujuan?","The receiver, unless we agree otherwise in writing.","Penerima, kecuali disepakati lain secara tertulis."),
+  ("What are DDP and DDU?","Apa itu DDP dan DDU?","DDU (Delivered Duty Unpaid): the receiver pays duties and taxes on arrival. DDP (Delivered Duty Paid): the shipper pays them in advance, so the receiver pays nothing at delivery. DDP is available on request, and we confirm availability and price before pickup.","DDU (Delivered Duty Unpaid): penerima membayar bea masuk dan pajak saat barang tiba. DDP (Delivered Duty Paid): pengirim membayar di muka, sehingga penerima tidak membayar apa pun saat pengantaran. DDP tersedia atas permintaan, dan ketersediaan serta harganya kami konfirmasi sebelum pickup."),
+  ("Which documents do I need?","Dokumen apa yang dibutuhkan?","For goods: a commercial invoice and a packing list. We help you prepare them. Describe the contents clearly in English.","Untuk barang: commercial invoice dan packing list. Kami bantu menyiapkannya. Jelaskan isi kiriman dengan jelas dalam bahasa Inggris."),
+  ("Can I ship any item?","Apakah semua barang boleh dikirim?","No. Some items are prohibited or need checking first. See our Prohibited items page before you pack.","Tidak. Sebagian barang dilarang atau perlu diperiksa dahulu. Lihat halaman Barang terlarang sebelum mengemas."),
+ ]),
+ 'awb': ("AWB & labels","AWB & label","What an AWB is and how to attach it.","Apa itu AWB dan cara memasangnya.", [
+  ("What is an AWB?","Apa itu AWB?","AWB means Air Waybill. It is the shipping document and label that identifies your shipment, with a barcode, sender, receiver, service and weight.","AWB adalah Air Waybill. Dokumen sekaligus label pengiriman yang mengidentifikasi kiriman Anda, berisi barcode, pengirim, penerima, layanan, dan berat."),
+  ("When do I get my AWB?","Kapan saya mendapat AWB?","After our team weighs and confirms your shipment. The booking summary you print after booking is not the AWB.","Setelah tim kami menimbang dan mengonfirmasi kiriman Anda. Ringkasan booking yang dicetak setelah booking bukan AWB."),
+  ("How do I attach the label?","Bagaimana cara memasang label?","Print it on A4, attach it on the top of the box, and do not cover the barcode. Each box has its own label, marked for example 1 of 2.","Cetak di kertas A4, tempel di bagian atas kardus, dan jangan menutupi barcode. Setiap kardus memiliki label sendiri, ditandai misalnya 1 of 2."),
+ ]),
+ 'packing': ("Packing guide","Panduan pengemasan","Pack safely and give correct details.","Mengemas dengan aman dan mengisi detail dengan benar.", [
+  ("How should I pack?","Bagaimana cara mengemas?","Use a strong box, fill empty space so items cannot move, and seal all seams with tape. Do not reuse a box that is weak or damaged.","Gunakan kardus yang kuat, isi ruang kosong agar barang tidak bergerak, dan rekatkan semua sambungan dengan lakban. Jangan memakai ulang kardus yang lemah atau rusak."),
+  ("How do I measure the box?","Bagaimana mengukur kardus?","Measure the outside of the packed box: length × width × height in cm. We re-measure and re-weigh, and the final price follows our measurement.","Ukur bagian luar kardus yang sudah dikemas: panjang × lebar × tinggi dalam cm. Kami mengukur dan menimbang ulang, dan harga final mengikuti hasil ukur kami."),
+  ("What address details are required?","Detail alamat apa yang wajib?","A full street address, city, postcode and a phone number and email for the receiver. We cannot deliver to a PO Box.","Alamat lengkap, kota, kode pos, serta nomor telepon dan email penerima. Kami tidak dapat mengantar ke PO Box."),
+  ("What about damage claims?","Bagaimana dengan klaim kerusakan?","Report within the time limits in our Terms & Conditions, with photos. For Economy, keep an unboxing video.","Laporkan dalam batas waktu di Syarat & Ketentuan kami, dengan foto. Untuk Economy, simpan video unboxing."),
+ ]),
+ 'billing': ("Billing & payment","Tagihan & pembayaran","How and when you pay.","Cara dan waktu pembayaran.", [
+  ("How do I pay?","Bagaimana cara membayar?","New customers pay in full by bank transfer before pickup. Payment details are sent with the booking confirmation.","Pelanggan baru membayar penuh melalui transfer bank sebelum pickup. Detail pembayaran dikirim bersama konfirmasi booking."),
+  ("Is the website price final?","Apakah harga di website sudah final?","It is an estimate based on the published rate. The final price follows weighing and measuring, and any situational charge is told to you before you agree.","Itu estimasi berdasarkan published rate. Harga final mengikuti hasil timbang dan ukur, dan biaya situasional diinformasikan sebelum Anda setuju."),
+  ("Is VAT charged?","Apakah dikenakan PPN?","No. Our prices are not subject to VAT (PPN).","Tidak. Harga kami tidak dikenakan PPN."),
+  ("Can I get invoice terms?","Bisakah mendapat termin tagihan?","Regular shippers can apply for the Member program. After verification we agree billing terms in writing.","Pengirim rutin dapat mendaftar Program Member. Setelah verifikasi, kami menyepakati termin tagihan secara tertulis."),
+ ]),
+ 'extras': ("Extra services","Layanan tambahan","Insurance, signature and DDP.","Asuransi, tanda tangan, dan DDP.", [
+  ("Which extras can I request?","Layanan tambahan apa yang bisa diminta?","Insurance, signature on delivery and DDP. Tick them in step 3 of the booking form.","Asuransi, tanda tangan saat penerimaan, dan DDP. Centang pada langkah 3 formulir booking."),
+  ("Are extras guaranteed when I tick them?","Apakah layanan tambahan pasti diberikan saat dicentang?","No. It is a request. Our team confirms availability and price before pickup.","Tidak. Itu permintaan. Tim kami mengonfirmasi ketersediaan dan harga sebelum pickup."),
+  ("Why declare the value of my goods?","Mengapa harus mengisi nilai barang?","Declared value is needed for customs and for any insurance or claim. Please state it honestly.","Nilai barang dibutuhkan untuk kepabeanan serta asuransi atau klaim. Mohon diisi dengan jujur."),
+ ]),
+}
+
+def help_hub(lang):
+    E = lang == 'en'
+    cards = ''.join(f'<a class="card tile" href="help-{k}.html"><h3>{v[0] if E else v[1]}</h3><p>{v[2] if E else v[3]}</p></a>' for k, v in HELP.items())
+    return head(lang, "Help Center" if E else "Pusat Bantuan", "Guides for shipping with PCW International Express." if E else "Panduan mengirim dengan PCW International Express.", "Help" if E else "Bantuan") + f'''
+<section class="s"><div class="wrap"><div class="grid g3 tiles">{cards}</div>
+<p style="margin-top:24px"><a href="faq.html">{"More questions? See the FAQ" if E else "Pertanyaan lain? Lihat FAQ"}</a> &middot; <a href="{wa(L[lang]['wa_txt'])}">{L[lang]['chat']}</a></p></div></section>'''
+
+def help_col(lang, key):
+    E = lang == 'en'; v = HELP[key]
+    items = ''.join(f'<details class="faq"><summary>{q if E else qi}</summary><p>{a if E else ai}</p></details>' for q, qi, a, ai in v[4])
+    return head(lang, v[0] if E else v[1], v[2] if E else v[3], "Help" if E else "Bantuan") + f'<section class="s"><div class="wrap prose"><p><a href="help.html">&larr; {"Help Center" if E else "Pusat Bantuan"}</a></p>{items}<p><a class="btn btn-wa" href="{wa(L[lang]["wa_txt"])}">{L[lang]["chat"]}</a></p></div></section>'
+
+def member(lang):
+    E = lang == 'en'
+    lv = [("Starter","Your first shipments. Published rates and full support.","Kiriman pertama Anda. Published rate dan dukungan penuh."),
+          ("Growth","Shipping regularly. Your own member rate starts here.","Mengirim rutin. Tarif member Anda dimulai di sini."),
+          ("Business","Higher monthly volume, a better member rate.","Volume bulanan lebih tinggi, tarif member lebih baik."),
+          ("Partner","Our best rate, agreed in writing with a named contact.","Tarif terbaik kami, disepakati tertulis dengan kontak khusus.")]
+    lc = ''.join(f'<div class="card"><span class="tag">{i+1}</span><h3>{a}</h3><p>{c if E else d}</p></div>' for i, (a, c, d) in enumerate(lv))
+    ben = [("Your own member rate","Tarif member Anda","Members get a rate separate from the published rate on this website.","Member mendapat tarif yang terpisah dari published rate di website ini."),
+           ("Rates that improve as you grow","Tarif membaik seiring pertumbuhan","Your level follows your shipping volume over a 4-week period.","Level Anda mengikuti volume pengiriman dalam periode 4 minggu."),
+           ("Individuals and companies","Perorangan dan perusahaan","Online sellers and companies are welcome. We verify the sender identity once.","Penjual online dan perusahaan dipersilakan. Kami memverifikasi identitas pengirim satu kali."),
+           ("A real contact","Kontak yang nyata","Questions go to our team on WhatsApp, not a ticket queue.","Pertanyaan langsung ke tim kami di WhatsApp, bukan antrean tiket.")]
+    bc = ''.join(f'<div class="card"><h3>{a if E else b}</h3><p>{c if E else d}</p></div>' for a, b, c, d in ben)
+    msg = "Hello PCW, I would like to apply for the Member program." if E else "Halo PCW, saya ingin mendaftar Program Member."
+    return head(lang, "PCW Member program" if E else "Program Member PCW", "For regular shippers: your own rate, and better rates as your volume grows." if E else "Untuk pengirim rutin: tarif sendiri, dan tarif lebih baik seiring volume Anda bertambah.", "Member") + f'''
+<section class="s"><div class="wrap"><h2>{"Why become a member" if E else "Mengapa menjadi member"}</h2><div class="grid g4">{bc}</div></div></section>
+<section class="s alt"><div class="wrap"><h2>{"Four levels" if E else "Empat level"}</h2>
+<p class="sub">{"The more you ship in a 4-week period, the higher your level. Your member rate is confirmed to you in writing." if E else "Semakin banyak Anda mengirim dalam periode 4 minggu, semakin tinggi level Anda. Tarif member dikonfirmasi tertulis kepada Anda."}</p>
+<div class="grid g4">{lc}</div></div></section>
+<section class="s"><div class="wrap prose"><h2>{"How to join" if E else "Cara bergabung"}</h2>
+<ol><li>{"Message us on WhatsApp with your shipping needs (destinations, goods, monthly volume)." if E else "Hubungi kami di WhatsApp dengan kebutuhan pengiriman Anda (tujuan, jenis barang, volume bulanan)."}</li><li>{"We verify the sender identity and agree your starting level." if E else "Kami memverifikasi identitas pengirim dan menyepakati level awal Anda."}</li><li>{"Your first shipment is paid before pickup. After that, we can agree billing terms in writing." if E else "Kiriman pertama Anda dibayar sebelum pickup. Setelah itu, kami dapat menyepakati termin tagihan secara tertulis."}</li></ol>
+<p><a class="btn btn-wa" href="{wa(msg)}">{"Apply on WhatsApp" if E else "Daftar lewat WhatsApp"}</a> <a class="btn btn-o" href="help-billing.html">{"Billing help" if E else "Bantuan tagihan"}</a></p></div></section>'''
+
+def grow(lang):
+    E = lang == 'en'
+    st = [("Parcels","Paket","Start with Priority or Economy Express.","Mulai dengan Priority atau Economy Express.","international-express.html"),
+          ("Regular shipping","Pengiriman rutin","Join the Member program for your own rate.","Gabung Program Member untuk tarif sendiri.","member.html"),
+          ("Freight","Freight","Larger volumes by air, sea or land.","Volume lebih besar lewat udara, laut, atau darat.","other-services.html")]
+    c = ''.join(f'<a class="card tile" href="{h}"><span class="tag">{i+1}</span><h3>{a if E else b}</h3><p>{x if E else y}</p></a>' for i, (a, b, x, y, h) in enumerate(st))
+    return f'<section class="s alt"><div class="wrap"><h2>{"Grow with PCW" if E else "Bertumbuh bersama PCW"}</h2><p class="sub">{"From your first parcel to full freight, one team." if E else "Dari paket pertama hingga freight penuh, satu tim."}</p><div class="grid g3 tiles">{c}</div></div></section>'
+
+
 PAGES = [
  ('index.html', home, ('PCW Freight | International Express from Indonesia','PCW Freight | Ekspres Internasional dari Indonesia'), ('Door-to-door international express for documents and parcels from Indonesia. Instant published rates, online booking and tracking.','Pengiriman ekspres internasional door to door untuk dokumen dan paket dari Indonesia. Cek tarif, booking online, dan lacak kiriman.')),
  ('international-express.html', express, ('PCW International Express | PCW Freight',)*2, ('Compare PCW Priority Express and PCW Economy Express.','Bandingkan PCW Priority Express dan PCW Economy Express.')),
@@ -491,6 +572,14 @@ PAGES = [
  ('other-services.html', other, ('Other Services | PCW Freight','Layanan Lain | PCW Freight'), ('Air, sea and land freight and warehousing by request.','Air, sea, land freight, dan gudang melalui permintaan.')),
  ('about.html', about, ('About | PCW Freight','Tentang | PCW Freight'), ('About PCW Freight, a brand of PT Prabaswara Catur Widantara.','Tentang PCW Freight, merek PT Prabaswara Catur Widantara.')),
  ('contact.html', contact, ('Contact | PCW Freight','Kontak | PCW Freight'), ('Contact PCW Freight by WhatsApp, email or at our Sentul City office.','Hubungi PCW Freight lewat WhatsApp, email, atau di kantor Sentul City.')),
+ ('member.html', member, ('Member Program | PCW Freight','Program Member | PCW Freight'), ('Own member rate for regular shippers, with levels that grow with your volume.','Tarif member untuk pengirim rutin, dengan level yang naik seiring volume Anda.')),
+ ('help.html', help_hub, ('Help Center | PCW Freight','Pusat Bantuan | PCW Freight'), ('Guides on booking, customs, AWB labels, packing, billing and extras.','Panduan booking, kepabeanan, label AWB, pengemasan, tagihan, dan layanan tambahan.')),
+ ('help-basics.html', lambda l: help_col(l,'basics'), ('Help Center: basics | PCW Freight','Pusat Bantuan: basics | PCW Freight'), ('PCW Help Center guide: basics.','Panduan Pusat Bantuan PCW: basics.')),
+ ('help-customs.html', lambda l: help_col(l,'customs'), ('Help Center: customs | PCW Freight','Pusat Bantuan: customs | PCW Freight'), ('PCW Help Center guide: customs.','Panduan Pusat Bantuan PCW: customs.')),
+ ('help-awb.html', lambda l: help_col(l,'awb'), ('Help Center: awb | PCW Freight','Pusat Bantuan: awb | PCW Freight'), ('PCW Help Center guide: awb.','Panduan Pusat Bantuan PCW: awb.')),
+ ('help-packing.html', lambda l: help_col(l,'packing'), ('Help Center: packing | PCW Freight','Pusat Bantuan: packing | PCW Freight'), ('PCW Help Center guide: packing.','Panduan Pusat Bantuan PCW: packing.')),
+ ('help-billing.html', lambda l: help_col(l,'billing'), ('Help Center: billing | PCW Freight','Pusat Bantuan: billing | PCW Freight'), ('PCW Help Center guide: billing.','Panduan Pusat Bantuan PCW: billing.')),
+ ('help-extras.html', lambda l: help_col(l,'extras'), ('Help Center: extras | PCW Freight','Pusat Bantuan: extras | PCW Freight'), ('PCW Help Center guide: extras.','Panduan Pusat Bantuan PCW: extras.')),
  ('faq.html', faq, ('FAQ | PCW Freight',)*2, ('Answers about pricing, duties, payment, pickup and claims.','Jawaban seputar harga, bea masuk, pembayaran, pickup, dan klaim.')),
  ('surcharges-customs.html', surcharges, ('Surcharges & Customs | PCW Freight','Surcharge & Kepabeanan | PCW Freight'), ('Fuel surcharge, chargeable weight, duties and taxes explained for PCW International Express.','Fuel surcharge, berat tagih, bea masuk dan pajak untuk PCW International Express dijelaskan.')),
  ('prohibited-items.html', prohibited, ('Prohibited Items | PCW Freight','Barang Terlarang | PCW Freight'), ('Items we do not accept and items that need checking before shipping.','Barang yang tidak kami terima dan barang yang perlu diperiksa sebelum dikirim.')),
