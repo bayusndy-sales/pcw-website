@@ -209,3 +209,15 @@
   $all('form[data-book]').forEach(bookForm);
   $all('form[data-track]').forEach(trackForm);
 })();
+/* home hub tabs */
+(function () {
+  var hub = document.querySelector('[data-hub]'); if (!hub) return;
+  var btns = hub.querySelectorAll('.hubbar button'), panes = hub.querySelectorAll('.hubpane');
+  Array.prototype.forEach.call(btns, function (b) {
+    b.addEventListener('click', function () {
+      Array.prototype.forEach.call(btns, function (x) { x.classList.toggle('on', x === b); });
+      Array.prototype.forEach.call(panes, function (p) { p.classList.toggle('hidden', p.getAttribute('data-pane') !== b.getAttribute('data-tab')); });
+    });
+  });
+  if (location.hash === '#track') btns[1].click();
+})();

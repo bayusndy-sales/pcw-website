@@ -25,18 +25,36 @@
 <section class="hero"><div class="wrap">
 <h1>International express from Indonesia, door to door.</h1>
 <p class="lead">Documents and parcels to 23 destination countries in our published table, with two speeds. You see the full price before you book, and a real person answers on WhatsApp.</p>
-<form class="box" data-rate data-quick>
+<div class="hubtabs" data-hub>
+<div class="hubbar" role="tablist">
+<button type="button" role="tab" class="on" data-tab="rate">Get rate</button>
+<button type="button" role="tab" data-tab="track">Track</button>
+<button type="button" role="tab" data-tab="book">Book</button>
+</div>
+<div class="hubpane" data-pane="rate"><form class="box" data-rate data-quick>
 <div class="row">
 <div><label for="r_c" class="req">Destination country</label><select id="r_c" name="country" required><option value="">Loading…</option></select></div>
 <div><label class="req">Shipment type</label><div class="seg"><label><input type="radio" name="type" value="Parcel" checked><span>Parcel</span></label><label><input type="radio" name="type" value="Document"><span>Document</span></label></div></div>
 <div><label for="r_kg" class="req">Total actual weight (kg)</label><input id="r_kg" name="kg" type="number" min="0.1" step="0.1" required></div>
 <div style="display:flex;align-items:flex-end"><button class="btn btn-a" type="submit" style="width:100%">Get rate</button></div>
 </div>
-</form>
-<div style="margin-top:14px"><form class="box" data-track data-quick style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
+</form></div>
+<div class="hubpane hidden" data-pane="track"><form class="box" data-track data-quick style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
 <div style="flex:1;min-width:220px"><label for="t_ref">PCW reference number</label><input id="t_ref" name="ref" placeholder="PCW-PX-2611-0001" autocomplete="off"></div>
 <button class="btn btn-p" type="submit">Track</button></form></div>
+<div class="hubpane hidden" data-pane="book"><div class="box"><p style="margin:0 0 12px">Send your shipment details in one short form. You get a PCW reference number at once, and our team confirms price and pickup.</p><a class="btn btn-a" href="book.html">Start booking</a></div></div>
+<div class="who"><span>I am a:</span><a class="on" href="book.html">Guest / one-off shipper</a><a href="https://wa.me/6281199896752?text=Hello%20PCW%2C%20I%20would%20like%20a%20shipping%20quotation.">Business shipper: ask for business rates</a></div>
+</div>
 </div></section>
+
+<section class="s"><div class="wrap">
+<h2>What are you looking for today?</h2>
+<div class="grid g4 tiles">
+<a class="card tile" href="international-express.html"><h3>Shipping services</h3><p>Compare Priority and Economy Express.</p></a>
+<a class="card tile" href="rates.html"><h3>Rates & surcharges</h3><p>Published rates and how chargeable weight works.</p></a>
+<a class="card tile" href="prohibited-items.html"><h3>Prohibited items</h3><p>Check what we cannot accept before you pack.</p></a>
+<a class="card tile" href="faq.html"><h3>Duties, payment & FAQ</h3><p>Answers on duties, payment, pickup and claims.</p></a>
+</div></div></section>
 
 <section class="s"><div class="wrap">
 <h2>Two services. One clear price.</h2>

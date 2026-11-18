@@ -112,9 +112,60 @@ def home(lang):
 <section class="hero"><div class="wrap">
 <h1>{"International express from Indonesia, door to door." if E else "Pengiriman ekspres internasional dari Indonesia, door to door."}</h1>
 <p class="lead">{"Documents and parcels to 23 destination countries in our published table, with two speeds. You see the full price before you book, and a real person answers on WhatsApp." if E else "Dokumen dan paket ke 23 negara tujuan dalam tabel publikasi kami, dengan dua pilihan kecepatan. Total harga terlihat sebelum Anda booking, dan tim kami membalas langsung di WhatsApp."}</p>
-{rate_form(lang, quick=True)}
-<div style="margin-top:14px">{track_form(lang, quick=True)}</div>
+<div class="hubtabs" data-hub>
+<div class="hubbar" role="tablist">
+<button type="button" role="tab" class="on" data-tab="rate">{"Get rate" if E else "Cek tarif"}</button>
+<button type="button" role="tab" data-tab="track">{"Track" if E else "Lacak"}</button>
+<button type="button" role="tab" data-tab="book">{"Book" if E else "Booking"}</button>
+</div>
+<div class="hubpane" data-pane="rate">{rate_form(lang, quick=True)}</div>
+<div class="hubpane hidden" data-pane="track">{track_form(lang, quick=True)}</div>
+<div class="hubpane hidden" data-pane="book"><div class="box"><p style="margin:0 0 12px">{"Send your shipment details in one short form. You get a PCW reference number at once, and our team confirms price and pickup." if E else "Kirim detail kiriman lewat satu formulir singkat. Anda langsung mendapat nomor referensi PCW, dan tim kami mengonfirmasi harga serta pickup."}</p><a class="btn btn-a" href="book.html">{"Start booking" if E else "Mulai booking"}</a></div></div>
+<div class="who"><span>{"I am a:" if E else "Saya:"}</span><a class="on" href="book.html">{"Guest / one-off shipper" if E else "Pengirim sekali-kali"}</a><a href="{wa(L[lang]['wa_txt'])}">{"Business shipper: ask for business rates" if E else "Pengirim bisnis: minta tarif bisnis"}</a></div>
+</div>
 </div></section>
+
+<section class="s"><div class="wrap">
+<h2>{"What are you looking for today?" if E else "Apa yang Anda cari hari ini?"}</h2>
+<div class="grid g4 tiles">
+<a class="card tile" href="international-express.html"><h3>{"Shipping services" if E else "Layanan pengiriman"}</h3><p>{"Compare Priority and Economy Express." if E else "Bandingkan Priority dan Economy Express."}</p></a>
+<a class="card tile" href="rates.html"><h3>{"Rates & surcharges" if E else "Tarif & surcharge"}</h3><p>{"Published rates and how chargeable weight works." if E else "Tarif publikasi dan cara berat tagih dihitung."}</p></a>
+<a class="card tile" href="prohibited-items.html"><h3>{"Prohibited items" if E else "Barang terlarang"}</h3><p>{"Check what we cannot accept before you pack." if E else "Cek barang yang tidak dapat kami terima sebelum mengemas."}</p></a>
+<a class="card tile" href="faq.html"><h3>{"Duties, payment & FAQ" if E else "Bea masuk, pembayaran & FAQ"}</h3><p>{"Answers on duties, payment, pickup and claims." if E else "Jawaban soal bea masuk, pembayaran, pickup, dan klaim."}</p></a>
+</div></div></section>
+
+<section class="s"><div class="wrap">
+<h2>{"Two services. One clear price." if E else "Dua layanan. Satu harga yang jelas."}</h2>
+<p class="sub">{"Choose speed or budget. Both are door to door, from pickup in Indonesia to the receiver's address." if E else "Pilih cepat atau hemat. Keduanya door to door, dari pickup di Indonesia sampai alamat penerima."}</p>
+<div class="grid g2">
+<div class="card prod"><span class="tag">{"Fastest" if E else "Tercepat"}</span><h3>PCW Priority Express</h3>
+<ul class="ticks"><li>{"For documents, samples and urgent goods" if E else "Untuk dokumen, sampel, dan barang mendesak"}</li><li>{"Pickup anywhere in Indonesia" if E else "Pickup di seluruh Indonesia"}</li><li>{"Price = base rate + fuel surcharge" if E else "Harga = tarif dasar + fuel surcharge"}</li></ul>
+<a class="btn btn-o" href="priority-express.html">{"See details" if E else "Lihat detail"}</a></div>
+<div class="card prod eco"><span class="tag eco">{"Best value" if E else "Paling hemat"}</span><h3>PCW Economy Express</h3>
+<ul class="ticks"><li>{"For parcels that are not urgent" if E else "Untuk paket yang tidak mendesak"}</li><li>{"All-in price, fuel included" if E else "Harga all-in, sudah termasuk fuel"}</li><li>{"Pickup in Jakarta; other cities by request" if E else "Pickup di Jakarta; kota lain melalui permintaan"}</li></ul>
+<a class="btn btn-o" href="economy-express.html">{"See details" if E else "Lihat detail"}</a></div>
+</div></div></section>
+
+<section class="s alt"><div class="wrap">
+<h2>{"How it works" if E else "Cara kerjanya"}</h2>
+<div class="grid g4 steps">
+<div class="card"><h3>{"Get a rate" if E else "Cek tarif"}</h3><p>{"Enter destination and weight. See both services side by side." if E else "Isi tujuan dan berat. Lihat kedua layanan berdampingan."}</p></div>
+<div class="card"><h3>{"Book online" if E else "Booking online"}</h3><p>{"Send shipment details. You get a PCW reference number at once." if E else "Kirim detail kiriman. Anda langsung mendapat nomor referensi PCW."}</p></div>
+<div class="card"><h3>{"We confirm" if E else "Kami konfirmasi"}</h3><p>{"Our team checks weight, price and documents, then arranges pickup or drop-off." if E else "Tim kami memeriksa berat, harga, dan dokumen, lalu mengatur pickup atau drop-off."}</p></div>
+<div class="card"><h3>{"Track" if E else "Lacak"}</h3><p>{"Follow every status update with your PCW reference, or ask us on WhatsApp." if E else "Ikuti setiap update status dengan nomor referensi PCW, atau tanya kami di WhatsApp."}</p></div>
+</div></div></section>
+
+<section class="s"><div class="wrap">
+<h2>{"Why shippers choose PCW Freight" if E else "Mengapa pengirim memilih PCW Freight"}</h2>
+<div class="grid g4">
+<div class="card"><h3>{"A real person" if E else "Dilayani langsung"}</h3><p>{"WhatsApp answered by our team during working hours." if E else "WhatsApp dijawab langsung oleh tim kami pada jam kerja."}</p></div>
+<div class="card"><h3>{"Full price first" if E else "Total harga di awal"}</h3><p>{"Chargeable weight and every charge shown before you agree." if E else "Berat tagih dan seluruh biaya ditunjukkan sebelum Anda setuju."}</p></div>
+<div class="card"><h3>{"Document help" if E else "Bantuan dokumen"}</h3><p>{"Commercial invoice and packing list prepared with you." if E else "Commercial invoice dan packing list kami bantu siapkan."}</p></div>
+<div class="card"><h3>{"Business rates" if E else "Tarif bisnis"}</h3><p>{"Regular shippers get their own discounted rates." if E else "Pengirim rutin mendapat tarif khusus."}</p></div>
+</div></div></section>
+
+<section class="band"><div class="wrap"><h2>{"Ready to ship?" if E else "Siap mengirim?"}</h2>
+<div style="display:flex;gap:10px;flex-wrap:wrap"><a class="btn btn-a" href="book.html">{"Book now" if E else "Booking sekarang"}</a><a class="btn btn-wa" href="{wa(L[lang]['wa_txt'])}">{L[lang]['chat']}</a></div></div></section>
 
 <section class="s"><div class="wrap">
 <h2>{"Two services. One clear price." if E else "Dua layanan. Satu harga yang jelas."}</h2>
