@@ -314,22 +314,39 @@ def faq(lang):
 def surcharges(lang):
     E = lang == 'en'
     t = lambda en, idn: en if E else idn
-    rows = [
-     (t("Fuel surcharge","Fuel surcharge"), t("Priority Express: added to the base rate and updated every month. Economy Express: already included (all-in).","Priority Express: ditambahkan ke tarif dasar dan diperbarui setiap bulan. Economy Express: sudah termasuk (all-in)."), t("Shown in your quote","Tercantum di penawaran")),
-     ("Remote area", t("Delivery to an address in a remote area.","Pengiriman ke alamat di area terpencil."), t("Told to you before booking when known; otherwise billed after shipment","Diinformasikan sebelum booking jika diketahui; jika tidak, ditagihkan setelah pengiriman")),
-     ("Oversize", t("Pieces larger than the carrier's size limits.","Koli yang melebihi batas ukuran pengangkut."), t("Same as above","Sama seperti di atas")),
-     ("Address correction", t("The address is incomplete or wrong and must be corrected.","Alamat tidak lengkap atau salah sehingga perlu dikoreksi."), t("Billed to the sender","Ditagihkan kepada Pengirim")),
-     (t("Duties & taxes","Bea masuk & pajak"), t("Charged by the destination country's customs.","Dikenakan oleh bea cukai negara tujuan."), t("The receiver, unless agreed otherwise in writing","Penerima, kecuali disepakati lain secara tertulis")),
+    def tbl(rows):
+        return '<div style="overflow-x:auto"><table class="rates"><thead><tr><th>%s</th><th>%s</th><th>%s</th></tr></thead><tbody>%s</tbody></table></div>' % (t("Charge","Biaya"), t("When it applies","Kapan berlaku"), t("Indicative price (IDR)","Perkiraan harga (IDR)"), ''.join('<tr><td><b>%s</b></td><td>%s</td><td>%s</td></tr>' % r for r in rows))
+    per_piece = t("per piece","per koli"); per_ship = t("per shipment","per pengiriman"); per_kg = t("per kg","per kg")
+    prio = [
+     (t("Fuel surcharge","Fuel surcharge"), t("Added to the base rate; updated every month. Currently 51%.","Ditambahkan ke tarif dasar; diperbarui setiap bulan. Saat ini 51%."), t("Included in your quote","Tercantum di penawaran")),
+     (t("Remote area","Remote area"), t("Pickup or delivery in a remote area.","Pickup atau pengiriman ke area terpencil."), t("12,000 per kg, minimum 488,000 per shipment","12.000 per kg, minimum 488.000 per pengiriman")),
+     (t("Oversize piece","Koli oversize"), t("Longest side over 100 cm.","Sisi terpanjang lebih dari 100 cm."), t("From 625,000 per piece","Mulai 625.000 per koli")),
+     (t("Additional handling","Additional handling"), t("Piece of 24-69 kg actual weight, or not fully enclosed in an outer carton.","Koli berat aktual 24-69 kg, atau tidak sepenuhnya tertutup karton luar."), t("From 625,000 per piece","Mulai 625.000 per koli")),
+     (t("Overweight piece","Koli overweight"), t("Piece over 70 kg.","Koli di atas 70 kg."), t("From 2,500,000 per piece","Mulai 2.500.000 per koli")),
+     (t("Address correction","Koreksi alamat"), t("Address is incomplete or wrong and must be corrected.","Alamat tidak lengkap atau salah sehingga harus dikoreksi."), t("From 438,000 per shipment","Mulai 438.000 per pengiriman")),
+     (t("Dangerous goods","Dangerous goods"), t("Only with our written approval.","Hanya dengan persetujuan tertulis kami."), t("From 2,375,000 per shipment","Mulai 2.375.000 per pengiriman")),
+     (t("Paying duties & taxes for you (DDP)","Membayarkan bea masuk & pajak (DDP)"), t("Only if agreed in writing.","Hanya jika disepakati tertulis."), t("2.5% of duties & taxes, minimum 500,000","2,5% dari bea masuk & pajak, minimum 500.000")),
+     (t("Peak / demand surcharge","Surcharge peak / demand"), t("Applies in certain high-demand periods.","Berlaku pada periode permintaan tinggi tertentu."), t("Told to you before booking","Diinformasikan sebelum booking")),
     ]
-    tr = ''.join(f'<tr><td><b>{a}</b></td><td>{b}</td><td>{c}</td></tr>' for a, b, c in rows)
+    eco = [
+     (t("Fuel surcharge","Fuel surcharge"), t("Already included in the Economy price (all-in).","Sudah termasuk dalam harga Economy (all-in)."), t("Included","Sudah termasuk")),
+     (t("Remote area","Remote area"), t("Delivery to a remote area.","Pengiriman ke area terpencil."), t("32,000 per kg, minimum 1,482,000 per shipment","32.000 per kg, minimum 1.482.000 per pengiriman")),
+     (t("Oversize piece","Koli oversize"), t("Length over 120 cm, or width or height over 80 cm.","Panjang lebih dari 120 cm, atau lebar atau tinggi lebih dari 80 cm."), t("From 3,932,000 per piece","Mulai 3.932.000 per koli")),
+     (t("Additional handling","Additional handling"), t("Non-standard packing.","Kemasan tidak standar."), t("From 1,157,000 per piece","Mulai 1.157.000 per koli")),
+     (t("Address correction","Koreksi alamat"), t("Address is incomplete or wrong and must be corrected.","Alamat tidak lengkap atau salah sehingga harus dikoreksi."), t("From 557,000 per shipment","Mulai 557.000 per pengiriman")),
+     (t("Lithium battery","Baterai lithium"), t("Only with our written approval.","Hanya dengan persetujuan tertulis kami."), t("From 500,000 per shipment","Mulai 500.000 per pengiriman")),
+     (t("Dangerous goods","Dangerous goods"), t("Only with our written approval.","Hanya dengan persetujuan tertulis kami."), t("From 4,350,000 per shipment","Mulai 4.350.000 per pengiriman")),
+     (t("Paying duties & taxes for you (DDP)","Membayarkan bea masuk & pajak (DDP)"), t("Only if agreed in writing.","Hanya jika disepakati tertulis."), t("7% of duties & taxes, minimum 500,000","7% dari bea masuk & pajak, minimum 500.000")),
+    ]
+    tr = ('<h3>PCW Priority Express</h3>' + tbl(prio) + '<h3 style="margin-top:22px">PCW Economy Express</h3>' + tbl(eco))
     return head(lang, t("Surcharges & customs","Surcharge & kepabeanan"), t("What can change the price, and who pays what. We tell you before you agree.","Apa saja yang dapat mengubah harga, dan siapa yang membayar. Kami informasikan sebelum Anda setuju."), t("Surcharges & customs","Surcharge & kepabeanan")) + f'''
 <section class="s"><div class="wrap prose">
 <h2>{t("1. Chargeable weight","1. Berat tagih (chargeable weight)")}</h2>
 <p>{t("We charge on the higher of the actual weight and the volumetric weight. Volumetric weight = length × width × height (cm) ÷ 5000.","Kami menagih berdasarkan yang lebih besar antara berat aktual dan berat volumetrik. Berat volumetrik = panjang × lebar × tinggi (cm) ÷ 5000.")}</p>
 <p><b>{t("Example:","Contoh:")}</b> {t("a box of 40 × 30 × 30 cm weighing 5 kg. Volumetric weight = 36,000 ÷ 5000 = 7.2 kg. You are charged for 7.2 kg, not 5 kg.","kotak 40 × 30 × 30 cm dengan berat 5 kg. Berat volumetrik = 36.000 ÷ 5000 = 7,2 kg. Anda ditagih untuk 7,2 kg, bukan 5 kg.")}</p>
 <h2>{t("2. Charges that can apply","2. Biaya yang dapat berlaku")}</h2>
-<div style="overflow-x:auto"><table class="rates"><thead><tr><th>{t("Charge","Biaya")}</th><th>{t("When it applies","Kapan berlaku")}</th><th>{t("Who pays","Siapa yang membayar")}</th></tr></thead><tbody>{tr}</tbody></table></div>
-<p class="hint">{t("Amounts depend on destination and service, so we confirm them in your quote. Charges that arise after shipment are billed to the sender and are due within 7 days of the invoice.","Besarnya biaya tergantung tujuan dan layanan, sehingga kami konfirmasi di penawaran. Biaya yang timbul setelah pengiriman ditagihkan kepada Pengirim dan jatuh tempo paling lambat 7 hari setelah tagihan diterbitkan.")}</p>
+{tr}
+<p class="hint">{t("Prices are indicative and in IDR; the exact amount depends on destination and is confirmed in your quote. If a charge is only found after shipment (for example a wrong address or a remote area), it is billed to the sender and is due within 7 days of the invoice. Duties and taxes at the destination are separate: the receiver pays them unless agreed otherwise in writing.","Harga bersifat perkiraan dalam IDR; jumlah pastinya tergantung tujuan dan dikonfirmasi di penawaran. Jika suatu biaya baru diketahui setelah pengiriman (misalnya alamat salah atau area terpencil), biaya ditagihkan kepada Pengirim dan jatuh tempo paling lambat 7 hari setelah tagihan diterbitkan. Bea masuk dan pajak di negara tujuan terpisah: Penerima yang membayar kecuali disepakati lain secara tertulis.")}</p>
 <h2>{t("3. Duties & taxes at the destination","3. Bea masuk & pajak di negara tujuan")}</h2>
 <p>{t("Import duties and taxes are set by the destination country. By default the receiver pays them. If the receiver refuses to pay, the duties, taxes and the cost of returning or destroying the goods are billed to the sender.","Bea masuk dan pajak ditetapkan oleh negara tujuan. Secara standar Penerima yang membayar. Jika Penerima menolak membayar, bea masuk, pajak, serta biaya pengembalian atau pemusnahan barang ditagihkan kepada Pengirim.")}</p>
 <div class="notice info"><b>DDU</b> (Delivered Duty Unpaid) = {t("the receiver pays duties and taxes. This is our default.","Penerima membayar bea masuk dan pajak. Ini ketentuan standar kami.")}<br><b>DDP</b> (Delivered Duty Paid) = {t("the sender pays them in advance. Only available if we agree in writing first. Ask us on WhatsApp.","Pengirim membayar di muka. Hanya tersedia jika kita sepakati tertulis terlebih dahulu. Tanyakan lewat WhatsApp.")}</div>
