@@ -30,6 +30,12 @@
   function err(r) { return ERR[r && r.error] || (r && r.error === 'missing_fields' ? ERR.missing_fields : t('Something went wrong. Try again or contact us on WhatsApp.', 'Terjadi kendala. Coba lagi atau hubungi kami lewat WhatsApp.')); }
   function fld(n, label, typ, req, extra) { return '<div><label' + (req === false ? '' : ' class="req"') + '>' + label + '</label><input name="' + n + '" type="' + (typ || 'text') + '"' + (req === false ? '' : ' required') + ' ' + (extra || '') + '></div>'; }
   function opts(list, sel) { return list.map(function (c) { return '<option value="' + esc(c) + '"' + (c === sel ? ' selected' : '') + '>' + esc(c) + '</option>'; }).join(''); }
+  function badge(s) { var k = /deliver|terkirim|diterima/i.test(s) ? 'ok' : /cancel|batal|return|retur|hold|tahan/i.test(s) ? 'bad' : /transit|picked|pickup|jemput|customs|bea|out for|diantar|perjalanan|paid|dibayar|booked/i.test(s) ? 'go' : 'new'; return '<span class="bdg bdg-' + k + '">' + esc(s) + '</span>'; }
+  function toast(msg, kind) { var d = document.createElement('div'); d.className = 'toast ' + (kind || 'ok'); d.textContent = msg; document.body.appendChild(d); setTimeout(function () { d.classList.add('out'); setTimeout(function () { d.remove(); }, 400); }, 2600); }
+  function modal(html) { var m = document.createElement('div'); m.className = 'mdl'; m.innerHTML = '<div class="mdl-b" role="dialog" aria-modal="true"><button class="mdl-x" type="button" aria-label="Close">&times;</button>' + html + '</div>'; document.body.appendChild(m); var close = function () { m.remove(); document.removeEventListener('keydown', esc_); }; var esc_ = function (e) { if (e.key === 'Escape') close(); }; document.addEventListener('keydown', esc_); m.addEventListener('click', function (e) { if (e.target === m) close(); }); $('.mdl-x', m).onclick = close; return m; }
+  var SCR = document.currentScript, SV = (SCR && SCR.getAttribute('data-v')) || '1';
+  function awbOpen(f) { var js = (ROOT || '') + 'assets/'; return new Promise(function (res, rej) { if (window.PCWAWB) return res(); var s = document.createElement('script'); s.src = js + 'awb.js?v=' + SV; s.onload = res; s.onerror = rej; document.head.appendChild(s); }).then(function () { return window.PCWAWB.open(f, { base: BASE, origin: location.origin, logo: location.origin + '/assets/logo.png', qrSrc: (ROOT || '') + 'assets/qr.js?v=' + SV }); }).catch(function () { toast(t('Could not open the AWB. Please try again.', 'AWB tidak dapat dibuka. Coba lagi.'), 'bad'); }); }
+  function timeline(ev) { if (!ev || !ev.length) return '<p class="hint">' + t('No tracking updates yet. Our team will update the status after pickup.', 'Belum ada pembaruan status. Tim kami akan memperbarui setelah pickup.') + '</p>'; return '<ol class="tl">' + ev.slice().reverse().map(function (e, i) { return '<li' + (i === 0 ? ' class="cur"' : '') + '><b>' + esc(e.status) + '</b><span class="hint"> ' + esc(e.time) + (e.location ? ' · ' + esc(e.location) : '') + '</span>' + (e.note ? '<div>' + esc(e.note) + '</div>' : '') + '</li>'; }).join('') + '</ol>'; }
   function wl(text) { return 'https://wa.me/' + WA + '?text=' + encodeURIComponent(text); }
   var TH = 'text-align:left;padding:8px;border-bottom:2px solid #ccd;white-space:nowrap', TD = 'padding:8px;border-bottom:1px solid #e3e6ee;vertical-align:top';
   function table(cols, rows) { return '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:.92rem"><thead><tr>' + cols.map(function (c) { return '<th style="' + TH + '">' + c + '</th>'; }).join('') + '</tr></thead><tbody>' + rows.join('') + '</tbody></table></div>'; }
@@ -142,18 +148,36 @@
         '<div style="margin:16px 0;display:flex;gap:10px;flex-wrap:wrap"><button class="btn btn-a" type="button" data-g="new">' + t('New shipment', 'Kiriman baru') + '</button><button class="btn btn-o" type="button" data-g="rates">' + t('Check rates', 'Cek tarif') + '</button><a class="btn btn-o" href="track.html">' + t('Track a shipment', 'Lacak kiriman') + '</a></div>' +
         '<h3>' + t('Recent shipments', 'Kiriman terbaru') + '</h3>' + shipTable(ITEMS.slice(0, 5));
       $$('[data-g]', root).forEach(function (b) { b.onclick = function () { window._go(b.getAttribute('data-g')); }; });
+      bindShip(root);
+    }
+    function bindShip(sc) {
+      $$('[data-d]', sc).forEach(function (b) { b.onclick = function () { openShip(b.getAttribute('data-d')); }; });
+      $$('[data-awb]', sc).forEach(function (b) { b.onclick = function () { busy(b, true, 'AWB'); post({ action: 'awb_m', token: store('pt'), ref: b.getAttribute('data-awb') }).then(function (r) { busy(b, false); if (r.error === 'session') return expired(); if (!r.ok) return toast(t('Shipment not found.', 'Kiriman tidak ditemukan.'), 'bad'); awbOpen(r.fields); }).catch(function () { busy(b, false); toast(err(), 'bad'); }); }; });
+    }
+    function openShip(ref) {
+      var m = modal('<h3 style="margin-top:0">' + esc(ref) + '</h3><div id="shB"><p class="hint"><span class="spin spin-d"></span> ' + t('Loading...', 'Memuat...') + '</p></div>');
+      post({ action: 'awb_m', token: store('pt'), ref: ref, lang: ID ? 'id' : 'en' }).then(function (r) {
+        if (r.error === 'session') { m.remove(); return expired(); }
+        if (!r.ok) { $('#shB', m).innerHTML = notice('err', t('Shipment not found.', 'Kiriman tidak ditemukan.')); return; }
+        var f = r.fields, kv = function (l, v) { return '<div><label>' + l + '</label><div>' + esc(v == null || v === '' ? '-' : v) + '</div></div>'; };
+        $('#shB', m).innerHTML = '<div class="row r3">' + kv(t('Service', 'Layanan'), f.Product) + kv(t('Destination', 'Tujuan'), f.Dest_Country) + kv(t('Pieces / kg', 'Koli / kg'), f.Pieces + ' / ' + (f.Chargeable_Kg || f.Actual_Kg)) + kv(t('Receiver', 'Penerima'), f.Consignee_Name) + kv(t('Contents', 'Isi'), f.Contents) + kv(t('Submitted', 'Dibuat'), f.Submitted_At) + '</div>' +
+          '<h4 style="margin:16px 0 6px">' + t('Tracking', 'Pelacakan') + '</h4>' + timeline(r.events) +
+          '<div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap"><button class="btn btn-a btn-sm" type="button" id="shA">' + t('Print AWB', 'Cetak AWB') + '</button><button class="btn btn-o btn-sm" type="button" id="shC">' + t('Copy reference', 'Salin referensi') + '</button><a class="btn btn-o btn-sm" href="' + BASE + 'track.html?ref=' + encodeURIComponent(ref) + '">' + t('Public tracking page', 'Halaman pelacakan publik') + '</a></div>';
+        $('#shA', m).onclick = function () { m.remove(); awbOpen(f); };
+        $('#shC', m).onclick = function () { try { navigator.clipboard.writeText(ref); toast(t('Reference copied', 'Referensi disalin')); } catch (e) { toast(ref); } };
+      }).catch(function () { $('#shB', m).innerHTML = notice('err', err()); });
     }
     function shipTable(items) {
       if (!items.length) return '<p>' + t('No shipments yet.', 'Belum ada kiriman.') + '</p>';
       return table([t('Ref', 'Ref'), t('Date', 'Tanggal'), t('Service', 'Layanan'), t('Destination', 'Tujuan'), 'Kg', t('Receiver', 'Penerima'), 'Status', ''],
-        items.map(function (i) { return tr([esc(i.ref), esc(i.date), esc(i.product), esc(i.dest), esc(i.kg), esc(i.to), esc(i.status), '<a href="' + BASE + 'track.html?ref=' + encodeURIComponent(i.ref) + '">' + t('Track', 'Lacak') + '</a>']); }));
+        items.map(function (i) { return tr([esc(i.ref), esc(i.date), esc(i.product), esc(i.dest), esc(i.kg), esc(i.to), badge(i.status), '<button class="btn btn-o btn-sm" type="button" data-d="' + esc(i.ref) + '">' + t('Details', 'Detail') + '</button> <button class="btn btn-o btn-sm" type="button" data-awb="' + esc(i.ref) + '">AWB</button>']); }));
     }
     function renderShip() {
       var p = $('[data-pane=ship]', root); if (!p) return;
       var q = ($('#sq', p) || {}).value || '';
       if (!$('#sq', p)) { p.innerHTML = '<h3>' + t('Your shipments', 'Kiriman Anda') + '</h3><input id="sq" placeholder="' + t('Filter by reference, country or receiver', 'Filter ref, negara, atau penerima') + '" style="max-width:420px"><div id="sl" style="margin-top:12px"></div>'; $('#sq', p).oninput = renderShip; }
       var qq = $('#sq', p).value.toLowerCase();
-      $('#sl', p).innerHTML = shipTable(ITEMS.filter(function (i) { return !qq || (i.ref + ' ' + i.dest + ' ' + i.to + ' ' + i.status).toLowerCase().indexOf(qq) > -1; }));
+      $('#sl', p).innerHTML = shipTable(ITEMS.filter(function (i) { return !qq || (i.ref + ' ' + i.dest + ' ' + i.to + ' ' + i.status).toLowerCase().indexOf(qq) > -1; })); bindShip(p);
     }
     function buildRates() {
       var p = $('[data-pane=rates]', root);
@@ -311,7 +335,7 @@
       function filtered() { var q = $('#bq', p).value.toLowerCase(), s = $('#bs', p).value, pr = $('#bp', p).value; return BK.filter(function (b) { return (!s || b.status === s) && (!pr || b.product === pr) && (!q || (b.ref + ' ' + b.company + ' ' + b.shipper + ' ' + b.email + ' ' + b.dest + ' ' + b.to).toLowerCase().indexOf(q) > -1); }); }
       var f = filtered();
       $('#bl', p).innerHTML = '<p class="hint">' + f.length + ' of ' + BK.length + ' bookings</p>' + table(['Ref', 'Date', 'Customer', 'Service / Dest', 'Kg', 'Receiver', 'Price (IDR)', 'Status', ''], f.map(function (b) {
-        return tr([esc(b.ref), esc(b.date), esc(b.company || b.shipper) + '<br><span class="hint">' + esc(b.email) + '</span>', esc(b.product) + '<br>' + esc(b.dest), esc(b.chg || b.kg), esc(b.to), b.final ? '<strong>' + Number(b.final).toLocaleString('id-ID') + '</strong> <span class="hint">final</span>' : (b.est ? Number(b.est).toLocaleString('id-ID') + ' <span class="hint">est</span>' : '-'), '<strong>' + esc(b.status) + '</strong>', '<button class="btn btn-a btn-sm" type="button" data-open="' + esc(b.ref) + '">Open</button>']);
+        return tr([esc(b.ref), esc(b.date), esc(b.company || b.shipper) + '<br><span class="hint">' + esc(b.email) + '</span>', esc(b.product) + '<br>' + esc(b.dest), esc(b.chg || b.kg), esc(b.to), b.final ? '<strong>' + Number(b.final).toLocaleString('id-ID') + '</strong> <span class="hint">final</span>' : (b.est ? Number(b.est).toLocaleString('id-ID') + ' <span class="hint">est</span>' : '-'), badge(b.status), '<button class="btn btn-a btn-sm" type="button" data-open="' + esc(b.ref) + '">Open</button>']);
       }));
       $$('[data-open]', p).forEach(function (b) { b.onclick = function () { openBk(b.getAttribute('data-open')); }; });
     }
@@ -321,7 +345,7 @@
         var f = r.fields, d = $('#bd', pane('bk')), so = STAT.map(function (s) { return '<option>' + esc(s) + '</option>'; }).join('');
         var row = function (k) { return '<div><label>' + k.replace(/_/g, ' ') + '</label><div>' + esc(f[k] == null || f[k] === '' ? '-' : f[k]) + '</div></div>'; };
         var inp = function (n, label, val, typ) { return '<div><label>' + label + '</label><input name="' + n + '" type="' + (typ || 'text') + '" value="' + esc(val == null ? '' : val) + '"></div>'; };
-        d.innerHTML = '<div class="box" style="margin-top:16px"><div style="display:flex;justify-content:space-between;align-items:center"><h3 style="margin:0">' + esc(ref) + ' - ' + esc(f.Product) + ' to ' + esc(f.Dest_Country) + '</h3><button id="bc" class="btn btn-o btn-sm" type="button">Close</button></div><div id="bdm"></div>' +
+        d.innerHTML = '<div class="box" style="margin-top:16px"><div style="display:flex;justify-content:space-between;align-items:center"><h3 style="margin:0">' + esc(ref) + ' - ' + esc(f.Product) + ' to ' + esc(f.Dest_Country) + '</h3><div style="display:flex;gap:8px"><button id="bawb" class="btn btn-a btn-sm" type="button">Print AWB</button><button id="bc" class="btn btn-o btn-sm" type="button">Close</button></div></div><div id="bdm"></div>' +
           '<div class="row r3" style="margin-top:12px">' + ['Submitted_At', 'Shipper_Name', 'Shipper_Company', 'Shipper_Email', 'Shipper_WhatsApp', 'Pickup_or_Dropoff', 'Pickup_Address', 'Pickup_City', 'Pickup_Date', 'Est_Total_IDR'].map(row).join('') + '</div>' +
           '<h4 style="margin:16px 0 6px">Edit shipment</h4><form id="be"><div class="row r4">' + inp('actual_kg', 'Actual kg', f.Actual_Kg) + inp('chargeable_kg', 'Chargeable kg', f.Chargeable_Kg) + inp('pieces', 'Pieces', f.Pieces) + inp('dims', 'Dims cm', f.Dims_cm) + '</div>' +
           '<div class="row r4" style="margin-top:10px">' + inp('final_price', 'Final price (IDR)', f.Final_Price_IDR) + inp('declared_value', 'Declared value', f.Declared_Value) + inp('contents', 'Contents', f.Contents) + inp('consignee_name', 'Receiver name', f.Consignee_Name) + '</div>' +
@@ -332,8 +356,9 @@
           '<form id="bt" style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;align-items:end"><div><label>New status</label><select name="status">' + so + '</select></div><div><label>Location</label><input name="location"></div><div><label>Public note</label><input name="note"></div><button class="btn btn-a btn-sm" type="submit">Add status</button></form></div>';
         d.scrollIntoView({ behavior: 'smooth' });
         $('#bc').onclick = function () { d.innerHTML = ''; };
-        $('#be').addEventListener('submit', function (ev) { ev.preventDefault(); var b = { action: 'adm_booking_edit', ref: ref }; new FormData(ev.target).forEach(function (v, k) { b[k] = v; }); aPost(b).then(function (x) { aMsg('#bdm', x.ok, x.ok ? 'Saved.' : aErr(x)); if (x.ok) { loadBkQuiet(); openBk(ref); } }); });
-        $('#bt').addEventListener('submit', function (ev) { ev.preventDefault(); var fe = ev.target.elements; aPost({ action: 'adm_status', ref: ref, status: fe.status.value, location: fe.location.value, note: fe.note.value }).then(function (x) { aMsg('#bdm', x.ok, x.ok ? 'Status added.' : aErr(x)); if (x.ok) { loadBkQuiet(); openBk(ref); } }); });
+        $('#bawb').onclick = function () { var ff = {}; Object.keys(f).forEach(function (k) { ff[k] = f[k]; }); ff.PCW_Ref = ref; awbOpen(ff); };
+        $('#be').addEventListener('submit', function (ev) { ev.preventDefault(); var b = { action: 'adm_booking_edit', ref: ref }; new FormData(ev.target).forEach(function (v, k) { b[k] = v; }); aPost(b).then(function (x) { aMsg('#bdm', x.ok, x.ok ? 'Saved.' : aErr(x)); toast(x.ok ? 'Saved' : aErr(x), x.ok ? 'ok' : 'bad'); if (x.ok) { loadBkQuiet(); openBk(ref); } }); });
+        $('#bt').addEventListener('submit', function (ev) { ev.preventDefault(); var fe = ev.target.elements; aPost({ action: 'adm_status', ref: ref, status: fe.status.value, location: fe.location.value, note: fe.note.value }).then(function (x) { aMsg('#bdm', x.ok, x.ok ? 'Status added.' : aErr(x)); toast(x.ok ? 'Status added' : aErr(x), x.ok ? 'ok' : 'bad'); if (x.ok) { loadBkQuiet(); openBk(ref); } }); });
         $$('[data-del]', d).forEach(function (b) { b.onclick = function () { if (!confirm('Remove this tracking event? This cannot be undone.')) return; aPost({ action: 'adm_track_del', ref: ref, row: b.getAttribute('data-del') }).then(function (x) { aMsg('#bdm', x.ok, x.ok ? 'Event removed.' : aErr(x)); if (x.ok) { loadBkQuiet(); openBk(ref); } }); }; });
       }).catch(function () {});
     }

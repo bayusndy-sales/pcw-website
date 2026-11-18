@@ -9,7 +9,7 @@ SITE = 'https://pcwfreight.com/'
 
 import hashlib as _h, os as _o
 _AD = _o.path.join(_o.path.dirname(_o.path.abspath(__file__)), 'assets')
-ASSET_V = {n: _h.md5(open(_o.path.join(_AD, n), 'rb').read()).hexdigest()[:8] for n in ('style.css', 'app.js', 'portal.js')}
+ASSET_V = {n: _h.md5(open(_o.path.join(_AD, n), 'rb').read()).hexdigest()[:8] for n in ('style.css', 'app.js', 'portal.js', 'awb.js')}
 
 def wa(text):
     from urllib.parse import quote
@@ -563,7 +563,7 @@ def grow(lang):
 def _auth_page(lang, title_en, title_id, sub_en, sub_id, crumb, root_id):
     E = lang == 'en'
     return head(lang, title_en if E else title_id, sub_en if E else sub_id, crumb) + f'''
-<section class="s"><div class="wrap" style="max-width:980px"><div id="{root_id}"><noscript>JavaScript is required.</noscript></div></div></section><script src="{'../' if lang=='id' else ''}assets/portal.js?v={ASSET_V["portal.js"]}" defer></script>'''
+<section class="s"><div class="wrap" style="max-width:980px"><div id="{root_id}"><noscript>JavaScript is required.</noscript></div></div></section><script src="{'../' if lang=='id' else ''}assets/portal.js?v={ASSET_V["portal.js"]}" data-v="{ASSET_V["awb.js"]}" defer></script>'''
 
 def portal(lang):
     return _auth_page(lang, "Customer portal", "Portal pelanggan", "Check rates, book, and track your shipments.", "Cek tarif, booking, dan lacak kiriman Anda.", "Portal", "pRoot")

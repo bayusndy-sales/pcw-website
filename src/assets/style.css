@@ -172,3 +172,18 @@ footer .legal{border-top:1px solid #26366b;margin-top:28px;padding-top:16px;font
 @media (max-width:460px){.row.r5{grid-template-columns:1fr}}
 
 @media print{header,footer,nav,.btn,.hubbar{display:none!important}}
+
+/* portal / admin UX */
+.bdg{display:inline-block;padding:3px 10px;border-radius:999px;font-size:12.5px;font-weight:700;white-space:nowrap;background:#eef1f6;color:#44506a}
+.bdg-go{background:var(--blue-l);color:var(--blue-d)}.bdg-ok{background:#e3f4ea;color:var(--ok)}.bdg-bad{background:#fde7e5;color:var(--err)}
+.toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);background:#16202f;color:#fff;padding:11px 18px;border-radius:10px;font-weight:600;font-size:14.5px;z-index:10000;box-shadow:0 8px 30px rgba(0,0,0,.25);transition:opacity .35s,transform .35s}
+.toast.ok{background:#1d7a46}.toast.bad{background:#b3261e}.toast.out{opacity:0;transform:translate(-50%,10px)}
+.mdl{position:fixed;inset:0;background:rgba(10,20,40,.6);z-index:9000;display:flex;align-items:flex-start;justify-content:center;padding:5vh 14px;overflow:auto}
+.mdl-b{position:relative;background:#fff;border-radius:14px;max-width:720px;width:100%;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,.35)}
+.mdl-x{position:absolute;right:12px;top:8px;border:0;background:none;font-size:30px;line-height:1;cursor:pointer;color:var(--muted)}
+.tl{list-style:none;margin:0;padding:0 0 0 18px;border-left:2px solid var(--line)}
+.tl li{position:relative;padding:0 0 14px 14px}.tl li:before{content:"";position:absolute;left:-25px;top:5px;width:12px;height:12px;border-radius:50%;background:#fff;border:2px solid #b9c4d8}
+.tl li.cur:before{background:var(--blue);border-color:var(--blue)}
+.spin-d{border-color:rgba(0,74,173,.25);border-top-color:var(--blue)}
+.tabbar{overflow-x:auto;flex-wrap:nowrap;scrollbar-width:thin}.tabbar>*{flex:none}
+@media(max-width:640px){.mdl-b{padding:18px}.toast{width:calc(100% - 28px);text-align:center}}
