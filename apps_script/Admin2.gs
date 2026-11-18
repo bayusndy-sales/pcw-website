@@ -109,7 +109,7 @@ function admRoute2_(b) {
     case 'adm_stats': return admStats_(b); case 'adm_bookings_all': return admBookingsAll_(b); case 'adm_booking_get': return admBookingGet_(b); case 'adm_booking_edit': return admBookingEdit_(b);
     case 'adm_track_del': return admTrackDel_(b); case 'adm_user_edit': return admUserEdit_(b); case 'adm_user_create': return admUserCreate_(b); case 'adm_user_reset': return admUserReset_(b);
     case 'adm_user_bookings': return admUserBookings_(b); case 'adm_inv_list': return admInvList_(b); case 'adm_inv_add': return admInvAdd_(b); case 'adm_inv_pay': return admInvPay_(b);
-    case 'adm_audit': return admAudit_(b); case 'adm_settings': return admSettings_(b);
+    case 'adm_audit': return admAudit_(b); case 'adm_settings': return admSettings_(b); case 'adm_fuel_get': return admFuelGet_(b); case 'adm_fuel_set': return admFuelSet_(b);
   }
   return null;
 }

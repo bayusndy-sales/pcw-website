@@ -486,8 +486,8 @@
         var act = '';
         if (idx === 0) {
           var SG = r.suggest || {}, idr0 = function (n) { return 'Rp ' + Math.round(n).toLocaleString('id-ID'); };
-          var sgBox = '<div class="notice ' + (SG.suggest ? 'ok' : 'warn') + '" style="margin:0 0 10px"><strong>' + (SG.suggest && FLCH[SG.suggest] ? 'Suggested: ' + esc(FLCH[SG.suggest].label) : 'No automatic suggestion') + '</strong><br>' + esc(SG.reason || '') + (SG.flags || []).map(function (x) { return '<br><strong>&#9873; ' + esc(x) + '</strong>'; }).join('') + '</div>';
-          act = '<h4 style="margin:0 0 8px">Step 1. Choose how to book this shipment</h4>' + sgBox + Object.keys(FLCH).map(function (k) { var c = SG.costs && SG.costs[k], star = SG.suggest === k; return '<button type="button" class="btn ' + (star ? 'btn-a' : 'btn-o') + '" data-ch="' + k + '" style="display:block;width:100%;text-align:left;margin-bottom:8px"><strong>' + esc(FLCH[k].label) + (star ? ' &middot; suggested' : '') + '</strong>' + (c ? ' <span class="hint" style="float:right">vendor cost ' + idr0(c) + '</span>' : '') + '<br><span class="hint">' + esc(GUIDE[k][0]) + '</span></button>'; }).join('') + (r.role === 'SuperAdmin' ? '<p class="hint">Costs include fuel (FedEx/ICCL 51.5%, DHL 50% [VERIFY weekly]). Own FedEx = publish less 45%, own DHL = publish less 50%.</p>' : '');
+          var sgBox = '<div class="notice ' + (SG.suggest ? 'ok' : 'warn') + '" style="margin:0 0 10px"><strong>' + (SG.suggest && FLCH[SG.suggest] ? 'Suggested: ' + esc(FLCH[SG.suggest].label) : 'No automatic suggestion') + '</strong><br>' + esc(SG.reason || '') + (SG.flags || []).map(function (x) { return '<br><strong>&#9873; ' + esc(x) + '</strong>'; }).join('') + (SG.fuel_age == null && SG.gp ? '<br><strong>&#9873; Fuel % has never been updated. Set it in Settings.</strong>' : (SG.fuel_age > 7 ? '<br><strong>&#9873; Fuel % was last updated ' + SG.fuel_age + ' days ago. Update it in Settings.</strong>' : '')) + '</div>';
+          act = '<h4 style="margin:0 0 8px">Step 1. Choose how to book this shipment</h4>' + sgBox + Object.keys(FLCH).map(function (k) { var c = SG.costs && SG.costs[k], star = SG.suggest === k; return '<button type="button" class="btn ' + (star ? 'btn-a' : 'btn-o') + '" data-ch="' + k + '" style="display:block;width:100%;text-align:left;margin-bottom:8px"><strong>' + esc(FLCH[k].label) + (star ? ' &middot; suggested' : '') + '</strong>' + (c ? ' <span class="hint" style="float:right">vendor cost ' + idr0(c) + (SG.gp && SG.gp[k] != null ? ' &middot; <strong style="color:' + (SG.gp[k] < (SG.floor || 20) ? '#b3261e' : '#1a7f37') + '">GP ' + SG.gp[k] + '%' + (SG.gp[k] < (SG.floor || 20) ? ' (below ' + (SG.floor || 20) + '%)' : '') + '</strong>' : '') + '</span>' : '') + '<br><span class="hint">' + esc(GUIDE[k][0]) + '</span></button>'; }).join('') + (r.role === 'SuperAdmin' ? '<p class="hint">Costs include the fuel % saved in Settings' + (SG.fuel_updated ? ' (updated ' + esc(SG.fuel_updated) + ')' : '') + '. GP = (price - cost) / price. Own FedEx = publish less 45%, own DHL = publish less 50%.</p>' : '');
         } else {
           act = '<div class="hint">Channel: <strong>' + esc(chd.label) + '</strong>' + (idx < 3 ? ' <a href="#" id="fchg">change</a>' : '') + '</div>';
           if (idx <= 2) {
@@ -563,7 +563,19 @@
     }
     /* Audit + settings */
     function loadAudit() { aPost({ action: 'adm_audit' }).then(function (r) { if (r.ok) pane('au').innerHTML = '<p class="hint">Last 200 admin actions.</p>' + table(['Time', 'Admin', 'Action', 'Detail'], r.items.map(function (i) { return tr([esc(i.time), esc(i.who), esc(i.action), esc(i.detail)]); })); }).catch(function () {}); }
-    function loadSettings() { aPost({ action: 'adm_settings' }).then(function (r) { if (r.ok) pane('st').innerHTML = '<p class="hint">Read-only. Rates, fuel and rules are changed in the Google Sheet by the team.</p>' + table(['Setting', 'Value', 'Note'], r.items.map(function (i) { return tr(['<strong>' + esc(i.key) + '</strong>', esc(i.value), esc(i.note)]); })); }).catch(function () {}); }
+    function loadSettings() {
+      Promise.all([aPost({ action: 'adm_settings' }), aPost({ action: 'adm_fuel_get' })]).then(function (rs) {
+        var r = rs[0], f = rs[1]; if (!r.ok) return;
+        var fb = '';
+        if (f && f.ok) {
+          var old = f.age == null || f.age > 7;
+          fb = '<div class="box" style="margin-bottom:14px"><h4 style="margin:0 0 6px">Weekly fuel update</h4><div class="notice ' + (old ? 'warn' : 'ok') + '" style="margin:0 0 10px">' + (f.age == null ? 'Fuel % has not been confirmed yet.' : 'Last updated ' + esc(f.updated) + ' (' + f.age + ' days ago).' + (old ? ' Please update it now.' : '')) + '</div><form id="fuf" style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">' + f.items.map(function (i) { return '<label style="min-width:200px;flex:1"><span class="hint">' + esc(i.label) + ' (%)</span><input name="' + esc(i.key) + '" type="number" step="0.1" min="20" max="100" value="' + (Math.round(i.value * 1000) / 10) + '" required></label>'; }).join('') + '<button class="btn btn-p" type="submit">Save fuel %</button></form><div id="fum" style="margin-top:8px"></div><p class="hint">Use the current FedEx and DHL fuel tables. The first box changes the customer price on new quotes.</p></div>';
+        }
+        pane('st').innerHTML = fb + '<p class="hint">Other rates and rules are changed in the Google Sheet by the team.</p>' + table(['Setting', 'Value', 'Note'], r.items.map(function (i) { return tr(['<strong>' + esc(i.key) + '</strong>', esc(i.value), esc(i.note)]); }));
+        var ff = $('#fuf', pane('st'));
+        if (ff) ff.addEventListener('submit', function (ev) { ev.preventDefault(); var v = {}; new FormData(ff).forEach(function (x, k) { v[k] = x; }); aPost({ action: 'adm_fuel_set', values: v }).then(function (x) { if (x.ok) { loadSettings(); } else aMsg('#fum', false, x.error === 'invalid' ? 'Enter a percent between 20 and 100 for ' + (x.field || 'each box') + '.' : aErr(x)); }); });
+      }).catch(function () {});
+    }
     if (store('at')) post({ action: 'me', token: store('at') }).then(function (r) { if (r.ok && (r.user.role === 'SuperAdmin' || r.user.role === 'Ops')) { AU = r.user; aApp(); } else { store('at', null); aLogin(); } }).catch(aLogin); else aLogin();
   }
 })();

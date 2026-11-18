@@ -58,7 +58,11 @@ function ulGet_(b) {
   const fo = fObj_(fr ? fr.v : null); const cst = num_(fo.Cost_IDR);
   const margin = u.role === 'SuperAdmin' ? { price: sell, cost: cst, gp: sell > 0 && cst > 0 ? Math.round(sell - cst) : null, pct: sell > 0 && cst > 0 ? Math.round((sell - cst) / sell * 1000) / 10 : null } : null;
   const sg = chanSuggest_(f.Product, f.Dest_Country, num_(f.Chargeable_Kg));
-  if (u.role !== 'SuperAdmin') sg.costs = {};
+  if (u.role !== 'SuperAdmin') { sg.costs = {}; } else {
+    sg.sell = sell; sg.floor = 20; sg.gp = {};
+    Object.keys(sg.costs).forEach(function (k) { sg.gp[k] = sell > 0 ? Math.round((sell - sg.costs[k]) / sell * 1000) / 10 : null; });
+    const fa = fuelAge_(); sg.fuel_age = fa.age; sg.fuel_updated = fa.date;
+  }
   return { ok: true, fields: f, ful: fo, events: ev, channels: FUL_CH, role: u.role, margin: margin, suggest: sg };
 }
 
