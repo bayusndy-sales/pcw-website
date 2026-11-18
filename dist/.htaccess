@@ -19,6 +19,11 @@ RewriteRule ^check-shipping-rates/?$ /rates.html [R=301,L]
 RewriteRule ^privacy-policy/?$ /privacy.html [R=301,L]
 RewriteRule ^terms-and-conditions/?$ /terms.html [R=301,L]
 RewriteRule ^(blogs|blog|news)(/.*)?$ / [R=301,L]
+# clean addresses: /track -> track.html (query string kept)
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{DOCUMENT_ROOT}/$1.html -f
+RewriteRule ^(.+?)/?$ /$1.html [L]
 </IfModule>
 <IfModule mod_headers.c>
 Header set X-Content-Type-Options "nosniff"
