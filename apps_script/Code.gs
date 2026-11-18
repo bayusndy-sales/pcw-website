@@ -36,7 +36,7 @@ function doGet(e) {
 function doPost(e) {
   try {
     const body = JSON.parse((e && e.postData && e.postData.contents) || '{}');
-    delete body.__member; if (body.action === 'book') return json_(book_(body)); if (body.action === 'portal_login') return json_(portalLogin_(body)); if (body.action === 'portal_list') return json_(portalList_(body)); if (body.action === 'portal_book') return json_(portalBook_(body));
+    delete body.__member; delete body.__disc; if (body.action === 'book') return json_(book_(body)); if (body.action === 'portal_login') return json_(portalLogin_(body)); if (body.action === 'portal_list') return json_(portalList_(body)); if (body.action === 'portal_book') return json_(portalBook_(body));
     return json_({ ok: false, error: 'unknown_action' });
   } catch (err) {
     console.error(err);
@@ -277,7 +277,7 @@ function book_(b) {
   const r = rate_({ country: b.dest_country, type: b.shipment_type, kg: b.actual_kg, pieces: b.pieces, l: b.l, w: b.w, h: b.h });
   if (!r.ok) return r;
   const opt = r.options.filter(function (o) { return o.product === prod; })[0];
-  const quote = !!b.__member || !opt || !!opt.quote;
+  const quote = (b.__member && !b.__disc) || !opt || !!opt.quote; if (b.__disc && opt && !opt.quote) { const dk = 1 - b.__disc; opt.base = Math.round(opt.base * dk); opt.fuel = Math.round(opt.fuel * dk); opt.total = Math.round(opt.total * dk); }
 
   const lock = LockService.getScriptLock();
   lock.waitLock(20000);
@@ -289,7 +289,7 @@ function book_(b) {
       ? r.pieces + ' x ' + num_(b.l) + 'x' + num_(b.w) + 'x' + num_(b.h) + ' cm' : '';
     const notes = ['Web booking (published rate estimate)']; const xm = String(b.contents || '').match(/\| Options: (.*)$/); if (xm) notes.push('EXTRAS REQUESTED: ' + xm[1] + ' (confirm availability and price)');
     if (outside) notes.push('PICKUP OUTSIDE JAKARTA: confirm pickup cost');
-    if (b.__member) notes.push('PORTAL MEMBER BOOKING (' + safe_(b.shipper_company) + '): price per member agreement, not published rate'); else if (quote) notes.push('ABOVE PUBLISHED TABLE: quote needed');
+    if (b.__member) notes.push('PORTAL MEMBER BOOKING (' + safe_(b.shipper_company) + '): price per member agreement, not published rate' + (b.__disc ? ' (' + Math.round(b.__disc * 100) + '% off published)' : '')); else if (quote) notes.push('ABOVE PUBLISHED TABLE: quote needed');
 
     sh_(TABS.web).appendRow([
       ref, now, b.lang === 'id' ? 'id' : 'en', prod, r.type, safe_(r.country), r.pieces, r.actual_kg, safe_(dims),

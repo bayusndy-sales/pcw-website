@@ -62,7 +62,8 @@
         var m = r.error === 'missing_fields' ? T.miss + (r.fields || []).join(', ') : r.error === 'economy_pickup_outside_jakarta' ? T.eco : r.error === 'po_box_not_accepted' ? (ID ? 'Alamat PO Box tidak dapat dikirimi.' : 'PO Box addresses cannot be delivered.') : T.err;
         out.innerHTML = '<div class="notice err">' + esc(m) + '</div>'; return;
       }
-      out.innerHTML = '<div class="notice ok"><strong>' + T.ok + esc(r.ref) + '</strong><br>' + (ID ? 'Harga sesuai kesepakatan member; tim kami mengonfirmasi dan menerbitkan AWB.' : 'Price follows your member agreement; our team confirms and issues the AWB.') + '</div>';
+      var pr = r.est_total ? '<br>' + (ID ? 'Estimasi tarif member (belum termasuk surcharge situasional): Rp ' : 'Member rate estimate (excl. situational surcharges): Rp ') + Number(r.est_total).toLocaleString('id-ID') + ' · ' + (ID ? 'berat tagih ' : 'chargeable ') + r.chargeable_kg + ' kg' : '';
+      out.innerHTML = '<div class="notice ok"><strong>' + T.ok + esc(r.ref) + '</strong>' + pr + '<br>' + (ID ? 'Harga final dikonfirmasi tim kami setelah penimbangan; AWB diterbitkan oleh PCW.' : 'Our team confirms the final price after weighing, then issues the AWB.') + '</div>';
       form.reset(); form.classList.add('hidden'); loadList();
     }).catch(function () { btn.disabled = false; btn.innerHTML = lab; out.innerHTML = '<div class="notice err">' + T.err + '</div>'; });
   });
