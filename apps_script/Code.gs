@@ -418,7 +418,7 @@ function notify_(ref, prod, r, opt, quote, outside, b, email, s) {
   const price = quote ? 'Quote needed' : idr(opt.total);
   try {
     if (owner) {
-      MailApp.sendEmail({
+      sendMail_({
         to: owner, name: 'PCW Freight Website',
         subject: 'New web booking ' + ref + ' - ' + PRODUCT_NAME[prod] + ' to ' + r.country,
         body: [
@@ -435,8 +435,8 @@ function notify_(ref, prod, r, opt, quote, outside, b, email, s) {
       });
     }
     const id = b.lang === 'id';
-    MailApp.sendEmail({
-      to: email, name: 'PCW Freight', replyTo: owner || undefined,
+    sendMail_({
+      to: email, name: 'PCW Freight',
       subject: (id ? 'Permintaan booking diterima: ' : 'Booking request received: ') + ref,
       body: (id ? [
         'Terima kasih, permintaan booking Anda sudah kami terima.',
@@ -481,8 +481,8 @@ function onTrackingEdit(e) {
   if (!email) return; // shipments not booked on the website get no automatic email
   const label = m ? (lang === 'id' ? m[2] : m[1]) : status;
   try {
-    MailApp.sendEmail({
-      to: email, name: 'PCW Freight', replyTo: settings_().Notify_Email || undefined,
+    sendMail_({
+      to: email, name: 'PCW Freight',
       subject: (lang === 'id' ? 'Update kiriman ' : 'Shipment update ') + ref + ': ' + label,
       body: (lang === 'id' ? 'Status kiriman ' : 'Status of shipment ') + ref + ': ' + label +
         (row[3] ? ' - ' + row[3] : '') + (row[5] ? '\n' + row[5] : '') +

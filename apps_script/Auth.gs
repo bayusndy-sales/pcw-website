@@ -2,7 +2,7 @@ function pRound_(salt, pw, ver) { let h = Utilities.base64Encode(Utilities.compu
 function uGet_(email) { const sh = sh_('Portal_Users'); const v = sh.getDataRange().getValues(); for (let i = 1; i < v.length; i++) { if (String(v[i][0]).trim().toLowerCase() === email) { const x = v[i]; return { row: i + 1, sh: sh, email: email, company: String(x[1]), name: String(x[2]), salt: String(x[3]), hash: String(x[4]), status: String(x[5]), rate: String(x[6]), role: String(x[10] || 'Customer'), phone: String(x[11] || ''), ver: String(x[12] || '') }; } } return null; }
 function uPub_(u) { return { email: u.email, company: u.company, name: u.name, phone: u.phone, role: u.role, plan: u.rate ? 'member' : 'published' }; }
 function num6_() { return ('000000' + Math.floor(Math.random() * 1000000)).slice(-6); }
-function mailTo_(to, subject, body) { try { MailApp.sendEmail({ to: to, subject: subject, body: body }); } catch (e) { console.error(e); } }
+function mailTo_(to, subject, body) { try { sendMail_({ to: to, subject: subject, body: body }); } catch (e) { console.error(e); } }
 function emailOk_(e) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e); }
 function setPw_(u, pw) { const salt = Utilities.getUuid(); u.sh.getRange(u.row, 4, 1, 2).setValues([[salt, pRound_(salt, pw, 'v2')]]); u.sh.getRange(u.row, 13).setValue('v2'); }
 function sess_(token) { const c = CacheService.getScriptCache().get('ss_' + String(token || '')); if (!c) return null; const u = uGet_(JSON.parse(c).e); return u && u.status === 'Active' ? u : null; }
