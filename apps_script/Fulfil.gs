@@ -1,7 +1,7 @@
 /* PCW Fulfilment: vendor booking workflow for the ops team.
    Needs helpers from Admin.gs / Admin2.gs / Auth.gs: audit_, dt_, a2Rows_, a2Last_, uGet_, num6_, mailTo_, emailOk_, pRound_, sess_.
    Stages: To assign > To book > Requested (only channels that need a request) > Booked (vendor AWB created) > Confirmed (pickup / drop-off confirmed). */
-const FUL_HDR = ['PCW_Ref', 'Channel', 'Stage', 'PCW_AWB_Done', 'Req_Sent_At', 'Req_Sent_By', 'Booked_At', 'Booked_By', 'Vendor_AWB', 'Vendor_Booking_Ref', 'Pickup_Date', 'Pickup_Window', 'Confirmed_At', 'Confirmed_By', 'Cost_IDR', 'Issue', 'Vendor_Notes', 'Updated_At', 'Updated_By', 'Created_At'];
+const FUL_HDR = ['PCW_Ref', 'Channel', 'Stage', 'PCW_AWB_Done', 'Req_Sent_At', 'Req_Sent_By', 'Booked_At', 'Booked_By', 'Vendor_AWB', 'Vendor_Booking_Ref', 'Pickup_Date', 'Pickup_Window', 'Confirmed_At', 'Confirmed_By', 'Cost_IDR', 'Issue', 'Vendor_Notes', 'Updated_At', 'Updated_By', 'Created_At', 'Pickup_Code', 'AWB_File_Id', 'AWB_File_Name'];
 const FUL_CH = {
   DHL_OWN: { label: 'DHL (own account)', src: 'DHL', req: false },
   FEDEX_OWN: { label: 'FedEx (own account)', src: 'FedEx', req: false },
@@ -14,6 +14,7 @@ function ops_(b) { const u = sess_(b.token); return u && (u.role === 'SuperAdmin
 function fSheet_() {
   const ss = SpreadsheetApp.getActive(); let sh = ss.getSheetByName('Fulfilment');
   if (!sh) { sh = ss.insertSheet('Fulfilment'); sh.getRange(1, 1, 1, FUL_HDR.length).setValues([FUL_HDR]).setFontWeight('bold'); sh.setFrozenRows(1); }
+  else if (sh.getLastColumn() < FUL_HDR.length) { sh.getRange(1, 1, 1, FUL_HDR.length).setValues([FUL_HDR]).setFontWeight('bold'); }
   return sh;
 }
 function fRows_() {
@@ -39,7 +40,7 @@ function ulList_(b) {
       ref: r[0], submitted: fMs_(r[ix('Submitted_At')]), date: dt_(r[ix('Submitted_At')]), product: r[ix('Product')], dest: r[ix('Dest_Country')], pieces: r[ix('Pieces')], kg: r[ix('Actual_Kg')], chg: r[ix('Chargeable_Kg')],
       customer: String(r[ix('Shipper_Company')] || r[ix('Shipper_Name')]), mode: r[ix('Pickup_or_Dropoff')], pickup_req: fDate_(r[ix('Pickup_Date')]), pickup_city: r[ix('Pickup_City')], to: String(r[ix('Consignee_Name')]),
       status: st[k] ? st[k].s : 'Booking request', stage: stage, channel: o.Channel, vendor_awb: o.Vendor_AWB, vendor_ref: o.Vendor_Booking_Ref, pickup_conf: fDate_(o.Pickup_Date), window: o.Pickup_Window,
-      issue: o.Issue, awb_done: o.PCW_AWB_Done === 'Y', since: since, done: !!delivered
+      issue: o.Issue, has_file: !!o.AWB_File_Id, code: o.Pickup_Code, awb_done: o.PCW_AWB_Done === 'Y', since: since, done: !!delivered
     };
   });
   return { ok: true, items: items, channels: FUL_CH };
@@ -104,16 +105,25 @@ function ulAct_(b) {
       detail = 'vendor awb ' + awb;
     } else if (op === 'confirm') {
       if (stageIdx < 3) return { ok: false, error: 'need_booked' };
-      const pd = String(b.pickup_date || '').trim(); const win = safe_(b.window, 40);
-      if (mode === 'Pickup') { if (!/^\d{4}-\d{2}-\d{2}$/.test(pd)) return { ok: false, error: 'need_date' }; }
+      const pd = String(b.pickup_date || '').trim(); const win = safe_(b.window, 40); const code = safe_(b.pickup_code, 60);
+      if (mode === 'Pickup') { if (!/^\d{4}-\d{2}-\d{2}$/.test(pd)) return { ok: false, error: 'need_date' }; if (!code) return { ok: false, error: 'need_code' }; }
       else if (pd && !/^\d{4}-\d{2}-\d{2}$/.test(pd)) return { ok: false, error: 'need_date' };
-      set('Pickup_Date', pd); set('Pickup_Window', win);
+      if (!o.AWB_File_Id) return { ok: false, error: 'need_file' };
+      const awb2 = String(b.vendor_awb || '').trim();
+      if (awb2 && awb2 !== String(o.Vendor_AWB)) {
+        if (!/^[A-Za-z0-9][A-Za-z0-9 \-\/]{4,39}$/.test(awb2)) return { ok: false, error: 'invalid_awb' };
+        const key2 = awb2.replace(/[ \-\/]/g, '').toUpperCase(); let dup2 = '';
+        Object.keys(f.map).forEach(function (k) { if (k !== ref && String(f.map[k].v[8]).replace(/[ \-\/]/g, '').toUpperCase() === key2) dup2 = k; });
+        if (dup2) return { ok: false, error: 'duplicate_awb', ref: dup2 };
+        set('Vendor_AWB', awb2); ordSync_(ref, { Network_Tracking_No: awb2 });
+      }
+      set('Pickup_Date', pd); set('Pickup_Window', win); set('Pickup_Code', code);
       if (stageIdx === 3) { set('Confirmed_At', now); set('Confirmed_By', who); set('Stage', 'Confirmed'); }
       if (mode === 'Pickup') {
         ordSync_(ref, { Pickup_Date: pd, Status: 'Pickup scheduled' });
         if (stageIdx === 3 || fDate_(cur.v[10]) !== pd || !trackHas_(ref, ['Pickup scheduled'])) trackAdd_(ref, 'Pickup scheduled', 'Pickup ' + pd + (win ? ' ' + win : ''), u.email);
       } else ordSync_(ref, { Status: 'Booked' });
-      detail = 'confirmed ' + pd + ' ' + win;
+      detail = 'completed: pickup ' + pd + ' ' + win + ' code ' + (code ? 'set' : 'none') + ' file ' + o.AWB_File_Name;
     } else if (op === 'issue') {
       const t = safe_(b.text, 250); if (!t) return { ok: false, error: 'invalid' };
       set('Issue', t); detail = 'issue: ' + t;
@@ -132,6 +142,37 @@ function ulAct_(b) {
     audit_(u, 'ful_' + op, ref + ' ' + detail);
     return { ok: true };
   } finally { lock.releaseLock(); }
+}
+
+
+/* ---- vendor AWB file (private Drive folder; ops download through the API, never a public link) ---- */
+const FUL_MAX_BYTES = 4 * 1024 * 1024;
+const FUL_MIME = { 'application/pdf': 'pdf', 'image/png': 'png', 'image/jpeg': 'jpg' };
+function fFolder_() { const it = DriveApp.getFoldersByName('PCW Vendor AWB'); return it.hasNext() ? it.next() : DriveApp.createFolder('PCW Vendor AWB'); }
+function ulUpload_(b) {
+  const u = ops_(b); if (!u) return { ok: false, error: 'session' };
+  const ref = String(b.ref || '').trim().toUpperCase(); if (!/^[A-Z0-9-]{6,40}$/.test(ref)) return { ok: false, error: 'invalid' };
+  const mime = String(b.mime || ''); const ext = FUL_MIME[mime]; if (!ext) return { ok: false, error: 'bad_type' };
+  let bytes; try { bytes = Utilities.base64Decode(String(b.data || '')); } catch (e) { return { ok: false, error: 'invalid' }; }
+  if (!bytes.length || bytes.length > FUL_MAX_BYTES) return { ok: false, error: 'too_big' };
+  const lock = LockService.getScriptLock(); lock.waitLock(20000);
+  try {
+    const f = fRows_(); const cur = f.map[ref]; if (!cur) return { ok: false, error: 'not_found' };
+    const o = fObj_(cur.v); if (FUL_ORDER.indexOf(o.Stage) < 3) return { ok: false, error: 'need_booked' };
+    const safeName = ref + '_vendor_awb_' + Utilities.formatDate(new Date(), TZ, 'yyyyMMdd_HHmm') + '.' + ext;
+    const file = fFolder_().createFile(Utilities.newBlob(bytes, mime, safeName));
+    if (o.AWB_File_Id) { try { DriveApp.getFileById(String(o.AWB_File_Id)).setTrashed(true); } catch (e) {} }
+    const set = function (name, val) { f.sh.getRange(cur.row, FUL_HDR.indexOf(name) + 1).setValue(val); };
+    set('AWB_File_Id', file.getId()); set('AWB_File_Name', safeName); set('Updated_At', new Date()); set('Updated_By', u.email.split('@')[0]);
+    audit_(u, 'ful_upload', ref + ' ' + safeName + ' ' + bytes.length + ' bytes'); return { ok: true, name: safeName };
+  } finally { lock.releaseLock(); }
+}
+function ulFile_(b) {
+  const u = ops_(b); if (!u) return { ok: false, error: 'session' };
+  const ref = String(b.ref || '').trim().toUpperCase(); const cur = fRows_().map[ref]; if (!cur) return { ok: false, error: 'not_found' };
+  const o = fObj_(cur.v); if (!o.AWB_File_Id) return { ok: false, error: 'no_file' };
+  let blob; try { blob = DriveApp.getFileById(String(o.AWB_File_Id)).getBlob(); } catch (e) { return { ok: false, error: 'no_file' }; }
+  audit_(u, 'ful_file_view', ref); return { ok: true, name: String(o.AWB_File_Name), mime: blob.getContentType(), data: Utilities.base64Encode(blob.getBytes()) };
 }
 
 /* ---- team (Ops accounts) ---- */
@@ -158,7 +199,7 @@ function ulStaffSet_(b) {
 }
 function ulRoute_(b) {
   switch (b.action) {
-    case 'ful_list': return ulList_(b); case 'ful_get': return ulGet_(b); case 'ful_act': return ulAct_(b);
+    case 'ful_list': return ulList_(b); case 'ful_get': return ulGet_(b); case 'ful_act': return ulAct_(b); case 'ful_upload': return ulUpload_(b); case 'ful_file': return ulFile_(b);
     case 'staff_list': return ulStaffList_(b); case 'staff_add': return ulStaffAdd_(b); case 'staff_set': return ulStaffSet_(b);
   }
   return null;
