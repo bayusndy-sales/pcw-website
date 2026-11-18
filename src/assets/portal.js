@@ -17,7 +17,7 @@
     invalid_login: t('Email or password is incorrect.', 'Email atau password salah.'),
     invalid_code: t('The code is incorrect or expired.', 'Kode salah atau kedaluwarsa.'),
     too_many_requests: t('Too many attempts. Please wait a while and try again.', 'Terlalu banyak percobaan. Tunggu sebentar lalu coba lagi.'),
-    weak_password: t('Password must be at least 10 characters.', 'Password minimal 10 karakter.'),
+    weak_password: t('Password must be at least 10 characters and different from your email.', 'Password minimal 10 karakter dan tidak boleh sama dengan email.'),
     missing_fields: t('Please complete all fields.', 'Lengkapi semua kolom.'),
     invalid_whatsapp: t('Please enter a valid WhatsApp number.', 'Masukkan nomor WhatsApp yang valid.'),
     consent_required: t('Please accept the Terms and Privacy Policy.', 'Mohon setujui Syarat dan Kebijakan Privasi.'),

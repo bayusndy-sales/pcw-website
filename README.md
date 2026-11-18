@@ -10,4 +10,5 @@ Published rates only. No costs, vendor names or customer data are stored in this
 
 ## Apps Script source of truth
 - `apps_script/*.gs` mirrors the live Apps Script project. clasp is not usable from the build environment (Google API hosts blocked), so changes are pasted into the editor and then committed here.
-- Drift check: run `python3 tools/fnhash.py` and compare with the per-function hashes computed in the editor (same normalisation: strip full-line `//` comments, collapse whitespace). Function names/hashes of the last function in each file can differ only because of file-boundary text.
+- Drift check: run `python3 tools/fnhash2.py` (brace-matched per-function hashes; the editor-side snippet uses the same algorithm). Last full match: 133/133 functions, 19 Nov 2026.
+- Older check: `python3 tools/fnhash.py` and compare with the per-function hashes computed in the editor (same normalisation: strip full-line `//` comments, collapse whitespace). Function names/hashes of the last function in each file can differ only because of file-boundary text.
