@@ -237,7 +237,16 @@
   /* ---------- ADMIN ---------- */
   var ad = $('#adRoot');
   if (ad) {
-    var AU = null, STAT = [];
+    var AU = null, STAT = [], USERS = [], BK = [], INV = [];
+    function aTok() { return store('at'); }
+    function aPost(b) { b.token = aTok(); return post(b).then(function (r) { if (r && r.error === 'session') { aExpired(); throw new Error('session'); } return r; }); }
+    function aMsg(id, ok, text) { var e = $(id); if (e) e.innerHTML = notice(ok ? 'ok' : 'err', esc(text)); }
+    function aErr(r) { return ({ not_found: 'Not found.', invalid: 'Invalid value.', exists: 'Already exists.', nothing_to_change: 'Nothing to change.', missing_fields: 'Please complete the required fields.' })[r && r.error] || (r && r.error) || 'Failed.'; }
+    function csv(name, head, rows) {
+      var q = function (v) { v = String(v == null ? '' : v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
+      var txt = [head].concat(rows).map(function (r) { return r.map(q).join(','); }).join('\n');
+      var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['﻿' + txt], { type: 'text/csv' })); a.download = name; document.body.appendChild(a); a.click(); a.remove();
+    }
     function aLogin(msg) {
       ad.innerHTML = (msg || '') + '<form id="af" class="box" style="max-width:460px"><h2 style="margin-top:0">PCW Admin</h2><div id="am"></div>' + fld('email', 'Email', 'email', true, 'autocomplete="username"') + '<div style="margin-top:14px">' + fld('password', 'Password', 'password', true, 'autocomplete="current-password"') + '</div>' +
         '<button class="btn btn-a" type="submit" style="margin-top:14px;width:100%;padding:14px">Sign in</button><p class="hint"><a href="#" id="afg">Set or reset password</a></p></form>';
@@ -264,37 +273,119 @@
       $('#ar').addEventListener('submit', function (ev) { ev.preventDefault(); var f = ev.target; post({ action: 'reset_do', email: em, code: f.elements.code.value.trim(), password: f.elements.password.value }).then(function (r) { if (!r.ok) { $('#am2').innerHTML = notice('err', err(r)); return; } aLogin(notice('ok', 'Password set. Sign in.')); }); });
     }
     function aExpired() { store('at', null); aLogin(notice('warn', 'Session expired. Sign in again.')); }
+    function stat(v, l) { return '<div class="box" style="text-align:center"><div style="font-size:1.7rem;font-weight:800;color:var(--blue)">' + v + '</div><div class="hint">' + l + '</div></div>'; }
+    function bars(obj, max) {
+      var ks = Object.keys(obj).sort(function (a, b) { return obj[b] - obj[a]; }).slice(0, max || 8), top = ks.length ? obj[ks[0]] : 1;
+      return ks.map(function (k) { return '<div style="display:flex;align-items:center;gap:8px;margin:4px 0;font-size:.9rem"><span style="width:150px;flex:none">' + esc(k) + '</span><span style="background:var(--blue);height:12px;border-radius:6px;width:' + Math.max(4, Math.round(obj[k] / top * 100)) + '%;max-width:55%"></span><span>' + obj[k] + '</span></div>'; }).join('') || '<p class="hint">No data.</p>';
+    }
     function aApp() {
-      ad.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px"><div><h2 style="margin:0">PCW Admin</h2><span class="hint">' + esc(AU.email) + '</span></div><button id="aso" class="btn btn-o" type="button">Sign out</button></div><div data-pane="ov"></div><div data-pane="us"></div><div data-pane="bk"></div>';
-      $('#aso').onclick = function () { post({ action: 'logout', token: store('at') }); store('at', null); aLogin(); };
-      var go = tabs(ad, [['ov', 'Overview'], ['us', 'Customers'], ['bk', 'Bookings']], function (k) { if (k === 'us') loadUsers(); else loadBk(); });
-      ad.insertBefore(ad.lastChild, ad.children[1]);
-      post({ action: 'adm_statuses', token: store('at') }).then(function (r) { if (r.ok) STAT = r.statuses; go('ov'); }).catch(function () { go('ov'); });
+      ad.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px"><div><h2 style="margin:0">PCW Admin</h2><span class="hint">' + esc(AU.email) + '</span></div><button id="aso" class="btn btn-o" type="button">Sign out</button></div>' +
+        ['ov', 'bk', 'us', 'iv', 'au', 'st'].map(function (k) { return '<div data-pane="' + k + '"></div>'; }).join('');
+      $('#aso').onclick = function () { post({ action: 'logout', token: aTok() }); store('at', null); aLogin(); };
+      var go = tabs(ad, [['ov', 'Overview'], ['bk', 'Bookings'], ['us', 'Customers'], ['iv', 'Invoices'], ['au', 'Audit log'], ['st', 'Settings']], function (k) { ({ ov: loadOv, bk: loadBk, us: loadUsers, iv: loadInv, au: loadAudit, st: loadSettings })[k](); });
+      ad.insertBefore(ad.lastChild, ad.children[1]); window._ago = go;
+      post({ action: 'adm_statuses', token: aTok() }).then(function (r) { if (r.ok) STAT = r.statuses; go('ov'); }).catch(function () { go('ov'); });
     }
-    var USERS = [], BK = [];
-    function loadUsers() {
-      post({ action: 'adm_users', token: store('at') }).then(function (r) {
-        if (!r.ok) return aExpired(); USERS = r.users; var p = $('[data-pane=us]', ad);
-        p.innerHTML = '<div id="um"></div><p class="hint">Rate profile: blank or PUBLISHED = published price; DISC10 / DISC20 = % off published; any other code (e.g. ALBINDO) = no price shown, quote needed.</p>' + table(['Customer', 'Contact', 'Status', 'Rate profile', 'Last login', ''], USERS.map(function (u, i) {
-          var st = ['Pending', 'Active', 'Disabled', 'Invite'].map(function (s) { return '<option' + (s === u.status ? ' selected' : '') + '>' + s + '</option>'; }).join('');
-          return tr(['<strong>' + esc(u.company) + '</strong><br>' + esc(u.email) + (u.role === 'SuperAdmin' ? ' · <em>SuperAdmin</em>' : ''), esc(u.name) + '<br>' + esc(u.phone), '<select data-i="' + i + '" data-f="st">' + st + '</select>', '<input data-i="' + i + '" data-f="rate" value="' + esc(u.rate) + '" style="width:110px">', esc(u.last), '<button class="btn btn-a btn-sm" type="button" data-save="' + i + '">Save</button>']);
-        }));
-        $$('[data-save]', p).forEach(function (b) { b.onclick = function () { var i = b.getAttribute('data-save'), u = USERS[i]; post({ action: 'adm_user_set', token: store('at'), email: u.email, status: $('[data-f=st][data-i="' + i + '"]', p).value, rate: $('[data-f=rate][data-i="' + i + '"]', p).value }).then(function (r) { if (r.error === 'session') return aExpired(); $('#um').innerHTML = r.ok ? notice('ok', 'Saved ' + esc(u.email)) : notice('err', err(r)); }); }; });
-      });
+    function pane(k) { return $('[data-pane=' + k + ']', ad); }
+    /* Overview */
+    function loadOv() {
+      aPost({ action: 'adm_stats' }).then(function (r) {
+        if (!r.ok) return; var u = r.users || {};
+        pane('ov').innerHTML = '<div class="row r4">' + stat(r.total, 'Total bookings') + stat(r.count_30d, 'Bookings last 30 days') + stat(idr(r.est_30d), 'Est. value last 30 days') + stat(idr(r.outstanding), 'Outstanding invoices (' + r.open_invoices + ')') + '</div>' +
+          '<div class="row r4" style="margin-top:14px">' + stat(u.Active || 0, 'Active customers') + stat(u.Pending || 0, 'Pending verification') + stat(u.Disabled || 0, 'Disabled') + stat(idr(r.est_total), 'Est. value all bookings') + '</div>' +
+          '<div class="row r3" style="margin-top:14px"><div class="box"><h3 style="margin-top:0">By status</h3>' + bars(r.by_status) + '</div><div class="box"><h3 style="margin-top:0">Top destinations</h3>' + bars(r.by_dest) + '</div><div class="box"><h3 style="margin-top:0">By service</h3>' + bars(r.by_product) + '</div></div>' +
+          '<p class="hint">Values are estimates from published or member rates, or the final price if you set one. Cancelled bookings are excluded from values.</p>';
+      }).catch(function () {});
     }
+    /* Bookings */
     function loadBk() {
-      post({ action: 'adm_bookings', token: store('at') }).then(function (r) {
-        if (!r.ok) return aExpired(); BK = r.items;
-        var ov = $('[data-pane=ov]', ad), n = BK.length, dl = BK.filter(function (i) { return /deliver/i.test(i.status); }).length, nw = BK.filter(function (i) { return /booking request/i.test(i.status); }).length;
-        var box = function (v, l) { return '<div class="box" style="text-align:center"><div style="font-size:2rem;font-weight:800;color:var(--blue)">' + v + '</div><div class="hint">' + l + '</div></div>'; };
-        ov.innerHTML = '<div class="row r3">' + box(n, 'Bookings (latest 150)') + box(nw, 'Awaiting processing') + box(dl, 'Delivered') + '</div>';
-        var p = $('[data-pane=bk]', ad), so = STAT.map(function (s) { return '<option>' + esc(s) + '</option>'; }).join('');
-        p.innerHTML = '<div id="bm"></div>' + table(['Ref', 'Date', 'Shipper', 'Service / Dest', 'Kg', 'Receiver', 'Contents', 'Status', 'Update'], BK.map(function (b, i) {
-          return tr([esc(b.ref), esc(b.date), esc(b.shipper) + '<br>' + esc(b.email), esc(b.product) + '<br>' + esc(b.dest), esc(b.chg || b.kg), esc(b.to), esc(b.contents), '<strong>' + esc(b.status) + '</strong>', '<select data-s="' + i + '">' + so + '</select><br><input data-n="' + i + '" placeholder="Location / note" style="margin-top:4px;width:150px"><br><button class="btn btn-a btn-sm" type="button" data-u="' + i + '" style="margin-top:4px">Add</button>']);
-        }));
-        $$('[data-u]', p).forEach(function (bt) { bt.onclick = function () { var i = bt.getAttribute('data-u'), note = $('[data-n="' + i + '"]', p).value; post({ action: 'adm_status', token: store('at'), ref: BK[i].ref, status: $('[data-s="' + i + '"]', p).value, location: note, note: '' }).then(function (r) { if (r.error === 'session') return aExpired(); $('#bm').innerHTML = r.ok ? notice('ok', 'Status added to ' + esc(BK[i].ref)) : notice('err', err(r)); if (r.ok) loadBk(); }); }; });
-      });
+      aPost({ action: 'adm_bookings_all' }).then(function (r) { if (!r.ok) return; BK = r.items; renderBk(); }).catch(function () {});
     }
+    function renderBk() {
+      var p = pane('bk');
+      if (!$('#bq', p)) {
+        p.innerHTML = '<div id="bm"></div><div style="display:flex;gap:8px;flex-wrap:wrap;align-items:end"><input id="bq" placeholder="Search ref, customer, email, destination, receiver" style="min-width:260px;flex:1"><select id="bs"><option value="">All statuses</option>' + ['Booking request'].concat(STAT).filter(function (v, i, a) { return a.indexOf(v) === i; }).map(function (s) { return '<option>' + esc(s) + '</option>'; }).join('') + '</select><select id="bp"><option value="">All services</option><option>Priority</option><option>Economy</option></select><button id="bx" class="btn btn-o btn-sm" type="button">Export CSV</button></div><div id="bl" style="margin-top:12px"></div><div id="bd"></div>';
+        ['bq', 'bs', 'bp'].forEach(function (id) { $('#' + id, p).oninput = renderBk; $('#' + id, p).onchange = renderBk; });
+        $('#bx', p).onclick = function () { var f = filtered(); csv('pcw-bookings.csv', ['Ref', 'Date', 'Customer', 'Email', 'Service', 'Destination', 'Pieces', 'Actual kg', 'Chargeable kg', 'Receiver', 'Contents', 'Est IDR', 'Final IDR', 'Status'], f.map(function (b) { return [b.ref, b.date, b.company, b.email, b.product, b.dest, b.pieces, b.kg, b.chg, b.to, b.contents, b.est, b.final, b.status]; })); };
+      }
+      function filtered() { var q = $('#bq', p).value.toLowerCase(), s = $('#bs', p).value, pr = $('#bp', p).value; return BK.filter(function (b) { return (!s || b.status === s) && (!pr || b.product === pr) && (!q || (b.ref + ' ' + b.company + ' ' + b.shipper + ' ' + b.email + ' ' + b.dest + ' ' + b.to).toLowerCase().indexOf(q) > -1); }); }
+      var f = filtered();
+      $('#bl', p).innerHTML = '<p class="hint">' + f.length + ' of ' + BK.length + ' bookings</p>' + table(['Ref', 'Date', 'Customer', 'Service / Dest', 'Kg', 'Receiver', 'Price (IDR)', 'Status', ''], f.map(function (b) {
+        return tr([esc(b.ref), esc(b.date), esc(b.company || b.shipper) + '<br><span class="hint">' + esc(b.email) + '</span>', esc(b.product) + '<br>' + esc(b.dest), esc(b.chg || b.kg), esc(b.to), b.final ? '<strong>' + Number(b.final).toLocaleString('id-ID') + '</strong> <span class="hint">final</span>' : (b.est ? Number(b.est).toLocaleString('id-ID') + ' <span class="hint">est</span>' : '-'), '<strong>' + esc(b.status) + '</strong>', '<button class="btn btn-a btn-sm" type="button" data-open="' + esc(b.ref) + '">Open</button>']);
+      }));
+      $$('[data-open]', p).forEach(function (b) { b.onclick = function () { openBk(b.getAttribute('data-open')); }; });
+    }
+    function openBk(ref) {
+      aPost({ action: 'adm_booking_get', ref: ref }).then(function (r) {
+        if (!r.ok) { aMsg('#bm', false, aErr(r)); return; }
+        var f = r.fields, d = $('#bd', pane('bk')), so = STAT.map(function (s) { return '<option>' + esc(s) + '</option>'; }).join('');
+        var row = function (k) { return '<div><label>' + k.replace(/_/g, ' ') + '</label><div>' + esc(f[k] == null || f[k] === '' ? '-' : f[k]) + '</div></div>'; };
+        var inp = function (n, label, val, typ) { return '<div><label>' + label + '</label><input name="' + n + '" type="' + (typ || 'text') + '" value="' + esc(val == null ? '' : val) + '"></div>'; };
+        d.innerHTML = '<div class="box" style="margin-top:16px"><div style="display:flex;justify-content:space-between;align-items:center"><h3 style="margin:0">' + esc(ref) + ' - ' + esc(f.Product) + ' to ' + esc(f.Dest_Country) + '</h3><button id="bc" class="btn btn-o btn-sm" type="button">Close</button></div><div id="bdm"></div>' +
+          '<div class="row r3" style="margin-top:12px">' + ['Submitted_At', 'Shipper_Name', 'Shipper_Company', 'Shipper_Email', 'Shipper_WhatsApp', 'Pickup_or_Dropoff', 'Pickup_Address', 'Pickup_City', 'Pickup_Date', 'Est_Total_IDR'].map(row).join('') + '</div>' +
+          '<h4 style="margin:16px 0 6px">Edit shipment</h4><form id="be"><div class="row r4">' + inp('actual_kg', 'Actual kg', f.Actual_Kg) + inp('chargeable_kg', 'Chargeable kg', f.Chargeable_Kg) + inp('pieces', 'Pieces', f.Pieces) + inp('dims', 'Dims cm', f.Dims_cm) + '</div>' +
+          '<div class="row r4" style="margin-top:10px">' + inp('final_price', 'Final price (IDR)', f.Final_Price_IDR) + inp('declared_value', 'Declared value', f.Declared_Value) + inp('contents', 'Contents', f.Contents) + inp('consignee_name', 'Receiver name', f.Consignee_Name) + '</div>' +
+          '<div class="row r4" style="margin-top:10px">' + inp('consignee_company', 'Receiver company', f.Consignee_Company) + inp('consignee_address', 'Receiver address', f.Consignee_Address) + inp('consignee_city', 'City', f.Consignee_City) + inp('consignee_postcode', 'Postcode', f.Consignee_Postcode) + '</div>' +
+          '<div class="row r3" style="margin-top:10px">' + inp('consignee_phone', 'Receiver phone', f.Consignee_Phone) + inp('consignee_email', 'Receiver email', f.Consignee_Email) + inp('notes_add', 'Add internal note', '') + '</div>' +
+          '<p class="hint">Notes so far: ' + esc(f.Notes || '-') + '</p><button class="btn btn-a" type="submit">Save changes</button></form>' +
+          '<h4 style="margin:16px 0 6px">Tracking</h4>' + (r.events.length ? table(['Time', 'Status', 'Location', 'Note', 'By', ''], r.events.map(function (e) { return tr([esc(e.time), '<strong>' + esc(e.status) + '</strong>', esc(e.location), esc(e.note), esc(e.by), '<button class="btn btn-o btn-sm" type="button" data-del="' + e.row + '">Remove</button>']); })) : '<p class="hint">No tracking events yet.</p>') +
+          '<form id="bt" style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;align-items:end"><div><label>New status</label><select name="status">' + so + '</select></div><div><label>Location</label><input name="location"></div><div><label>Public note</label><input name="note"></div><button class="btn btn-a btn-sm" type="submit">Add status</button></form></div>';
+        d.scrollIntoView({ behavior: 'smooth' });
+        $('#bc').onclick = function () { d.innerHTML = ''; };
+        $('#be').addEventListener('submit', function (ev) { ev.preventDefault(); var b = { action: 'adm_booking_edit', ref: ref }; new FormData(ev.target).forEach(function (v, k) { b[k] = v; }); aPost(b).then(function (x) { aMsg('#bdm', x.ok, x.ok ? 'Saved.' : aErr(x)); if (x.ok) { loadBkQuiet(); openBk(ref); } }); });
+        $('#bt').addEventListener('submit', function (ev) { ev.preventDefault(); var fe = ev.target.elements; aPost({ action: 'adm_status', ref: ref, status: fe.status.value, location: fe.location.value, note: fe.note.value }).then(function (x) { aMsg('#bdm', x.ok, x.ok ? 'Status added.' : aErr(x)); if (x.ok) { loadBkQuiet(); openBk(ref); } }); });
+        $$('[data-del]', d).forEach(function (b) { b.onclick = function () { if (!confirm('Remove this tracking event? This cannot be undone.')) return; aPost({ action: 'adm_track_del', ref: ref, row: b.getAttribute('data-del') }).then(function (x) { aMsg('#bdm', x.ok, x.ok ? 'Event removed.' : aErr(x)); if (x.ok) { loadBkQuiet(); openBk(ref); } }); }; });
+      }).catch(function () {});
+    }
+    function loadBkQuiet() { aPost({ action: 'adm_bookings_all' }).then(function (r) { if (r.ok) { BK = r.items; var p = pane('bk'); if ($('#bq', p)) { var keep = $('#bd', p).innerHTML; renderBk(); } } }); }
+    /* Customers */
+    function loadUsers() { aPost({ action: 'adm_users' }).then(function (r) { if (r.ok) { USERS = r.users; renderUsers(); } }).catch(function () {}); }
+    function renderUsers() {
+      var p = pane('us');
+      if (!$('#uq', p)) {
+        p.innerHTML = '<div id="um"></div><div style="display:flex;gap:8px;flex-wrap:wrap;align-items:end"><input id="uq" placeholder="Search company, name, email" style="min-width:240px;flex:1"><select id="us"><option value="">All statuses</option><option>Active</option><option>Pending</option><option>Disabled</option><option>Invite</option></select><button id="ux" class="btn btn-o btn-sm" type="button">Export CSV</button><button id="un" class="btn btn-a btn-sm" type="button">New customer</button></div>' +
+          '<form id="uc" class="box hidden" style="margin-top:12px"><h3 style="margin-top:0">New customer</h3><div class="row r3">' + fld('company', 'Company') + fld('name', 'Contact name') + fld('email', 'Email', 'email') + '</div><div class="row r3" style="margin-top:10px">' + fld('phone', 'WhatsApp', 'tel', false) + fld('rate', 'Rate profile (blank, DISC10, ...)', 'text', false) + '</div><p class="hint">The customer gets an email with a code to set their own password.</p><button class="btn btn-a" type="submit">Create and email</button></form>' +
+          '<p class="hint">Rate profile: blank or PUBLISHED = published price; DISC10 / DISC20 = % off published; any other code (e.g. ALBINDO) = no price shown, quote needed.</p><div id="ul"></div><div id="ud"></div>';
+        $('#uq', p).oninput = renderUsers; $('#us', p).onchange = renderUsers;
+        $('#un', p).onclick = function () { $('#uc', p).classList.toggle('hidden'); };
+        $('#ux', p).onclick = function () { csv('pcw-customers.csv', ['Company', 'Name', 'Email', 'Phone', 'Status', 'Rate profile', 'Created', 'Last login'], USERS.map(function (u) { return [u.company, u.name, u.email, u.phone, u.status, u.rate, u.created, u.last]; })); };
+        $('#uc', p).addEventListener('submit', function (ev) { ev.preventDefault(); var b = { action: 'adm_user_create' }; new FormData(ev.target).forEach(function (v, k) { b[k] = v.trim(); }); aPost(b).then(function (x) { aMsg('#um', x.ok, x.ok ? 'Customer created and emailed.' : aErr(x)); if (x.ok) { ev.target.reset(); ev.target.classList.add('hidden'); loadUsers(); } }); });
+      }
+      var q = $('#uq', p).value.toLowerCase(), s = $('#us', p).value;
+      var list = USERS.map(function (u, i) { u._i = i; return u; }).filter(function (u) { return (!s || u.status === s) && (!q || (u.company + ' ' + u.name + ' ' + u.email).toLowerCase().indexOf(q) > -1); });
+      $('#ul', p).innerHTML = '<p class="hint">' + list.length + ' of ' + USERS.length + ' customers</p>' + table(['Customer', 'Contact', 'Status', 'Rate profile', 'Last login', ''], list.map(function (u) {
+        var st = ['Pending', 'Active', 'Disabled', 'Invite'].map(function (x) { return '<option' + (x === u.status ? ' selected' : '') + '>' + x + '</option>'; }).join('');
+        return tr(['<strong>' + esc(u.company) + '</strong><br>' + esc(u.email) + (u.role === 'SuperAdmin' ? ' · <em>SuperAdmin</em>' : ''), esc(u.name) + '<br>' + esc(u.phone), '<select data-i="' + u._i + '" data-f="st">' + st + '</select>', '<input data-i="' + u._i + '" data-f="rate" value="' + esc(u.rate) + '" style="width:110px">', esc(u.last),
+          '<button class="btn btn-a btn-sm" type="button" data-save="' + u._i + '">Save</button> <button class="btn btn-o btn-sm" type="button" data-more="' + u._i + '">Details</button>']);
+      }));
+      $$('[data-save]', p).forEach(function (b) { b.onclick = function () { var i = b.getAttribute('data-save'), u = USERS[i]; aPost({ action: 'adm_user_set', email: u.email, status: $('[data-f=st][data-i="' + i + '"]', p).value, rate: $('[data-f=rate][data-i="' + i + '"]', p).value }).then(function (x) { aMsg('#um', x.ok, x.ok ? 'Saved ' + u.email : aErr(x)); if (x.ok) loadUsers(); }); }; });
+      $$('[data-more]', p).forEach(function (b) { b.onclick = function () { userDetail(USERS[b.getAttribute('data-more')]); }; });
+    }
+    function userDetail(u) {
+      var d = $('#ud', pane('us'));
+      aPost({ action: 'adm_user_bookings', email: u.email }).then(function (r) {
+        d.innerHTML = '<div class="box" style="margin-top:16px"><div style="display:flex;justify-content:space-between"><h3 style="margin:0">' + esc(u.company) + '</h3><button id="uclose" class="btn btn-o btn-sm" type="button">Close</button></div><div id="udm"></div>' +
+          '<form id="ue" class="row r3" style="margin-top:12px">' + fld('company', 'Company', 'text', true, 'value="' + esc(u.company) + '"') + fld('name', 'Contact name', 'text', true, 'value="' + esc(u.name) + '"') + fld('phone', 'WhatsApp', 'tel', false, 'value="' + esc(u.phone) + '"') + '<div style="grid-column:1/-1"><label>Internal notes</label><input name="notes" value=""></div><div><button class="btn btn-a btn-sm" type="submit">Save details</button> <button id="urs" class="btn btn-o btn-sm" type="button">Send password reset code</button></div></form>' +
+          '<h4 style="margin:16px 0 6px">Shipments (' + r.items.length + ')</h4>' + (r.items.length ? table(['Ref', 'Date', 'Service', 'Destination', 'Kg', 'Price', 'Status'], r.items.map(function (b) { return tr([esc(b.ref), esc(b.date), esc(b.product), esc(b.dest), esc(b.kg), b.final ? Number(b.final).toLocaleString('id-ID') : esc(b.est), esc(b.status)]); })) : '<p class="hint">No shipments yet.</p>') + '</div>';
+        d.scrollIntoView({ behavior: 'smooth' });
+        $('#uclose').onclick = function () { d.innerHTML = ''; };
+        $('#ue').addEventListener('submit', function (ev) { ev.preventDefault(); var b = { action: 'adm_user_edit', email: u.email }; new FormData(ev.target).forEach(function (v, k) { b[k] = v; }); if (!b.notes) delete b.notes; aPost(b).then(function (x) { aMsg('#udm', x.ok, x.ok ? 'Saved.' : aErr(x)); if (x.ok) loadUsers(); }); });
+        $('#urs').onclick = function () { aPost({ action: 'adm_user_reset', email: u.email }).then(function (x) { aMsg('#udm', x.ok, x.ok ? 'Reset code emailed to ' + u.email + ' (valid 24 hours).' : aErr(x)); }); };
+      }).catch(function () {});
+    }
+    /* Invoices */
+    function loadInv() { aPost({ action: 'adm_inv_list' }).then(function (r) { if (r.ok) { INV = r.items; renderInv(); } }).catch(function () {}); }
+    function renderInv() {
+      var p = pane('iv'), tot = INV.filter(function (i) { return i.status !== 'Paid'; }).reduce(function (a, i) { return a + (Number(i.amount) || 0); }, 0);
+      p.innerHTML = '<div id="im"></div><form id="if" class="box"><h3 style="margin-top:0">New invoice record</h3><div class="row r4">' + fld('customer', 'Customer') + fld('ref', 'PCW ref (optional)', 'text', false) + fld('amount', 'Amount (IDR)', 'text', true, 'inputmode="numeric"') + fld('terms_days', 'Payment terms (days)', 'number', false, 'min="0" value="0"') + '</div><div style="margin-top:10px">' + fld('notes', 'Notes', 'text', false) + '</div><button class="btn btn-a" type="submit" style="margin-top:12px">Add invoice</button><p class="hint">This records the receivable in the sheet. It does not send anything to the customer.</p></form>' +
+        '<p style="margin-top:14px"><strong>Outstanding: ' + idr(tot) + '</strong> <button id="ix" class="btn btn-o btn-sm" type="button">Export CSV</button></p>' + table(['Invoice', 'Ref', 'Customer', 'Date', 'Amount', 'Due', 'Paid', 'Status', ''], INV.map(function (i) { return tr([esc(i.no), esc(i.ref), esc(i.customer), esc(i.date), Number(i.amount).toLocaleString('id-ID'), esc(i.due), esc(i.paid), '<strong>' + esc(i.status) + '</strong>', i.status === 'Paid' ? '' : '<button class="btn btn-a btn-sm" type="button" data-pay="' + esc(i.no) + '">Mark paid</button>']); }));
+      $('#ix', p).onclick = function () { csv('pcw-invoices.csv', ['Invoice', 'Ref', 'Customer', 'Date', 'Amount', 'Due', 'Paid', 'Status', 'Notes'], INV.map(function (i) { return [i.no, i.ref, i.customer, i.date, i.amount, i.due, i.paid, i.status, i.notes]; })); };
+      $('#if', p).addEventListener('submit', function (ev) { ev.preventDefault(); var b = { action: 'adm_inv_add' }; new FormData(ev.target).forEach(function (v, k) { b[k] = v.trim(); }); aPost(b).then(function (x) { if (x.ok) loadInv(); setTimeout(function () { aMsg('#im', x.ok, x.ok ? 'Added ' + x.no : aErr(x)); }, 400); }); });
+      $$('[data-pay]', p).forEach(function (b) { b.onclick = function () { if (!confirm('Mark ' + b.getAttribute('data-pay') + ' as paid today?')) return; aPost({ action: 'adm_inv_pay', no: b.getAttribute('data-pay') }).then(function (x) { if (x.ok) loadInv(); }); }; });
+    }
+    /* Audit + settings */
+    function loadAudit() { aPost({ action: 'adm_audit' }).then(function (r) { if (r.ok) pane('au').innerHTML = '<p class="hint">Last 200 admin actions.</p>' + table(['Time', 'Admin', 'Action', 'Detail'], r.items.map(function (i) { return tr([esc(i.time), esc(i.who), esc(i.action), esc(i.detail)]); })); }).catch(function () {}); }
+    function loadSettings() { aPost({ action: 'adm_settings' }).then(function (r) { if (r.ok) pane('st').innerHTML = '<p class="hint">Read-only. Rates, fuel and rules are changed in the Google Sheet by the team.</p>' + table(['Setting', 'Value', 'Note'], r.items.map(function (i) { return tr(['<strong>' + esc(i.key) + '</strong>', esc(i.value), esc(i.note)]); })); }).catch(function () {}); }
     if (store('at')) post({ action: 'me', token: store('at') }).then(function (r) { if (r.ok && r.user.role === 'SuperAdmin') { AU = r.user; aApp(); } else { store('at', null); aLogin(); } }).catch(aLogin); else aLogin();
   }
 })();
