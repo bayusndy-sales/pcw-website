@@ -101,12 +101,3 @@ function admFuelSet_(b) {
   audit_(u, 'fuel_set', Object.keys(upd).map(function (k) { return k + '=' + upd[k]; }).join(', '));
   return { ok: true };
 }
-function tmpAddIsrael() {
-  const sh = sh_(TABS.rates), v = sh.getDataRange().getValues();
-  if (v.some(function (r) { return r[2] === 'Israel'; })) return 'exists';
-  const out = []; v.forEach(function (r, i) { if (i > 0 && r[2] === 'Albania' && r[0] === 'Priority') { const c = r.slice(); c[2] = 'Israel'; out.push(c); } });
-  if (!out.length) return 'no rows';
-  sh.getRange(sh.getLastRow() + 1, 1, out.length, out[0].length).setValues(out);
-  CacheService.getScriptCache().removeAll(['countries', 'r|loaded']);
-  return out.length;
-}
