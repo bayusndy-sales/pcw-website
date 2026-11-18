@@ -7,6 +7,9 @@ const KEY_FILE = '/home/pcws3397/.pcw_mail_key';
 const FROM = 'noreply@pcwfreight.com';
 const MAX_TO = 5;
 
+if (!function_exists('hash_equals')) { function hash_equals($a, $b) { if (strlen($a) !== strlen($b)) return false; $r = 0; for ($i = 0; $i < strlen($a); $i++) $r |= ord($a[$i]) ^ ord($b[$i]); return $r === 0; } }
+set_exception_handler(function ($e) { http_response_code(500); echo json_encode(['ok' => false, 'error' => 'php', 'msg' => substr($e->getMessage(), 0, 150)]); });
+register_shutdown_function(function () { $e = error_get_last(); if ($e && in_array($e['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR])) { echo json_encode(['ok' => false, 'error' => 'fatal', 'msg' => substr($e['message'], 0, 150), 'php' => PHP_VERSION]); } });
 function out($a, $code = 200) { http_response_code($code); echo json_encode($a); exit; }
 function clean($s, $n) { return substr(trim(preg_replace('/[\r\n]+/', ' ', (string)$s)), 0, $n); }
 
@@ -46,7 +49,7 @@ if ($reply) $headers .= 'Reply-To: ' . $reply . "\r\n";
 $headers .= "MIME-Version: 1.0\r\n";
 $att = isset($j['att']) && is_array($j['att']) ? $j['att'] : [];
 if ($att) {
-  $b = 'pcw' . bin2hex(random_bytes(12));
+  $b = 'pcw' . md5(uniqid('', true));
   $headers .= 'Content-Type: multipart/mixed; boundary="' . $b . '"';
   $msg = "--$b\r\nContent-Type: text/plain; charset=UTF-8\r\nContent-Transfer-Encoding: base64\r\n\r\n" . chunk_split(base64_encode($body));
   foreach ($att as $a) {
@@ -59,5 +62,6 @@ if ($att) {
   $headers .= "Content-Type: text/plain; charset=UTF-8\r\nContent-Transfer-Encoding: base64";
   $msg = chunk_split(base64_encode($body));
 }
+if (!function_exists('mail')) out(['ok' => false, 'error' => 'no_mail_fn', 'php' => PHP_VERSION], 500);
 $ok = mail(implode(', ', $to), $enc($subject), $msg, $headers, '-f' . FROM);
-out(['ok' => (bool)$ok], $ok ? 200 : 502);
+out(['ok' => (bool)$ok, 'php' => PHP_VERSION], $ok ? 200 : 502);
