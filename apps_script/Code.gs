@@ -26,6 +26,7 @@ function doGet(e) {
     if (p.action === 'countries') return json_({ ok: true, countries: countries_() });
     if (p.action === 'rate') return json_(rate_(p));
     if (p.action === 'track') return json_(track_(p));
+    if (p.action === 'bt') return json_({ ok: true, bt: botToken_() });
     return json_({ ok: false, error: 'unknown_action' });
   } catch (err) {
     console.error(err);
@@ -272,13 +273,37 @@ function rateLimit_(key, max, seconds) {
 }
 
 function verifyTurnstile_(token) {
-  const secret = settings_().Turnstile_Secret;
+  const secret = tsSecret_();
   if (!secret) return true; // bot check not configured yet
   if (!token) return false;
   const res = UrlFetchApp.fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
     method: 'post', payload: { secret: secret, response: token }, muteHttpExceptions: true
   });
   try { return JSON.parse(res.getContentText()).success === true; } catch (e) { return false; }
+}
+
+/* Self-hosted bot check: the page asks for a signed time token on load; a booking is accepted only if the token is genuine,
+   at least 4 seconds old, less than 2 hours old and not used before. When the Script Property TS_SECRET is set, the Cloudflare Turnstile check is required as well. */
+function tsSecret_() { return PropertiesService.getScriptProperties().getProperty('TS_SECRET') || settings_().Turnstile_Secret || ''; }
+function btKey_() {
+  const pr = PropertiesService.getScriptProperties();
+  let k = pr.getProperty('BT_KEY');
+  if (!k) { k = Utilities.getUuid() + Utilities.getUuid(); pr.setProperty('BT_KEY', k); }
+  return k;
+}
+function btSig_(ts) { return Utilities.base64EncodeWebSafe(Utilities.computeHmacSha256Signature(String(ts), btKey_())); }
+function botToken_() { const ts = Date.now(); return ts + '.' + btSig_(ts); }
+function botOk_(b) {
+  if (tsSecret_() && !verifyTurnstile_(b.turnstile)) return false;
+  const parts = String(b.bt || '').split('.');
+  if (parts.length !== 2) return false;
+  const ts = parseInt(parts[0], 10), age = Date.now() - ts;
+  if (!ts || age < 4000 || age > 7200000) return false;
+  if (btSig_(ts) !== parts[1]) return false;
+  const cache = CacheService.getScriptCache(), uk = 'btu_' + parts[1].slice(0, 40);
+  if (cache.get(uk)) return false;
+  cache.put(uk, '1', 7200);
+  return true;
 }
 
 function nextRef_(code) {
@@ -306,7 +331,7 @@ function normPhone_(v) {
 function book_(b) {
   const s = settings_();
   if (b.website) return { ok: false, error: 'rejected' };           // honeypot field filled = bot
-  if (!b.__member && !verifyTurnstile_(b.turnstile)) return { ok: false, error: 'bot_check_failed' };
+  if (!b.__member && !botOk_(b)) return { ok: false, error: 'bot_check_failed' };
 
   const prod = b.product === 'Economy' ? 'Economy' : (b.product === 'Priority' ? 'Priority' : '');
   const email = String(b.shipper_email || '').trim().toLowerCase();

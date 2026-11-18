@@ -5,3 +5,4 @@ deployment:
     - export TEST=/home/pcws3397/public_html/new.pcwfreight.com/
     - /bin/cp -R dist/. $TEST
     - /bin/cp -R dist/. $LIVE
+    - /bin/rm -f $LIVE/rates_import_tmp.csv $TEST/rates_import_tmp.csv

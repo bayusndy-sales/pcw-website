@@ -298,6 +298,8 @@ def book(lang):
 <label class="check"><input type="checkbox" name="terms_accepted"><span>{'I accept the <a href="terms.html" target="_blank">Terms &amp; Conditions</a>.' if E else 'Saya menyetujui <a href="terms.html" target="_blank">Syarat &amp; Ketentuan</a>.'}</span></label>
 <label class="check"><input type="checkbox" name="privacy_consent"><span>{'I agree that PCW uses my data and the receiver’s data to handle this shipment, as described in the <a href="privacy.html" target="_blank">Privacy Policy</a>.' if E else 'Saya setuju PCW menggunakan data saya dan data penerima untuk menangani kiriman ini, sesuai <a href="privacy.html" target="_blank">Kebijakan Privasi</a>.'}</span></label>
 </div>
+<div class="cf-turnstile" data-sitekey="0x4AAAAAAGHwlY2DDDa1v8N3" data-theme="light" style="margin-top:14px"></div>
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:18px"><button class="btn btn-o" type="button" data-bback>{"Back" if E else "Kembali"}</button><button class="btn btn-a" type="submit" style="flex:1;padding:15px">{"Confirm and send booking request" if E else "Konfirmasi dan kirim permintaan booking"}</button></div>
 <p class="hint" style="text-align:center">{"The price is recalculated from our published rates; our team confirms the final price after weighing, then issues your AWB." if E else "Harga dihitung ulang dari published rate kami; tim kami mengonfirmasi harga final setelah penimbangan, lalu menerbitkan AWB Anda."}</p>
 </div>

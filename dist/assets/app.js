@@ -259,6 +259,7 @@
     $all('[data-bback]', form).forEach(function (b) { b.addEventListener('click', function () { go(cur - 1); }); });
     if (q.country && PK.legacy(q)) go(2);
 
+    var BT = ''; function getBt() { apiGet({ action: 'bt' }).then(function (r) { if (r && r.bt) BT = r.bt; }).catch(function () {}); } getBt(); setInterval(getBt, 3600000);
     form.addEventListener('submit', function (ev) {
       ev.preventDefault();
       if (cur < 4) { if (stepOk(cur)) go(cur + 1); return; }
@@ -274,9 +275,12 @@
         .map(function (el) { return (form.querySelector('label[for=' + el.id + ']') || {}).textContent || el.name; });
       if (missing.length) { out.innerHTML = '<div class="notice err">' + T.missing + esc(missing.join(', ')) + '</div>'; return; }
       if (!b.terms_accepted || !b.privacy_consent || !b.no_prohibited) { out.innerHTML = '<div class="notice err">' + T.consent + '</div>'; return; }
+      b.bt = BT;
+      b.turnstile = b['cf-turnstile-response'] || ''; delete b['cf-turnstile-response'];
       submit.disabled = true; var label = submit.innerHTML; submit.innerHTML = '<span class="spin"></span> ' + T.sending;
       apiPost(b).then(function (r) {
         submit.disabled = false; submit.innerHTML = label;
+        if (window.turnstile) { try { window.turnstile.reset(); } catch (e) {} }
         if (!r.ok) {
           var m = { missing_fields: T.missing + (r.fields || []).join(', '), consent_required: T.consent, economy_pickup_outside_jakarta: T.ecoOut, too_many_requests: T.tooMany, invalid_email: T.invEmail, invalid_whatsapp: T.invWa, country_not_listed: T.notListed, po_box_not_accepted: (LANG === 'id' ? 'Alamat PO Box tidak dapat dikirimi. Mohon isi alamat jalan lengkap.' : 'PO Box addresses cannot be delivered. Please enter a full street address.') }[r.error] || T.err;
           out.innerHTML = '<div class="notice err">' + esc(m) + '</div>'; out.scrollIntoView({ behavior: 'smooth' }); return;
