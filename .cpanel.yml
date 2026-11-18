@@ -1,0 +1,5 @@
+---
+deployment:
+  tasks:
+    - export DEPLOYPATH=/home/pcws3397/public_html/new.pcwfreight.com/
+    - /bin/cp -R dist/. $DEPLOYPATH
