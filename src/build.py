@@ -429,6 +429,9 @@ Header set X-Frame-Options "SAMEORIGIN"
 </IfModule>
 """
     open(os.path.join(DIST, '.htaccess'), 'w').write(HT)
+    st = os.path.join(SRC, 'static')
+    if os.path.isdir(st):
+        for f in os.listdir(st): shutil.copy(os.path.join(st, f), DIST)
     print('built', len(PAGES) * 2, 'pages')
 
 if __name__ == '__main__': build()
