@@ -36,7 +36,7 @@ function doGet(e) {
 function doPost(e) {
   try {
     const body = JSON.parse((e && e.postData && e.postData.contents) || '{}');
-    delete body.__member; delete body.__disc; delete body.__pub; const ar = authRoute_(body) || admRoute_(body) || admRoute2_(body); if (ar) return json_(ar); if (body.action === 'book') return json_(book_(body)); if (body.action === 'portal_login') return json_(portalLogin_(body)); if (body.action === 'portal_list') return json_(portalList_(body)); if (body.action === 'portal_book') return json_(portalBook_(body));
+    delete body.__member; delete body.__disc; delete body.__pub; const ar = authRoute_(body) || admRoute_(body) || admRoute2_(body) || ulRoute_(body); if (ar) return json_(ar); if (body.action === 'book') return json_(book_(body)); if (body.action === 'portal_login') return json_(portalLogin_(body)); if (body.action === 'portal_list') return json_(portalList_(body)); if (body.action === 'portal_book') return json_(portalBook_(body));
     return json_({ ok: false, error: 'unknown_action' });
   } catch (err) {
     console.error(err);

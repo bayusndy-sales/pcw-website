@@ -256,7 +256,7 @@
       $('#pf').addEventListener('submit', function (ev) { ev.preventDefault(); var f = ev.target; post({ action: 'profile', token: store('pt'), name: f.elements.name.value, phone: f.elements.phone.value }).then(function (r) { if (r.error === 'session') return expired(); $('#pm').innerHTML = r.ok ? notice('ok', t('Saved.', 'Tersimpan.')) : notice('err', err(r)); if (r.ok) { ME.name = f.elements.name.value; ME.phone = f.elements.phone.value; } }); });
       $('#cf').addEventListener('submit', function (ev) { ev.preventDefault(); var f = ev.target; post({ action: 'chpw', token: store('pt'), current: f.elements.current.value, password: f.elements.password.value }).then(function (r) { if (r.error === 'session') return expired(); $('#cm').innerHTML = r.ok ? notice('ok', t('Password updated.', 'Password diperbarui.')) : notice('err', err(r)); if (r.ok) f.reset(); }); });
     }
-    if (store('pt')) { post({ action: 'me', token: store('pt') }).then(function (r) { if (r.ok) { ME = r.user; if (ME.role === 'SuperAdmin') { store('pt', null); renderLogin(); } else renderApp(); } else { store('pt', null); renderLogin(); } }).catch(function () { renderLogin(); }); } else renderLogin();
+    if (store('pt')) { post({ action: 'me', token: store('pt') }).then(function (r) { if (r.ok) { ME = r.user; if (ME.role === 'SuperAdmin' || ME.role === 'Ops') { store('pt', null); renderLogin(); } else renderApp(); } else { store('pt', null); renderLogin(); } }).catch(function () { renderLogin(); }); } else renderLogin();
     var q = new URLSearchParams(location.search); if (q.get('reset')) { }
   }
 
@@ -305,12 +305,13 @@
       return ks.map(function (k) { return '<div style="display:flex;align-items:center;gap:8px;margin:4px 0;font-size:.9rem"><span style="width:150px;flex:none">' + esc(k) + '</span><span style="background:var(--blue);height:12px;border-radius:6px;width:' + Math.max(4, Math.round(obj[k] / top * 100)) + '%;max-width:55%"></span><span>' + obj[k] + '</span></div>'; }).join('') || '<p class="hint">No data.</p>';
     }
     function aApp() {
-      ad.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px"><div><h2 style="margin:0">PCW Admin</h2><span class="hint">' + esc(AU.email) + '</span></div><button id="aso" class="btn btn-o" type="button">Sign out</button></div>' +
-        ['ov', 'bk', 'us', 'iv', 'au', 'st'].map(function (k) { return '<div data-pane="' + k + '"></div>'; }).join('');
+      ad.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px"><div><h2 style="margin:0">' + (AU.role === 'Ops' ? 'PCW Operations' : 'PCW Admin') + '</h2><span class="hint">' + esc(AU.email) + '</span></div><button id="aso" class="btn btn-o" type="button">Sign out</button></div>' +
+        ['fl', 'ov', 'bk', 'us', 'iv', 'au', 'st', 'tm'].map(function (k) { return '<div data-pane="' + k + '"></div>'; }).join('');
       $('#aso').onclick = function () { post({ action: 'logout', token: aTok() }); store('at', null); aLogin(); };
-      var go = tabs(ad, [['ov', 'Overview'], ['bk', 'Bookings'], ['us', 'Customers'], ['iv', 'Invoices'], ['au', 'Audit log'], ['st', 'Settings']], function (k) { ({ ov: loadOv, bk: loadBk, us: loadUsers, iv: loadInv, au: loadAudit, st: loadSettings })[k](); });
+      var isOps = AU.role === 'Ops';
+      var go = tabs(ad, (isOps ? [['fl', 'Fulfilment']] : [['fl', 'Fulfilment'], ['ov', 'Overview'], ['bk', 'Bookings'], ['us', 'Customers'], ['iv', 'Invoices'], ['au', 'Audit log'], ['st', 'Settings'], ['tm', 'Team']]), function (k) { ({ fl: loadFl, ov: loadOv, bk: loadBk, us: loadUsers, iv: loadInv, au: loadAudit, st: loadSettings, tm: loadTeam })[k](); });
       ad.insertBefore(ad.lastChild, ad.children[1]); window._ago = go;
-      post({ action: 'adm_statuses', token: aTok() }).then(function (r) { if (r.ok) STAT = r.statuses; go('ov'); }).catch(function () { go('ov'); });
+      (isOps ? Promise.resolve({ ok: false }) : post({ action: 'adm_statuses', token: aTok() })).then(function (r) { if (r.ok) STAT = r.statuses; go(isOps ? 'fl' : 'ov'); }).catch(function () { go(isOps ? 'fl' : 'ov'); });
     }
     function pane(k) { return $('[data-pane=' + k + ']', ad); }
     /* Overview */
@@ -410,9 +411,143 @@
       $('#if', p).addEventListener('submit', function (ev) { ev.preventDefault(); var b = { action: 'adm_inv_add' }; new FormData(ev.target).forEach(function (v, k) { b[k] = v.trim(); }); aPost(b).then(function (x) { if (x.ok) loadInv(); setTimeout(function () { aMsg('#im', x.ok, x.ok ? 'Added ' + x.no : aErr(x)); }, 400); }); });
       $$('[data-pay]', p).forEach(function (b) { b.onclick = function () { if (!confirm('Mark ' + b.getAttribute('data-pay') + ' as paid today?')) return; aPost({ action: 'adm_inv_pay', no: b.getAttribute('data-pay') }).then(function (x) { if (x.ok) loadInv(); }); }; });
     }
+    /* Fulfilment (ops): vendor booking workflow */
+    var FL = [], FLCH = {}, FLF = 'open', FLREF = '';
+    var STG = ['To assign', 'To book', 'Requested', 'Booked', 'Confirmed'];
+    var STC = { 'To assign': '#b45309', 'To book': '#2563eb', 'Requested': '#7c3aed', 'Booked': '#0f766e', 'Confirmed': '#15803d', 'Cancelled': '#6b7280' };
+    var GUIDE = {
+      DHL_OWN: ['Open the DHL website and sign in with the PCW DHL account.', 'Create the shipment with the details on the left (use the copy buttons). Add the pickup if the customer asked for pickup.', 'Print or save the DHL waybill. Copy its tracking number.', 'Enter the tracking number below and press Mark as booked.'],
+      FEDEX_OWN: ['Open the FedEx website and sign in with the PCW FedEx account.', 'Create the shipment with the details on the left (use the copy buttons). Schedule the pickup if the customer asked for pickup.', 'Print or save the FedEx label. Copy its tracking number.', 'Enter the tracking number below and press Mark as booked.'],
+      FEDEX_ICCL: ['Copy the request message below and post it in the ICCL WhatsApp group.', 'Press I sent the request. The booking now waits for the ICCL team.', 'When ICCL replies with the FedEx tracking number and the pickup schedule, enter them below.', 'Press Mark as booked, then confirm the pickup.'],
+      MARS: ['Create the booking in the Mars Portal with the details on the left (use the copy buttons).', 'Copy the request message below and send it to the Mars CX team on WhatsApp.', 'Press I sent the request. When Mars CX replies with the Mars AWB and pickup schedule, enter them below.', 'Press Mark as booked, then confirm the pickup.']
+    };
+    var SITE = { DHL_OWN: ['Open DHL website', 'https://mydhl.express.dhl'], FEDEX_OWN: ['Open FedEx website', 'https://www.fedex.com'] };
+    function ago(ms) { if (!ms) return '-'; var m = Math.max(0, Math.round((Date.now() - ms) / 60000)); if (m < 60) return m + ' min'; var h = Math.round(m / 60); if (h < 48) return h + ' h'; return Math.round(h / 24) + ' d'; }
+    function slaStyle(i) { var lim = { 'To assign': 2, 'To book': 4, 'Requested': 3, 'Booked': 12 }[i.stage]; if (!lim || !i.since) return ''; var h = (Date.now() - i.since) / 36e5; return h > lim * 4 ? 'color:#b91c1c;font-weight:700' : h > lim ? 'color:#b45309;font-weight:700' : ''; }
+    function badge(s) { return '<span style="display:inline-block;padding:2px 9px;border-radius:99px;font-size:.78rem;font-weight:700;color:#fff;background:' + (STC[s] || '#6b7280') + '">' + esc(s) + '</span>'; }
+    function flMatch(i, f) { if (f === 'all') return true; if (f === 'issue') return !!i.issue && i.stage !== 'Cancelled'; if (f === 'open') return !i.done && ['To assign', 'To book', 'Requested', 'Booked'].indexOf(i.stage) > -1; return !i.done && i.stage === f; }
+    function loadFl() { aPost({ action: 'ful_list' }).then(function (r) { if (!r.ok) return; FL = r.items; FLCH = r.channels; renderFl(); }).catch(function () {}); }
+    function renderFl() {
+      var p = pane('fl');
+      if (!$('#fq', p)) {
+        p.innerHTML = '<div id="fm"></div><div id="fchips" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px"></div><div style="display:flex;gap:8px;flex-wrap:wrap;align-items:end"><input id="fq" placeholder="Search ref, customer, destination, vendor AWB" style="min-width:260px;flex:1"><select id="fc"><option value="">All channels</option>' +
+          Object.keys(FLCH).map(function (k) { return '<option value="' + k + '">' + esc(FLCH[k].label) + '</option>'; }).join('') + '</select><button id="fr" class="btn btn-o btn-sm" type="button">Refresh</button></div><div id="fl"></div><div id="fd"></div>';
+        $('#fq', p).oninput = renderFl; $('#fc', p).onchange = renderFl; $('#fr', p).onclick = loadFl;
+      }
+      var q = $('#fq', p).value.toLowerCase(), ch = $('#fc', p).value;
+      var chips = [['open', 'Needs action'], ['To assign', 'To assign'], ['To book', 'To book'], ['Requested', 'Requested'], ['Booked', 'Booked, awaiting pickup confirmation'], ['Confirmed', 'Confirmed'], ['issue', 'Issues'], ['all', 'All']];
+      $('#fchips', p).innerHTML = chips.map(function (c) { var n = FL.filter(function (i) { return flMatch(i, c[0]); }).length; var on = FLF === c[0]; return '<button type="button" data-chip="' + c[0] + '" class="btn btn-sm ' + (on ? 'btn-a' : 'btn-o') + '">' + esc(c[1]) + ' <strong>' + n + '</strong></button>'; }).join('');
+      $$('[data-chip]', p).forEach(function (b) { b.onclick = function () { FLF = b.getAttribute('data-chip'); renderFl(); }; });
+      var list = FL.filter(function (i) { return flMatch(i, FLF) && (!ch || i.channel === ch) && (!q || (i.ref + ' ' + i.customer + ' ' + i.dest + ' ' + i.to + ' ' + i.vendor_awb).toLowerCase().indexOf(q) > -1); });
+      list.sort(function (a, b) { return (a.issue ? 0 : 1) - (b.issue ? 0 : 1) || a.since - b.since; });
+      $('#fl', p).innerHTML = '<p class="hint">' + list.length + ' booking(s). Oldest waiting first; red or amber time means it is waiting too long.</p>' + table(['Ref / customer', 'Service / destination', 'Handover', 'Channel', 'Stage', 'Vendor AWB', ''], list.map(function (i) {
+        var ho = i.mode === 'Pickup' ? 'Pickup ' + esc(i.pickup_conf || i.pickup_req || '') + '<br><span class="hint">' + esc(i.pickup_city) + '</span>' : esc(i.mode || '-');
+        return tr(['<strong>' + esc(i.ref) + '</strong><br>' + esc(i.customer) + (i.issue ? '<br><span style="color:#b91c1c;font-weight:700">&#9888; ' + esc(i.issue) + '</span>' : ''), esc(i.product) + '<br>' + esc(i.dest) + ' <span class="hint">' + esc(i.pieces) + ' pc / ' + esc(i.chg || i.kg) + ' kg</span>', ho,
+          i.channel && FLCH[i.channel] ? esc(FLCH[i.channel].label) : '<span class="hint">Not assigned</span>', badge(i.stage) + '<br><span style="' + slaStyle(i) + '">' + (i.stage === 'Confirmed' ? esc(i.pickup_conf || '') : ago(i.since)) + '</span>', esc(i.vendor_awb || ''),
+          '<button class="btn btn-a btn-sm" type="button" data-fo="' + esc(i.ref) + '">Open</button>']);
+      }));
+      $$('[data-fo]', p).forEach(function (b) { b.onclick = function () { openFl(b.getAttribute('data-fo')); }; });
+    }
+    function digits(v) { var d = String(v || '').replace(/\D/g, ''); if (d.indexOf('0') === 0) d = '62' + d.slice(1); return d; }
+    function reqMsg(f, ch) {
+      var recv = [f.Consignee_Name, f.Consignee_Company].filter(Boolean).join(', ');
+      var lines = ['Halo tim ' + (ch === 'MARS' ? 'Mars CX' : 'ICCL') + ', mohon bantu ' + (ch === 'MARS' ? 'proses booking' : 'booking FedEx') + ' untuk kiriman berikut:', '',
+        'Ref PCW: ' + f.PCW_Ref, 'Layanan: ' + f.Product + ' (' + f.Shipment_Type + ')', 'Tujuan: ' + f.Dest_Country, '',
+        'PENERIMA', recv, f.Consignee_Address, [f.Consignee_City, f.Consignee_Postcode].filter(Boolean).join(' '), 'Telp: ' + (f.Consignee_Phone || '-'), 'Email: ' + (f.Consignee_Email || '-'), '',
+        'BARANG', 'Isi: ' + (f.Contents || '-'), 'Nilai: IDR ' + (f.Declared_Value || '-'), 'Koli: ' + f.Pieces + ' | Berat aktual: ' + f.Actual_Kg + ' kg | Berat tagih: ' + (f.Chargeable_Kg || '-') + ' kg', 'Dimensi: ' + (f.Dims_cm || '-'), '',
+        'PENGIRIM', [f.Shipper_Name, f.Shipper_Company].filter(Boolean).join(' / '), 'HP: ' + digits(f.Shipper_WhatsApp)];
+      if (f.Pickup_or_Dropoff === 'Pickup') lines.push('Pickup: ' + f.Pickup_Address, [f.Pickup_City, f.Pickup_Postcode].filter(Boolean).join(' '), 'Tanggal pickup diminta: ' + (f.Pickup_Date || '-'));
+      else lines.push('Serah terima: Drop-off');
+      var ex = String(f.Contents || '').match(/\| Options: (.*)$/); if (ex) lines.push('', 'Layanan tambahan: ' + ex[1]);
+      lines.push('', 'Mohon konfirmasi nomor AWB dan jadwal pickup. Terima kasih.');
+      return lines.join('\n');
+    }
+    function custMsg(f, ful) {
+      var id = f.Lang === 'id', url = 'https://pcwfreight.com/' + (id ? 'id/' : '') + 'track.html?ref=' + encodeURIComponent(f.PCW_Ref), nm = f.Shipper_Name || '';
+      var pick = f.Pickup_or_Dropoff === 'Pickup';
+      if (id) return 'Halo ' + nm + ', booking ' + f.PCW_Ref + ' ke ' + f.Dest_Country + ' sudah kami konfirmasi.\n' + (pick ? 'Pickup dijadwalkan: ' + (ful.Pickup_Date || '-') + (ful.Pickup_Window ? ' (' + ful.Pickup_Window + ')' : '') + '.' : 'Silakan lakukan drop-off sesuai arahan tim kami.') + '\nPantau status kiriman di ' + url + '\nTerima kasih, PCW International Express.';
+      return 'Hello ' + nm + ', your booking ' + f.PCW_Ref + ' to ' + f.Dest_Country + ' is confirmed.\n' + (pick ? 'Pickup scheduled: ' + (ful.Pickup_Date || '-') + (ful.Pickup_Window ? ' (' + ful.Pickup_Window + ')' : '') + '.' : 'Please drop off your shipment as our team has advised.') + '\nTrack your shipment at ' + url + '\nThank you, PCW International Express.';
+    }
+    function copyTxt(t, btn) { var done = function () { if (btn) { var o = btn.textContent; btn.textContent = 'Copied'; setTimeout(function () { btn.textContent = o; }, 1200); } }; if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(done, function () { fallbackCopy(t); done(); }); else { fallbackCopy(t); done(); } }
+    function fallbackCopy(t) { var a = document.createElement('textarea'); a.value = t; document.body.appendChild(a); a.select(); try { document.execCommand('copy'); } catch (e) {} a.remove(); }
+    function flErr(r) { return ({ need_channel: 'Choose a booking channel first.', not_needed: 'This channel does not need a request message.', locked: 'This step is already past that stage. Use Back one step if you need to change it.', invalid_awb: 'Enter a valid vendor tracking number (5 to 40 letters, numbers, spaces or dashes).', duplicate_awb: 'This vendor number is already used on ' + (r && r.ref) + '.', need_booked: 'Mark the booking as booked first.', need_date: 'Enter the pickup date as YYYY-MM-DD.', invalid: 'Invalid value.', not_found: 'Booking not found.' })[r && r.error] || aErr(r); }
+    function openFl(ref) {
+      FLREF = ref; var p = pane('fl'), d = $('#fd', p);
+      aPost({ action: 'ful_get', ref: ref }).then(function (r) {
+        if (!r.ok) { aMsg('#fm', false, flErr(r)); return; }
+        var f = r.fields, u = r.ful, ch = u.Channel, chd = FLCH[ch], idx = STG.indexOf(u.Stage), needReq = chd && chd.req;
+        f.PCW_Ref = ref;
+        var steps = STG.map(function (s, i) { if (s === 'Requested' && chd && !needReq) return ''; var on = i === idx, done = i < idx; return '<span style="padding:6px 12px;border-radius:99px;font-size:.85rem;font-weight:700;' + (on ? 'background:' + STC[s] + ';color:#fff' : done ? 'background:#dcfce7;color:#166534' : 'background:#f1f5f9;color:#64748b') + '">' + (done ? '&#10003; ' : '') + s + '</span>'; }).join('<span style="color:#94a3b8">&rarr;</span>');
+        var copyRows = [['Service', f.Product + ' (' + f.Shipment_Type + ')'], ['Destination', f.Dest_Country], ['Receiver name', f.Consignee_Name], ['Receiver company', f.Consignee_Company], ['Receiver address', f.Consignee_Address], ['Receiver city', f.Consignee_City], ['Receiver postcode', f.Consignee_Postcode], ['Receiver phone', f.Consignee_Phone], ['Receiver email', f.Consignee_Email],
+          ['Contents', String(f.Contents || '').replace(/ \| Options: .*$/, '')], ['Declared value (IDR)', f.Declared_Value], ['Pieces', f.Pieces], ['Actual kg', f.Actual_Kg], ['Chargeable kg', f.Chargeable_Kg], ['Packages (qty x kg, cm)', f.Dims_cm], ['Shipper', [f.Shipper_Name, f.Shipper_Company].filter(Boolean).join(' / ')], ['Shipper WhatsApp', digits(f.Shipper_WhatsApp)], ['Shipper email', f.Shipper_Email], ['Handover', f.Pickup_or_Dropoff],
+          ['Pickup address', f.Pickup_Address], ['Pickup city', f.Pickup_City], ['Pickup postcode', f.Pickup_Postcode], ['Pickup date requested', f.Pickup_Date]];
+        var ex = String(f.Contents || '').match(/\| Options: (.*)$/); if (ex) copyRows.push(['Extras requested', ex[1]]);
+        var left = '<div class="box" style="margin:0"><h4 style="margin:0 0 8px">Shipment details</h4>' + copyRows.filter(function (x) { return x[1] !== '' && x[1] != null; }).map(function (x, i) { return '<div style="display:flex;gap:8px;align-items:flex-start;padding:5px 0;border-bottom:1px solid #eef2f7"><div style="width:150px;flex:none" class="hint">' + esc(x[0]) + '</div><div style="flex:1;word-break:break-word">' + esc(x[1]) + '</div><button type="button" class="btn btn-o btn-sm" data-cp="' + esc(String(x[1])).replace(/"/g, '&quot;') + '">Copy</button></div>'; }).join('') + '</div>';
+        var act = '';
+        if (idx === 0) {
+          act = '<h4 style="margin:0 0 8px">Step 1. Choose how to book this shipment</h4>' + Object.keys(FLCH).map(function (k) { return '<button type="button" class="btn btn-o" data-ch="' + k + '" style="display:block;width:100%;text-align:left;margin-bottom:8px"><strong>' + esc(FLCH[k].label) + '</strong><br><span class="hint">' + esc(GUIDE[k][0]) + '</span></button>'; }).join('');
+        } else {
+          act = '<div class="hint">Channel: <strong>' + esc(chd.label) + '</strong>' + (idx < 3 ? ' <a href="#" id="fchg">change</a>' : '') + '</div>';
+          if (idx <= 2) {
+            act += '<h4 style="margin:10px 0 6px">How to book</h4><ol style="margin:0 0 10px 18px;padding:0">' + GUIDE[ch].map(function (s) { return '<li style="margin:3px 0">' + esc(s) + '</li>'; }).join('') + '</ol>' + (SITE[ch] ? '<a class="btn btn-o btn-sm" target="_blank" rel="noopener" href="' + SITE[ch][1] + '">' + SITE[ch][0] + '</a>' : '');
+            if (needReq) {
+              var m = reqMsg(f, ch);
+              act += '<h4 style="margin:12px 0 6px">Request message' + (u.Req_Sent_At ? ' <span class="hint">(sent ' + esc(u.Req_Sent_At) + ' by ' + esc(u.Req_Sent_By) + ')</span>' : '') + '</h4><textarea id="fmsg" readonly rows="9" style="width:100%;font-size:.88rem">' + esc(m) + '</textarea><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px"><button type="button" class="btn btn-o btn-sm" id="fcm">Copy message</button><a class="btn btn-o btn-sm" target="_blank" rel="noopener" href="https://web.whatsapp.com/">Open WhatsApp Web</a>' + (idx === 1 ? '<button type="button" class="btn btn-a btn-sm" id="freq">I sent the request</button>' : '') + '</div>';
+            }
+            act += '<form id="fbk" style="margin-top:14px" class="box"><h4 style="margin:0 0 8px">' + (needReq && idx < 2 ? 'Already have the vendor number? ' : '') + 'Vendor booking result</h4><div class="row r3">' + fld('vendor_awb', 'Vendor tracking / AWB number', 'text', true, 'value="' + esc(u.Vendor_AWB) + '"') + fld('vendor_ref', 'Vendor booking ref (optional)', 'text', false, 'value="' + esc(u.Vendor_Booking_Ref) + '"') + fld('cost', 'Vendor cost IDR (optional)', 'text', false, 'value="' + esc(u.Cost_IDR) + '"') + '</div><button class="btn btn-a" type="submit" style="margin-top:10px">Mark as booked</button><p class="hint">The customer sees "Booking confirmed" in tracking. The vendor number stays internal.</p></form>';
+          } else if (idx === 3) {
+            var pick = f.Pickup_or_Dropoff === 'Pickup';
+            act += '<div class="notice ok" style="margin:10px 0"><strong>Booked.</strong> Vendor number: <strong>' + esc(u.Vendor_AWB) + '</strong>' + (u.Vendor_Booking_Ref ? ' (ref ' + esc(u.Vendor_Booking_Ref) + ')' : '') + '</div>' +
+              '<form id="fcf" class="box"><h4 style="margin:0 0 8px">Step. ' + (pick ? 'Confirm the pickup with the vendor' : 'Confirm drop-off is arranged') + '</h4><div class="row r2">' + fld('pickup_date', pick ? 'Confirmed pickup date' : 'Drop-off date (optional)', 'date', pick, 'value="' + esc(String(f.Pickup_Date || '').slice(0, 10)) + '"') + fld('window', 'Time window (optional)', 'text', false, 'placeholder="e.g. 13:00-17:00"') + '</div><button class="btn btn-a" type="submit" style="margin-top:10px">' + (pick ? 'Pickup confirmed' : 'Drop-off confirmed') + '</button><p class="hint">' + (pick ? 'The customer sees "Pickup scheduled" with this date in tracking.' : 'Nothing new is shown to the customer.') + '</p></form>' +
+              '<form id="fbk" class="box" style="margin-top:10px"><h4 style="margin:0 0 8px">Correct vendor details</h4><div class="row r3">' + fld('vendor_awb', 'Vendor tracking / AWB number', 'text', true, 'value="' + esc(u.Vendor_AWB) + '"') + fld('vendor_ref', 'Vendor booking ref', 'text', false, 'value="' + esc(u.Vendor_Booking_Ref) + '"') + fld('cost', 'Vendor cost IDR', 'text', false, 'value="' + esc(u.Cost_IDR) + '"') + '</div><button class="btn btn-o btn-sm" type="submit" style="margin-top:10px">Save vendor details</button></form>';
+          } else {
+            var cm = custMsg(f, u), wa = digits(f.Shipper_WhatsApp);
+            act += '<div class="notice ok" style="margin:10px 0"><strong>Fully confirmed.</strong> Vendor number <strong>' + esc(u.Vendor_AWB) + '</strong> &middot; ' + (f.Pickup_or_Dropoff === 'Pickup' ? 'pickup ' + esc(String(u.Pickup_Date).slice(0, 10)) + ' ' + esc(u.Pickup_Window) : 'drop-off') + '</div>' +
+              '<h4 style="margin:10px 0 6px">Message to the customer</h4><textarea id="fcmsg" rows="6" style="width:100%;font-size:.88rem">' + esc(cm) + '</textarea><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px"><button type="button" class="btn btn-o btn-sm" id="fcc">Copy</button>' + (wa ? '<a class="btn btn-wa btn-sm" id="fwa" target="_blank" rel="noopener" href="https://wa.me/' + wa + '?text=' + encodeURIComponent(cm) + '">Open WhatsApp to customer</a>' : '') + '</div>' +
+              '<form id="fcf" class="box" style="margin-top:12px"><h4 style="margin:0 0 8px">Pickup changed?</h4><div class="row r2">' + fld('pickup_date', 'Pickup date', 'date', false, 'value="' + esc(String(u.Pickup_Date).slice(0, 10)) + '"') + fld('window', 'Time window', 'text', false, 'value="' + esc(u.Pickup_Window) + '"') + '</div><button class="btn btn-o btn-sm" type="submit" style="margin-top:10px">Update pickup</button></form>';
+          }
+        }
+        var common = '<div class="box" style="margin-top:14px"><h4 style="margin:0 0 8px">PCW AWB</h4><label style="display:flex;gap:8px;align-items:center;font-weight:600"><input type="checkbox" id="fawbd"' + (u.PCW_AWB_Done === 'Y' ? ' checked' : '') + '> PCW AWB printed / attached to the parcel</label><button type="button" class="btn btn-o btn-sm" id="fawb" style="margin-top:8px">Open PCW AWB</button></div>' +
+          '<div class="box" style="margin-top:12px"><h4 style="margin:0 0 8px">Problem or note</h4>' + (u.Issue ? '<div class="notice err">&#9888; ' + esc(u.Issue) + ' <button type="button" class="btn btn-o btn-sm" id="fclr" style="margin-left:8px">Clear issue</button></div>' : '') +
+          '<form id="fiss" style="display:flex;gap:8px;flex-wrap:wrap;align-items:end"><div style="flex:1;min-width:200px"><input name="text" placeholder="Describe the problem (the owner is emailed)" maxlength="250"></div><button class="btn btn-o btn-sm" type="submit">Flag issue</button></form>' +
+          '<form id="fnt" style="display:flex;gap:8px;flex-wrap:wrap;align-items:end;margin-top:8px"><div style="flex:1;min-width:200px"><input name="text" placeholder="Add an internal note" maxlength="250"></div><button class="btn btn-o btn-sm" type="submit">Add note</button></form><p class="hint">' + esc(u.Vendor_Notes || '') + '</p>' +
+          (idx > 0 ? '<button type="button" class="btn btn-o btn-sm" id="fback">Back one step</button>' : '') + '</div>';
+        var evs = r.events.length ? table(['Time', 'Customer sees', 'Note', 'By'], r.events.map(function (e) { return tr([esc(e.time), esc(e.status), esc(e.note), esc(e.by)]); })) : '<p class="hint">No tracking events yet.</p>';
+        d.innerHTML = '<div class="box" style="margin-top:16px"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><h3 style="margin:0">' + esc(ref) + ' &middot; ' + esc(f.Product) + ' to ' + esc(f.Dest_Country) + ' ' + badge(u.Stage) + '</h3><button id="fclose" class="btn btn-o btn-sm" type="button">Close</button></div><div id="fdm"></div>' +
+          '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:12px 0">' + steps + '</div><div class="row r2" style="align-items:start"><div>' + left + '</div><div>' + act + common + '</div></div><h4 style="margin:16px 0 6px">Tracking the customer sees</h4>' + evs + '</div>';
+        d.scrollIntoView({ behavior: 'smooth' });
+        var run = function (b, okMsg, keep) { aPost(Object.assign({ action: 'ful_act', ref: ref }, b)).then(function (x) { if (x.ok) { loadFl(); openFl(ref); setTimeout(function () { aMsg('#fdm', true, okMsg || 'Saved.'); }, 400); } else aMsg('#fdm', false, flErr(x)); }); };
+        $('#fclose').onclick = function () { d.innerHTML = ''; };
+        $$('[data-cp]', d).forEach(function (b) { b.onclick = function () { copyTxt(b.getAttribute('data-cp'), b); }; });
+        $$('[data-ch]', d).forEach(function (b) { b.onclick = function () { run({ op: 'assign', channel: b.getAttribute('data-ch') }, 'Channel set.'); }; });
+        if ($('#fchg')) $('#fchg').onclick = function (e) { e.preventDefault(); var c = prompt('Channel code: ' + Object.keys(FLCH).join(', '), ch); if (c && FLCH[c]) run({ op: 'assign', channel: c }, 'Channel changed.'); };
+        if ($('#fcm')) $('#fcm').onclick = function () { copyTxt($('#fmsg').value, $('#fcm')); };
+        if ($('#freq')) $('#freq').onclick = function () { run({ op: 'requested' }, 'Request recorded. Waiting for the vendor.'); };
+        if ($('#fbk')) $('#fbk').addEventListener('submit', function (ev) { ev.preventDefault(); var b = { op: 'booked' }; new FormData(ev.target).forEach(function (v, k) { b[k] = v.trim(); }); run(b, 'Marked as booked. The customer now sees Booking confirmed.'); });
+        if ($('#fcf')) $('#fcf').addEventListener('submit', function (ev) { ev.preventDefault(); var b = { op: 'confirm' }; new FormData(ev.target).forEach(function (v, k) { b[k] = v.trim(); }); run(b, 'Confirmed.'); });
+        if ($('#fcc')) $('#fcc').onclick = function () { copyTxt($('#fcmsg').value, $('#fcc')); };
+        if ($('#fcmsg') && $('#fwa')) $('#fcmsg').oninput = function () { $('#fwa').href = 'https://wa.me/' + digits(f.Shipper_WhatsApp) + '?text=' + encodeURIComponent($('#fcmsg').value); };
+        $('#fawbd').onchange = function () { run({ op: 'awb_done', value: this.checked ? 'Y' : '' }, 'Saved.'); };
+        $('#fawb').onclick = function () { var ff = {}; Object.keys(f).forEach(function (k) { ff[k] = f[k]; }); ff.PCW_Ref = ref; awbOpen(ff); };
+        $('#fiss').addEventListener('submit', function (ev) { ev.preventDefault(); var t = ev.target.elements.text.value.trim(); if (t) run({ op: 'issue', text: t }, 'Issue flagged and the owner was emailed.'); });
+        $('#fnt').addEventListener('submit', function (ev) { ev.preventDefault(); var t = ev.target.elements.text.value.trim(); if (t) run({ op: 'note', text: t }, 'Note added.'); });
+        if ($('#fclr')) $('#fclr').onclick = function () { run({ op: 'clear_issue' }, 'Issue cleared.'); };
+        if ($('#fback')) $('#fback').onclick = function () { if (confirm('Go back one step? Customer tracking events already sent are not removed.')) run({ op: 'back' }, 'Moved back one step.'); };
+      }).catch(function () {});
+    }
+    /* Team (Ops accounts) */
+    function loadTeam() {
+      aPost({ action: 'staff_list' }).then(function (r) {
+        if (!r.ok) return;
+        pane('tm').innerHTML = '<div id="tmm"></div><form id="tmf" class="box"><h3 style="margin-top:0">Add an Operations team member</h3><div class="row r3">' + fld('name', 'Name') + fld('email', 'Email', 'email') + '<div style="display:flex;align-items:flex-end"><button class="btn btn-a" type="submit">Create account</button></div></div><p class="hint">Operations accounts see only the Fulfilment tab. They get an email with a code to set their password, and every sign-in needs a 6-digit email code.</p></form>' +
+          table(['Name', 'Email', 'Role', 'Status', 'Last login', ''], r.items.map(function (u) { return tr([esc(u.name), esc(u.email), esc(u.role), esc(u.status), esc(u.last), u.role === 'Ops' ? '<button class="btn btn-o btn-sm" type="button" data-st="' + esc(u.email) + '" data-to="' + (u.status === 'Active' ? 'Disabled' : 'Active') + '">' + (u.status === 'Active' ? 'Disable' : 'Enable') + '</button>' : '']); }));
+        $('#tmf').addEventListener('submit', function (ev) { ev.preventDefault(); var b = { action: 'staff_add' }; new FormData(ev.target).forEach(function (v, k) { b[k] = v.trim(); }); aPost(b).then(function (x) { if (x.ok) { loadTeam(); setTimeout(function () { aMsg('#tmm', true, 'Account created. A password-setup code was emailed.'); }, 400); } else aMsg('#tmm', false, aErr(x)); }); });
+        $$('[data-st]', pane('tm')).forEach(function (b) { b.onclick = function () { aPost({ action: 'staff_set', email: b.getAttribute('data-st'), status: b.getAttribute('data-to') }).then(function () { loadTeam(); }); }; });
+      }).catch(function () {});
+    }
     /* Audit + settings */
     function loadAudit() { aPost({ action: 'adm_audit' }).then(function (r) { if (r.ok) pane('au').innerHTML = '<p class="hint">Last 200 admin actions.</p>' + table(['Time', 'Admin', 'Action', 'Detail'], r.items.map(function (i) { return tr([esc(i.time), esc(i.who), esc(i.action), esc(i.detail)]); })); }).catch(function () {}); }
     function loadSettings() { aPost({ action: 'adm_settings' }).then(function (r) { if (r.ok) pane('st').innerHTML = '<p class="hint">Read-only. Rates, fuel and rules are changed in the Google Sheet by the team.</p>' + table(['Setting', 'Value', 'Note'], r.items.map(function (i) { return tr(['<strong>' + esc(i.key) + '</strong>', esc(i.value), esc(i.note)]); })); }).catch(function () {}); }
-    if (store('at')) post({ action: 'me', token: store('at') }).then(function (r) { if (r.ok && r.user.role === 'SuperAdmin') { AU = r.user; aApp(); } else { store('at', null); aLogin(); } }).catch(aLogin); else aLogin();
+    if (store('at')) post({ action: 'me', token: store('at') }).then(function (r) { if (r.ok && (r.user.role === 'SuperAdmin' || r.user.role === 'Ops')) { AU = r.user; aApp(); } else { store('at', null); aLogin(); } }).catch(aLogin); else aLogin();
   }
 })();
