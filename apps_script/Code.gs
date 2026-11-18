@@ -36,7 +36,7 @@ function doGet(e) {
 function doPost(e) {
   try {
     const body = JSON.parse((e && e.postData && e.postData.contents) || '{}');
-    delete body.__member; delete body.__disc; if (body.action === 'book') return json_(book_(body)); if (body.action === 'portal_login') return json_(portalLogin_(body)); if (body.action === 'portal_list') return json_(portalList_(body)); if (body.action === 'portal_book') return json_(portalBook_(body));
+    delete body.__member; delete body.__disc; delete body.__pub; const ar = authRoute_(body) || admRoute_(body); if (ar) return json_(ar); if (body.action === 'book') return json_(book_(body)); if (body.action === 'portal_login') return json_(portalLogin_(body)); if (body.action === 'portal_list') return json_(portalList_(body)); if (body.action === 'portal_book') return json_(portalBook_(body));
     return json_({ ok: false, error: 'unknown_action' });
   } catch (err) {
     console.error(err);
@@ -277,7 +277,7 @@ function book_(b) {
   const r = rate_({ country: b.dest_country, type: b.shipment_type, kg: b.actual_kg, pieces: b.pieces, l: b.l, w: b.w, h: b.h });
   if (!r.ok) return r;
   const opt = r.options.filter(function (o) { return o.product === prod; })[0];
-  const quote = (b.__member && !b.__disc) || !opt || !!opt.quote; if (b.__disc && opt && !opt.quote) { const dk = 1 - b.__disc; opt.base = Math.round(opt.base * dk); opt.fuel = Math.round(opt.fuel * dk); opt.total = Math.round(opt.total * dk); }
+  const quote = (b.__member && !b.__disc && !b.__pub) || !opt || !!opt.quote; if (b.__disc && opt && !opt.quote) { const dk = 1 - b.__disc; opt.base = Math.round(opt.base * dk); opt.fuel = Math.round(opt.fuel * dk); opt.total = Math.round(opt.total * dk); }
 
   const lock = LockService.getScriptLock();
   lock.waitLock(20000);

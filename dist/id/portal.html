@@ -2,13 +2,13 @@
 <html lang="id">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Portal Member | PCW Freight</title>
-<meta name="description" content="Masuk member.">
+<title>Masuk | PCW Freight</title>
+<meta name="description" content="Masuk pelanggan.">
 <link rel="canonical" href="https://pcwfreight.com/id/portal.html"><link rel="alternate" hreflang="en" href="https://pcwfreight.com/portal.html"><link rel="alternate" hreflang="id" href="https://pcwfreight.com/id/portal.html">
-<meta property="og:title" content="Portal Member | PCW Freight"><meta property="og:description" content="Masuk member."><meta property="og:type" content="website">
+<meta property="og:title" content="Masuk | PCW Freight"><meta property="og:description" content="Masuk pelanggan."><meta property="og:type" content="website">
 <link rel="icon" type="image/png" sizes="32x32" href="../assets/favicon-32.png"><link rel="icon" type="image/png" sizes="192x192" href="../assets/icon-192.png"><link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
 <meta property="og:image" content="https://pcwfreight.com/assets/og-image.png"><meta name="theme-color" content="#004aad">
-<link rel="stylesheet" href="../assets/style.css?v=6d914da3"><meta name="robots" content="noindex">
+<link rel="stylesheet" href="../assets/style.css?v=00a0a754"><meta name="robots" content="noindex">
 </head>
 <body data-root="../">
 <a class="skip" href="#main">Langsung ke konten</a>
@@ -16,58 +16,19 @@
 <header class="nav"><div class="wrap">
 <a class="brand" href="../id/index.html"><picture><source srcset="../assets/logo.webp" type="image/webp"><img src="../assets/logo.png" alt="PCW - Prabaswara Catur Widantara" width="44" height="47"></picture><span>PCW Freight<small>International Express</small></span></a>
 <button class="burger" aria-label="Menu">☰</button>
-<nav class="menu"><a href="../id/international-express.html">Express</a><a href="../id/rates.html">Tarif</a><a href="../id/book.html">Booking</a><a href="../id/track.html">Lacak</a><a href="../id/other-services.html">Layanan</a><a href="../id/member.html">Member</a><a href="../id/about.html">Tentang</a><a href="../id/contact.html">Kontak</a></nav>
+<nav class="menu"><a href="../id/international-express.html">Express</a><a href="../id/rates.html">Tarif</a><a href="../id/book.html">Booking</a><a href="../id/track.html">Lacak</a><a href="../id/other-services.html">Layanan</a><a href="../id/member.html">Member</a><a href="../id/about.html">Tentang</a><a href="../id/contact.html">Kontak</a><a class="show-m" href="../id/portal.html">Masuk</a><a class="show-m" href="../id/register.html">Daftar</a></nav>
 <a class="lang" href="../portal.html" hreflang="en">EN</a>
-<a class="btn btn-p btn-sm hide-m" href="../id/rates.html">Cek tarif</a>
+<a class="btn btn-o btn-sm hide-m" href="../id/portal.html">Masuk</a><a class="btn btn-p btn-sm hide-m" href="../id/register.html">Daftar</a>
 </div></header>
 <main id="main">
-<div class="page-head"><div class="wrap"><div class="crumb"><a href="../id/index.html">Beranda</a> / Portal</div><h1>Portal member</h1><p>Masuk untuk membuat permintaan booking dan memantau kiriman Anda.</p></div></div>
-<section class="s"><div class="wrap" style="max-width:960px">
-<div id="pMsg"></div>
-<form id="pLogin" class="box" style="max-width:460px"><h2 style="margin-top:0">Masuk</h2>
-<div><label class="req">Email</label><input name="email" type="email" required autocomplete="username"></div>
-<div style="margin-top:14px"><label class="req">Kode akses</label><input name="code" type="password" required autocomplete="current-password"></div>
-<p class="hint">Akses melalui undangan. Untuk menjadi member, lihat halaman Member atau hubungi kami.</p>
-<button class="btn btn-a" type="submit">Masuk</button></form>
-<div id="pApp" class="hidden">
-<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px"><h2 style="margin:0" id="pCo"></h2><div style="display:flex;gap:10px"><button id="pNew" class="btn btn-a" type="button">Kiriman baru</button><button id="pOff" class="btn btn-o" type="button">Keluar</button></div></div>
-<form id="pForm" class="box hidden" style="margin-top:18px" novalidate><input class="hp" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
-<div class="row r2"><div><label class="req">Layanan</label><select name="product"><option value="Priority">PCW Priority Express</option><option value="Economy">PCW Economy Express</option></select></div>
-<div><label class="req">Negara tujuan</label><select name="dest_country" required><option value="">…</option></select></div></div>
-<div class="row r3" style="margin-top:14px"><div><label>Jenis</label><select name="shipment_type"><option value="Parcel">Paket</option><option value="Document">Dokumen</option></select></div>
-<div><label class="req">Jumlah koli</label><input name="pieces" type="number" required min="1" max="50" value="1"></div><div><label class="req">Total berat (kg)</label><input name="actual_kg" type="number" required min="0.1" step="0.1"></div></div>
-<div class="row r3" style="margin-top:14px"><div><label class="">Panjang (cm)</label><input name="l" type="number" min="0" step="0.1"></div><div><label class="">Lebar (cm)</label><input name="w" type="number" min="0" step="0.1"></div><div><label class="">Tinggi (cm)</label><input name="h" type="number" min="0" step="0.1"></div></div>
-<h3 style="margin:22px 0 10px">Pengirim dan serah terima</h3>
-<div class="row r2"><div><label class="req">Nama kontak</label><input name="shipper_name" type="text" required ></div><div><label class="req">Nomor WhatsApp</label><input name="shipper_whatsapp" type="tel" required placeholder="0811…"></div></div>
-<div class="row r2" style="margin-top:14px"><div><label>Serah terima</label><select name="pickup_or_dropoff"><option value="Pickup">Pickup</option><option value="Drop-off">Drop-off</option></select></div><div><label class="">Tanggal pickup</label><input name="pickup_date" type="date" ></div></div>
-<div style="margin-top:14px"><label>Alamat pickup (jika Pickup)</label><textarea name="pickup_address"></textarea></div>
-<div class="row r2" style="margin-top:14px"><div><label class="">Kota pickup</label><input name="pickup_city" type="text" ></div><div><label class="">Kode pos</label><input name="pickup_postcode" type="text" ></div></div>
-<h3 style="margin:22px 0 10px">Penerima</h3>
-<div class="row r2"><div><label class="req">Nama penerima</label><input name="consignee_name" type="text" required ></div><div><label class="">Perusahaan</label><input name="consignee_company" type="text" ></div></div>
-<div style="margin-top:14px"><label class="req">Alamat penerima (bukan PO Box)</label><textarea name="consignee_address" required></textarea></div>
-<div class="row r3" style="margin-top:14px"><div><label class="req">Kota</label><input name="consignee_city" type="text" required ></div><div><label class="">Kode pos</label><input name="consignee_postcode" type="text" ></div><div><label class="req">Telepon penerima</label><input name="consignee_phone" type="tel" required ></div></div>
-<div style="margin-top:14px"><div><label class="req">Receiver email</label><input name="consignee_email" type="email" required ></div></div>
-<h3 style="margin:22px 0 10px">Isi kiriman</h3>
-<div><label class="req">Deskripsi isi (bahasa Inggris)</label><textarea name="contents" required maxlength="200"></textarea></div>
-<div style="margin-top:14px"><div><label class="req">Total nilai barang (IDR)</label><input name="declared_value" type="text" required inputmode="numeric"></div></div>
-<label class="check" style="margin-top:14px"><input type="checkbox" name="opt_insurance"><span>Asuransi</span></label>
-<label class="check"><input type="checkbox" name="opt_signature"><span>Tanda tangan saat pengantaran</span></label>
-<label class="check"><input type="checkbox" name="opt_ddp"><span>DDP</span></label>
-<div style="margin-top:14px">
-<label class="check"><input type="checkbox" name="no_prohibited"><span>Tidak ada <a href="prohibited-items.html" target="_blank">barang terlarang atau terbatas</a>; deskripsi dan nilai benar.</span></label>
-<label class="check"><input type="checkbox" name="terms_accepted"><span>Saya menyetujui <a href="terms.html" target="_blank">Syarat &amp; Ketentuan</a>.</span></label>
-<label class="check"><input type="checkbox" name="privacy_consent"><span>Saya setuju dengan <a href="privacy.html" target="_blank">Kebijakan Privasi</a>.</span></label></div>
-<button class="btn btn-a" type="submit" style="margin-top:18px;padding:15px">Kirim permintaan booking</button>
-<p class="hint">Harga mengikuti kesepakatan member Anda. Tim kami mengonfirmasi berat dan harga, lalu menerbitkan AWB.</p></form>
-<div id="pOut" style="margin-top:16px"></div>
-<h3 style="margin:26px 0 10px">Kiriman Anda</h3><div id="pList"></div>
-</div></div></section><script src="../assets/portal.js?v=8e890c70" defer></script>
+<div class="page-head"><div class="wrap"><div class="crumb"><a href="../id/index.html">Beranda</a> / Portal</div><h1>Portal pelanggan</h1><p>Cek tarif, booking, dan lacak kiriman Anda.</p></div></div>
+<section class="s"><div class="wrap" style="max-width:980px"><div id="pRoot"><noscript>JavaScript is required.</noscript></div></div></section><script src="../assets/portal.js?v=3d6736be" defer></script>
 </main>
 <footer><div class="wrap">
 <div class="grid">
 <div><a class="brand foot" href="../id/index.html"><span class="logo-tile"><img src="../assets/logo.png" alt="PCW - Prabaswara Catur Widantara" width="40" height="43" loading="lazy"></span><span>PCW Freight</span></a><p style="margin-top:12px">PCW Freight adalah merek dari PT Prabaswara Catur Widantara.</p><p>Harga tidak dikenakan PPN.</p></div>
 <div><h4>Layanan</h4><a href="../id/international-express.html">PCW International Express</a><a href="../id/priority-express.html">PCW Priority Express</a><a href="../id/economy-express.html">PCW Economy Express</a><a href="../id/other-services.html">Layanan lain</a></div>
-<div><h4>Bantuan</h4><a href="../id/rates.html">Tarif</a><a href="../id/track.html">Lacak kiriman</a><a href="../id/help.html">Pusat Bantuan</a><a href="../id/faq.html">FAQ</a><a href="../id/surcharges-customs.html">Surcharge & kepabeanan</a><a href="../id/prohibited-items.html">Barang terlarang</a><a href="../id/terms.html">Syarat & Ketentuan</a><a href="../id/privacy.html">Kebijakan Privasi</a></div>
+<div><h4>Bantuan</h4><a href="../id/portal.html">Portal pelanggan</a><a href="../id/register.html">Buat akun</a><a href="../id/rates.html">Tarif</a><a href="../id/track.html">Lacak kiriman</a><a href="../id/help.html">Pusat Bantuan</a><a href="../id/faq.html">FAQ</a><a href="../id/surcharges-customs.html">Surcharge & kepabeanan</a><a href="../id/prohibited-items.html">Barang terlarang</a><a href="../id/terms.html">Syarat & Ketentuan</a><a href="../id/privacy.html">Kebijakan Privasi</a></div>
 <div><h4>Kontak</h4><p style="margin:5px 0">Jl. Bukit Golf Hijau Raya No. 18, Sentul City, Kab. Bogor 16810, Indonesia</p><a href="mailto:info@pcwfreight.com">info@pcwfreight.com</a><a href="https://wa.me/6281199896752?text=Halo%20PCW%2C%20saya%20ingin%20minta%20penawaran%20pengiriman%20internasional.">WhatsApp +62 811 9989 6752</a><p style="margin:5px 0">Senin–Jumat 08.30–17.30 · Sabtu 08.30–12.30 WIB</p></div>
 </div>
 <div class="legal"><span>© 2026 PT Prabaswara Catur Widantara</span><span><a style="display:inline" href="../id/terms.html">Syarat</a> · <a style="display:inline" href="../id/privacy.html">Privasi</a></span></div>

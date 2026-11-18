@@ -27,6 +27,7 @@ footer .brand.foot{color:#fff}
 .brand small{display:block;font-size:10.5px;font-weight:600;color:var(--muted);letter-spacing:.3px}
 nav.menu{display:flex;gap:4px;margin-left:auto}
 nav.menu a{padding:8px 11px;border-radius:8px;text-decoration:none;color:var(--ink);font-weight:550;font-size:15px}
+nav.menu a.show-m{display:none}
 nav.menu a:hover,nav.menu a[aria-current=page]{background:var(--blue-l);color:var(--blue-d)}
 .lang{font-size:13px;font-weight:700;border:1px solid var(--line);border-radius:8px;padding:6px 9px;text-decoration:none;color:var(--ink)}
 .burger{display:none;margin-left:auto;background:none;border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:18px}
@@ -35,6 +36,7 @@ nav.menu a:hover,nav.menu a[aria-current=page]{background:var(--blue-l);color:va
   nav.menu.open{display:flex}
   .burger{display:block}
   header .btn.hide-m{display:none}
+  nav.menu a.show-m{display:block}
 }
 
 /* buttons */

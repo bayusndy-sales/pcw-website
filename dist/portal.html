@@ -2,13 +2,13 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Member Portal | PCW Freight</title>
-<meta name="description" content="Member sign-in.">
+<title>Sign in | PCW Freight</title>
+<meta name="description" content="Customer sign-in.">
 <link rel="canonical" href="https://pcwfreight.com/portal.html"><link rel="alternate" hreflang="en" href="https://pcwfreight.com/portal.html"><link rel="alternate" hreflang="id" href="https://pcwfreight.com/id/portal.html">
-<meta property="og:title" content="Member Portal | PCW Freight"><meta property="og:description" content="Member sign-in."><meta property="og:type" content="website">
+<meta property="og:title" content="Sign in | PCW Freight"><meta property="og:description" content="Customer sign-in."><meta property="og:type" content="website">
 <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png"><link rel="icon" type="image/png" sizes="192x192" href="assets/icon-192.png"><link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
 <meta property="og:image" content="https://pcwfreight.com/assets/og-image.png"><meta name="theme-color" content="#004aad">
-<link rel="stylesheet" href="assets/style.css?v=6d914da3"><meta name="robots" content="noindex">
+<link rel="stylesheet" href="assets/style.css?v=00a0a754"><meta name="robots" content="noindex">
 </head>
 <body data-root="">
 <a class="skip" href="#main">Skip to content</a>
@@ -16,58 +16,19 @@
 <header class="nav"><div class="wrap">
 <a class="brand" href="index.html"><picture><source srcset="assets/logo.webp" type="image/webp"><img src="assets/logo.png" alt="PCW - Prabaswara Catur Widantara" width="44" height="47"></picture><span>PCW Freight<small>International Express</small></span></a>
 <button class="burger" aria-label="Menu">☰</button>
-<nav class="menu"><a href="international-express.html">Express</a><a href="rates.html">Rates</a><a href="book.html">Book</a><a href="track.html">Track</a><a href="other-services.html">Services</a><a href="member.html">Member</a><a href="about.html">About</a><a href="contact.html">Contact</a></nav>
+<nav class="menu"><a href="international-express.html">Express</a><a href="rates.html">Rates</a><a href="book.html">Book</a><a href="track.html">Track</a><a href="other-services.html">Services</a><a href="member.html">Member</a><a href="about.html">About</a><a href="contact.html">Contact</a><a class="show-m" href="portal.html">Sign in</a><a class="show-m" href="register.html">Register</a></nav>
 <a class="lang" href="id/portal.html" hreflang="id">ID</a>
-<a class="btn btn-p btn-sm hide-m" href="rates.html">Get a rate</a>
+<a class="btn btn-o btn-sm hide-m" href="portal.html">Sign in</a><a class="btn btn-p btn-sm hide-m" href="register.html">Register</a>
 </div></header>
 <main id="main">
-<div class="page-head"><div class="wrap"><div class="crumb"><a href="index.html">Home</a> / Portal</div><h1>Member portal</h1><p>Sign in to create shipment requests and follow your shipments.</p></div></div>
-<section class="s"><div class="wrap" style="max-width:960px">
-<div id="pMsg"></div>
-<form id="pLogin" class="box" style="max-width:460px"><h2 style="margin-top:0">Sign in</h2>
-<div><label class="req">Email</label><input name="email" type="email" required autocomplete="username"></div>
-<div style="margin-top:14px"><label class="req">Access code</label><input name="code" type="password" required autocomplete="current-password"></div>
-<p class="hint">Access is by invitation. To become a member, see the Member page or contact us.</p>
-<button class="btn btn-a" type="submit">Sign in</button></form>
-<div id="pApp" class="hidden">
-<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px"><h2 style="margin:0" id="pCo"></h2><div style="display:flex;gap:10px"><button id="pNew" class="btn btn-a" type="button">New shipment</button><button id="pOff" class="btn btn-o" type="button">Sign out</button></div></div>
-<form id="pForm" class="box hidden" style="margin-top:18px" novalidate><input class="hp" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
-<div class="row r2"><div><label class="req">Service</label><select name="product"><option value="Priority">PCW Priority Express</option><option value="Economy">PCW Economy Express</option></select></div>
-<div><label class="req">Destination country</label><select name="dest_country" required><option value="">…</option></select></div></div>
-<div class="row r3" style="margin-top:14px"><div><label>Type</label><select name="shipment_type"><option value="Parcel">Parcel</option><option value="Document">Document</option></select></div>
-<div><label class="req">Pieces</label><input name="pieces" type="number" required min="1" max="50" value="1"></div><div><label class="req">Total weight (kg)</label><input name="actual_kg" type="number" required min="0.1" step="0.1"></div></div>
-<div class="row r3" style="margin-top:14px"><div><label class="">Length (cm)</label><input name="l" type="number" min="0" step="0.1"></div><div><label class="">Width (cm)</label><input name="w" type="number" min="0" step="0.1"></div><div><label class="">Height (cm)</label><input name="h" type="number" min="0" step="0.1"></div></div>
-<h3 style="margin:22px 0 10px">Shipper and handover</h3>
-<div class="row r2"><div><label class="req">Contact name</label><input name="shipper_name" type="text" required ></div><div><label class="req">WhatsApp number</label><input name="shipper_whatsapp" type="tel" required placeholder="0811…"></div></div>
-<div class="row r2" style="margin-top:14px"><div><label>Handover</label><select name="pickup_or_dropoff"><option value="Pickup">Pickup</option><option value="Drop-off">Drop-off</option></select></div><div><label class="">Preferred pickup date</label><input name="pickup_date" type="date" ></div></div>
-<div style="margin-top:14px"><label>Pickup address (if Pickup)</label><textarea name="pickup_address"></textarea></div>
-<div class="row r2" style="margin-top:14px"><div><label class="">Pickup city</label><input name="pickup_city" type="text" ></div><div><label class="">Postcode</label><input name="pickup_postcode" type="text" ></div></div>
-<h3 style="margin:22px 0 10px">Receiver</h3>
-<div class="row r2"><div><label class="req">Receiver name</label><input name="consignee_name" type="text" required ></div><div><label class="">Company</label><input name="consignee_company" type="text" ></div></div>
-<div style="margin-top:14px"><label class="req">Receiver address (no PO Box)</label><textarea name="consignee_address" required></textarea></div>
-<div class="row r3" style="margin-top:14px"><div><label class="req">City</label><input name="consignee_city" type="text" required ></div><div><label class="">Postcode</label><input name="consignee_postcode" type="text" ></div><div><label class="req">Receiver phone</label><input name="consignee_phone" type="tel" required ></div></div>
-<div style="margin-top:14px"><div><label class="req">Receiver email</label><input name="consignee_email" type="email" required ></div></div>
-<h3 style="margin:22px 0 10px">Contents</h3>
-<div><label class="req">Contents description (in English)</label><textarea name="contents" required maxlength="200"></textarea></div>
-<div style="margin-top:14px"><div><label class="req">Total declared value (IDR)</label><input name="declared_value" type="text" required inputmode="numeric"></div></div>
-<label class="check" style="margin-top:14px"><input type="checkbox" name="opt_insurance"><span>Insurance</span></label>
-<label class="check"><input type="checkbox" name="opt_signature"><span>Signature on delivery</span></label>
-<label class="check"><input type="checkbox" name="opt_ddp"><span>DDP</span></label>
-<div style="margin-top:14px">
-<label class="check"><input type="checkbox" name="no_prohibited"><span>No <a href="prohibited-items.html" target="_blank">prohibited or restricted items</a>; description and value are true.</span></label>
-<label class="check"><input type="checkbox" name="terms_accepted"><span>I accept the <a href="terms.html" target="_blank">Terms &amp; Conditions</a>.</span></label>
-<label class="check"><input type="checkbox" name="privacy_consent"><span>I agree to the <a href="privacy.html" target="_blank">Privacy Policy</a>.</span></label></div>
-<button class="btn btn-a" type="submit" style="margin-top:18px;padding:15px">Send booking request</button>
-<p class="hint">Your price follows your member agreement. Our team confirms weight and price, then issues the AWB.</p></form>
-<div id="pOut" style="margin-top:16px"></div>
-<h3 style="margin:26px 0 10px">Your shipments</h3><div id="pList"></div>
-</div></div></section><script src="assets/portal.js?v=8e890c70" defer></script>
+<div class="page-head"><div class="wrap"><div class="crumb"><a href="index.html">Home</a> / Portal</div><h1>Customer portal</h1><p>Check rates, book, and track your shipments.</p></div></div>
+<section class="s"><div class="wrap" style="max-width:980px"><div id="pRoot"><noscript>JavaScript is required.</noscript></div></div></section><script src="assets/portal.js?v=3d6736be" defer></script>
 </main>
 <footer><div class="wrap">
 <div class="grid">
 <div><a class="brand foot" href="index.html"><span class="logo-tile"><img src="assets/logo.png" alt="PCW - Prabaswara Catur Widantara" width="40" height="43" loading="lazy"></span><span>PCW Freight</span></a><p style="margin-top:12px">PCW Freight is a brand of PT Prabaswara Catur Widantara.</p><p>Prices are not subject to VAT (PPN).</p></div>
 <div><h4>Services</h4><a href="international-express.html">PCW International Express</a><a href="priority-express.html">PCW Priority Express</a><a href="economy-express.html">PCW Economy Express</a><a href="other-services.html">Other services</a></div>
-<div><h4>Help</h4><a href="rates.html">Rates</a><a href="track.html">Track</a><a href="help.html">Help center</a><a href="faq.html">FAQ</a><a href="surcharges-customs.html">Surcharges & customs</a><a href="prohibited-items.html">Prohibited items</a><a href="terms.html">Terms & Conditions</a><a href="privacy.html">Privacy Policy</a></div>
+<div><h4>Help</h4><a href="portal.html">Customer portal</a><a href="register.html">Create account</a><a href="rates.html">Rates</a><a href="track.html">Track</a><a href="help.html">Help center</a><a href="faq.html">FAQ</a><a href="surcharges-customs.html">Surcharges & customs</a><a href="prohibited-items.html">Prohibited items</a><a href="terms.html">Terms & Conditions</a><a href="privacy.html">Privacy Policy</a></div>
 <div><h4>Contact</h4><p style="margin:5px 0">Jl. Bukit Golf Hijau Raya No. 18, Sentul City, Kab. Bogor 16810, Indonesia</p><a href="mailto:info@pcwfreight.com">info@pcwfreight.com</a><a href="https://wa.me/6281199896752?text=Hello%20PCW%2C%20I%20would%20like%20a%20shipping%20quotation.">WhatsApp +62 811 9989 6752</a><p style="margin:5px 0">Mon–Fri 08:30–17:30 · Sat 08:30–12:30 WIB</p></div>
 </div>
 <div class="legal"><span>© 2026 PT Prabaswara Catur Widantara</span><span><a style="display:inline" href="terms.html">Terms</a> · <a style="display:inline" href="privacy.html">Privacy</a></span></div>
