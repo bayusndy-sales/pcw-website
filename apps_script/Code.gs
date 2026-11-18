@@ -493,7 +493,7 @@ function onTrackingEdit(e) {
 
 function onOpen() {
   SpreadsheetApp.getUi().createMenu('PCW Website')
-    .addItem('Refresh website cache (after changing rates or settings)', 'refreshCache')
+    .addItem('Refresh website cache (after changing rates or settings)', 'refreshCache').addItem('Generate AWB for selected booking row', 'generateAwbForSelectedRow')
     .addToUi();
 }
 
