@@ -15,6 +15,11 @@ def wa(text):
     from urllib.parse import quote
     return f'https://wa.me/{WA}?text={quote(text)}'
 
+def qhint(E):
+    msg = ("Hello PCW, I would like a quote for a shipment to a destination that is not in your online list.\nDestination: \nWeight (kg): \nContents: " if E else "Halo PCW, saya ingin penawaran untuk pengiriman ke negara tujuan yang belum ada di daftar online.\nNegara tujuan: \nBerat (kg): \nIsi kiriman: ")
+    lab = "Destination not in the list? Request a quote on WhatsApp" if E else "Negara tujuan tidak ada di daftar? Minta penawaran lewat WhatsApp"
+    return f'<p class="hint" style="margin:6px 0 0"><a href="{wa(msg)}" target="_blank" rel="noopener">{lab}</a></p>'
+
 NAV = {
  'en': [('international-express.html','Express'),('rates.html','Rates'),('book.html','Book'),('track.html','Track'),('other-services.html','Services'),('member.html','Member'),('about.html','About'),('contact.html','Contact')],
  'id': [('international-express.html','Express'),('rates.html','Tarif'),('book.html','Booking'),('track.html','Lacak'),('other-services.html','Layanan'),('member.html','Member'),('about.html','Tentang'),('contact.html','Kontak')],
@@ -97,7 +102,7 @@ def rate_form(lang, quick=False):
 <div><label>{"Country / territory" if E else "Negara / wilayah"}</label><input value="Indonesia" disabled></div>
 <div class="row r2" style="margin-top:12px"><div><label for="r_oz">{"Postal code" if E else "Kode pos"}</label><input id="r_oz" name="o_zip" inputmode="numeric" maxlength="10" autocomplete="postal-code"></div><div><label for="r_oc">{"City" if E else "Kota"}</label><input id="r_oc" name="o_city" maxlength="60"></div></div></div>
 <div class="odc"><h4>{"To" if E else "Tujuan"}</h4>
-<div><label for="r_c" class="req">{"Country / territory" if E else "Negara / wilayah"}</label><select id="r_c" name="country" required><option value="">{"Loading…" if E else "Memuat…"}</option></select></div>
+<div><label for="r_c" class="req">{"Country / territory" if E else "Negara / wilayah"}</label><select id="r_c" name="country" required><option value="">{"Loading…" if E else "Memuat…"}</option></select>{qhint(E)}</div>
 <div class="row r2" style="margin-top:12px"><div><label for="r_dz">{"Postal code" if E else "Kode pos"}</label><input id="r_dz" name="d_zip" maxlength="12"></div><div><label for="r_dc">{"City" if E else "Kota"}</label><input id="r_dc" name="d_city" maxlength="60"></div></div></div>
 </div>
 <div style="margin-top:14px"><label class="req">{"What are you sending?" if E else "Apa yang dikirim?"}</label><div class="seg"><label><input type="radio" name="type" value="Parcel" checked><span>{"Parcel" if E else "Paket"}</span></label><label><input type="radio" name="type" value="Document"><span>{"Document" if E else "Dokumen"}</span></label></div></div>
@@ -111,7 +116,7 @@ def rate_form(lang, quick=False):
 </form>'''
     return f'''<form class="box" data-rate{" data-quick" if quick else ""}>
 <div class="row">
-<div><label for="r_c" class="req">{"Destination country" if E else "Negara tujuan"}</label><select id="r_c" name="country" required><option value="">{"Loading…" if E else "Memuat…"}</option></select></div>
+<div><label for="r_c" class="req">{"Destination country" if E else "Negara tujuan"}</label><select id="r_c" name="country" required><option value="">{"Loading…" if E else "Memuat…"}</option></select>{qhint(E)}</div>
 <div><label class="req">{"Shipment type" if E else "Jenis kiriman"}</label><div class="seg"><label><input type="radio" name="type" value="Parcel" checked><span>{"Parcel" if E else "Paket"}</span></label><label><input type="radio" name="type" value="Document"><span>{"Document" if E else "Dokumen"}</span></label></div></div>
 <div><label for="r_kg" class="req">{"Total actual weight (kg)" if E else "Total berat aktual (kg)"}</label><input id="r_kg" name="kg" type="number" min="0.1" step="0.1" required></div>
 <div style="display:flex;align-items:flex-end"><button class="btn btn-a" type="submit" style="width:100%">{"Get rate" if E else "Cek tarif"}</button></div>
@@ -244,7 +249,7 @@ def book(lang):
 <div class="bstp" data-bstep="1">
 <div class="row r2">
 <div><label for="b_prod" class="req">{"Service" if E else "Layanan"}</label><select id="b_prod" name="product" required><option value="Priority">PCW Priority Express</option><option value="Economy">PCW Economy Express</option></select></div>
-<div><label for="b_c" class="req">{"Destination country" if E else "Negara tujuan"}</label><select id="b_c" name="dest_country" required><option value="">…</option></select></div>
+<div><label for="b_c" class="req">{"Destination country" if E else "Negara tujuan"}</label><select id="b_c" name="dest_country" required><option value="">…</option></select>{qhint(E)}</div>
 </div>
 <div class="row" style="margin-top:14px">
 <div><label class="req">{"Type" if E else "Jenis"}</label><div class="seg"><label><input type="radio" name="shipment_type" value="Parcel" checked><span>{"Parcel" if E else "Paket"}</span></label><label><input type="radio" name="shipment_type" value="Document"><span>{"Document" if E else "Dokumen"}</span></label></div></div>

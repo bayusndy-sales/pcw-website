@@ -57,7 +57,9 @@ function ulGet_(b) {
   const ev = []; sh_(TABS.track).getDataRange().getValues().forEach(function (r, i) { if (i > 0 && String(r[0]).toUpperCase() === ref) ev.push({ time: dt_(r[1]) || String(r[1]), status: r[2], note: r[5], by: r[6] }); });
   const fo = fObj_(fr ? fr.v : null); const cst = num_(fo.Cost_IDR);
   const margin = u.role === 'SuperAdmin' ? { price: sell, cost: cst, gp: sell > 0 && cst > 0 ? Math.round(sell - cst) : null, pct: sell > 0 && cst > 0 ? Math.round((sell - cst) / sell * 1000) / 10 : null } : null;
-  return { ok: true, fields: f, ful: fo, events: ev, channels: FUL_CH, role: u.role, margin: margin };
+  const sg = chanSuggest_(f.Product, f.Dest_Country, num_(f.Chargeable_Kg));
+  if (u.role !== 'SuperAdmin') sg.costs = {};
+  return { ok: true, fields: f, ful: fo, events: ev, channels: FUL_CH, role: u.role, margin: margin, suggest: sg };
 }
 
 function ordSync_(ref, kv) {

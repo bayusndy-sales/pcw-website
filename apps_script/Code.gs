@@ -199,6 +199,7 @@ function rate_(p) {
     } else {
       row = pick_(prod, 'Parcel', country, cw);
     }
+    if (prod === 'Economy' && country === 'Timor-Leste' && cw >= 18) row = null;   // heavy Economy to Timor-Leste is quoted personally (margin floor)
     if (!row) { out.options.push({ product: prod, chargeable_kg: cw, quote: true }); return; }
     let base = row.b, fuel = row.f;
     if (prod === 'Priority' && cw > 30 && row.w > 0) {
