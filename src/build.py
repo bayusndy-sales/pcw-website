@@ -233,11 +233,17 @@ def book(lang):
     E = lang == 'en'
     def f(id_, name, label, typ='text', req=True, extra=''):
         return f'<div><label for="{id_}"{" class=req" if req else ""}>{label}</label><input id="{id_}" name="{name}" type="{typ}"{" required" if req else ""} {extra}></div>'
-    return head(lang, "Book a shipment" if E else "Booking pengiriman", "Send your shipment details. You receive a PCW reference at once; our team confirms weight, price and pickup before shipping." if E else "Kirim detail kiriman Anda. Nomor referensi PCW langsung terbit; tim kami mengonfirmasi berat, harga, dan pickup sebelum pengiriman.", "Book" if E else "Booking") + f'''
+    def nav(back=True, nxt=True, lab=None):
+        nb = f'<button class="btn btn-o" type="button" data-bback>{"Back" if E else "Kembali"}</button>' if back else ''
+        nn = f'<button class="btn btn-a" type="button" data-bnext>{lab}</button>' if nxt else ''
+        return f'<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:18px">{nb}{nn}</div>'
+    return head(lang, "Book a shipment" if E else "Booking pengiriman", "Four short steps. You receive a PCW reference at once; our team confirms weight, price and pickup before shipping." if E else "Empat langkah singkat. Nomor referensi PCW langsung terbit; tim kami mengonfirmasi berat, harga, dan pickup sebelum pengiriman.", "Book" if E else "Booking") + f"""
 <section class="s"><div class="wrap" style="max-width:900px">
-<form class="box" data-book novalidate>
+<form class="box" data-book data-bsteps novalidate>
 <input class="hp" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
-<fieldset><legend>1. {"Shipment" if E else "Kiriman"}</legend>
+<ol class="stepper"><li class="on" data-s="1"><b>1</b> {"Shipment" if E else "Kiriman"}</li><li data-s="2"><b>2</b> {"Addresses" if E else "Alamat"}</li><li data-s="3"><b>3</b> {"Contents" if E else "Isi kiriman"}</li><li data-s="4"><b>4</b> {"Review &amp; confirm" if E else "Tinjau &amp; konfirmasi"}</li></ol>
+
+<div class="bstp" data-bstep="1">
 <div class="row r2">
 <div><label for="b_prod" class="req">{"Service" if E else "Layanan"}</label><select id="b_prod" name="product" required><option value="Priority">PCW Priority Express</option><option value="Economy">PCW Economy Express</option></select></div>
 <div><label for="b_c" class="req">{"Destination country" if E else "Negara tujuan"}</label><select id="b_c" name="dest_country" required><option value="">…</option></select></div>
@@ -246,20 +252,21 @@ def book(lang):
 <div><label class="req">{"Type" if E else "Jenis"}</label><div class="seg"><label><input type="radio" name="shipment_type" value="Parcel" checked><span>{"Parcel" if E else "Paket"}</span></label><label><input type="radio" name="shipment_type" value="Document"><span>{"Document" if E else "Dokumen"}</span></label></div></div>
 {f("b_pcs","pieces","Pieces" if E else "Jumlah koli","number",True,'min="1" max="50" value="1"')}
 {f("b_kg","actual_kg","Total weight (kg)" if E else "Total berat (kg)","number",True,'min="0.1" step="0.1"')}
-{f("b_val","declared_value","Declared value (IDR)" if E else "Nilai barang (IDR)","text",False,'inputmode="numeric"')}
 </div>
 <div class="row r3" style="margin-top:14px">
 {f("b_l","l","Length per piece (cm)" if E else "Panjang per koli (cm)","number",False,'min="0" step="0.1"')}
 {f("b_w","w","Width (cm)" if E else "Lebar (cm)","number",False,'min="0" step="0.1"')}
 {f("b_h","h","Height (cm)" if E else "Tinggi (cm)","number",False,'min="0" step="0.1"')}
 </div>
-<div style="margin-top:14px"><label for="b_cont" class="req">{"Contents description" if E else "Deskripsi isi kiriman"}</label><textarea id="b_cont" name="contents" required placeholder="{"e.g. cotton T-shirts, 20 pcs" if E else "contoh: kaos katun, 20 pcs"}"></textarea></div>
-</fieldset>
+<p class="hint">{"Chargeable weight is the higher of actual weight and L × W × H / 5000. Final charges follow weighing and measuring." if E else "Berat tagih adalah yang lebih besar antara berat aktual dan P × L × T / 5000. Biaya final mengikuti hasil timbang dan ukur."}</p>
+{nav(False, True, "Next: addresses" if E else "Lanjut: alamat")}
+</div>
 
-<fieldset><legend>2. {"Shipper (you)" if E else "Pengirim (Anda)"}</legend>
+<div class="bstp hidden" data-bstep="2">
+<h3 style="margin:0 0 10px">{"Shipper (you)" if E else "Pengirim (Anda)"}</h3>
 <div class="row r2">{f("b_sn","shipper_name","Your full name" if E else "Nama lengkap Anda")}{f("b_sc","shipper_company","Company" if E else "Perusahaan","text",False)}</div>
 <div class="row r2" style="margin-top:14px">{f("b_se","shipper_email","Email","email")}{f("b_sw","shipper_whatsapp","WhatsApp number" if E else "Nomor WhatsApp","tel",True,'placeholder="0811…"')}</div>
-<div style="margin-top:14px"><label class="req">{"Pickup or drop-off" if E else "Pickup atau drop-off"}</label><div class="seg"><label><input type="radio" name="pickup_or_dropoff" value="Pickup" checked><span>Pickup</span></label><label><input type="radio" name="pickup_or_dropoff" value="Drop-off"><span>Drop-off</span></label></div></div>
+<div style="margin-top:14px"><label class="req">{"Handover: pickup or drop-off" if E else "Serah terima: pickup atau drop-off"}</label><div class="seg"><label><input type="radio" name="pickup_or_dropoff" value="Pickup" checked><span>Pickup</span></label><label><input type="radio" name="pickup_or_dropoff" value="Drop-off"><span>Drop-off</span></label></div></div>
 <div data-pickup style="margin-top:14px">
 <div><label for="b_pa" class="req">{"Pickup address" if E else "Alamat pickup"}</label><textarea id="b_pa" name="pickup_address" required></textarea></div>
 <div class="row r3" style="margin-top:14px">{f("b_pc","pickup_city","City" if E else "Kota")}{f("b_pp","pickup_postcode","Postcode" if E else "Kode pos","text",False)}{f("b_pd","pickup_date","Preferred date" if E else "Tanggal diinginkan","date",False)}</div>
@@ -267,24 +274,39 @@ def book(lang):
 <div data-eco-warn class="notice warn hidden">{"Economy pickup outside Jakarta is arranged by request." if E else "Pickup Economy di luar Jakarta diatur melalui permintaan."}
 <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px"><a class="btn btn-wa btn-sm" href="{wa("Hello PCW, I would like to request an Economy pickup outside Jakarta." if E else "Halo PCW, saya ingin meminta pickup Economy di luar Jakarta.")}">WhatsApp</a><a class="btn btn-o btn-sm" href="mailto:info@pcwfreight.com?subject={"Economy pickup request" if E else "Permintaan pickup Economy"}">Email</a></div>
 <div class="hint">{"Or choose Drop-off, or PCW Priority Express (pickup anywhere)." if E else "Atau pilih Drop-off, atau PCW Priority Express (pickup di mana saja)."}</div></div>
-</fieldset>
-
-<fieldset><legend>3. {"Receiver" if E else "Penerima"}</legend>
+<h3 style="margin:24px 0 10px">{"Receiver" if E else "Penerima"}</h3>
 <div class="row r2">{f("b_cn","consignee_name","Receiver name" if E else "Nama penerima")}{f("b_cc","consignee_company","Company" if E else "Perusahaan","text",False)}</div>
-<div style="margin-top:14px"><label for="b_ca" class="req">{"Receiver address" if E else "Alamat penerima"}</label><textarea id="b_ca" name="consignee_address" required></textarea></div>
-<div class="row" style="margin-top:14px">{f("b_cy","consignee_city","Receiver city" if E else "Kota penerima")}{f("b_cp","consignee_postcode","Postcode" if E else "Kode pos","text",False)}{f("b_ct","consignee_phone","Receiver phone" if E else "Telepon penerima","tel")}{f("b_ce","consignee_email","Email","email",False)}</div>
-</fieldset>
+<div style="margin-top:14px"><label for="b_ca" class="req">{"Receiver address (no PO Box)" if E else "Alamat penerima (bukan PO Box)"}</label><textarea id="b_ca" name="consignee_address" required></textarea></div>
+<div class="row" style="margin-top:14px">{f("b_cy","consignee_city","Receiver city" if E else "Kota penerima")}{f("b_cp","consignee_postcode","Postcode" if E else "Kode pos","text",False)}{f("b_ct","consignee_phone","Receiver phone" if E else "Telepon penerima","tel")}{f("b_ce","consignee_email","Receiver email" if E else "Email penerima","email")}</div>
+<p class="hint">{"The receiver’s email and phone are needed for delivery updates and customs. PO Box addresses cannot be delivered." if E else "Email dan telepon penerima diperlukan untuk info pengiriman dan bea cukai. Alamat PO Box tidak dapat dikirimi."}</p>
+{nav(True, True, "Next: contents" if E else "Lanjut: isi kiriman")}
+</div>
 
-<fieldset><legend>4. {"Confirm" if E else "Konfirmasi"}</legend>
+<div class="bstp hidden" data-bstep="3">
+<div><label for="b_cont" class="req">{"Contents description (in English)" if E else "Deskripsi isi kiriman (dalam bahasa Inggris)"}</label><textarea id="b_cont" name="contents" required maxlength="200" placeholder="{"e.g. cotton T-shirts, 20 pcs" if E else "contoh: cotton T-shirts, 20 pcs"}"></textarea></div>
+<div class="row r2" style="margin-top:14px">{f("b_val","declared_value","Total declared value (IDR)" if E else "Total nilai barang (IDR)","text",True,'inputmode="numeric"')}</div>
+<p class="hint">{"Be specific: customs may hold vague descriptions such as “gift” or “goods”. Gifts are treated as commercial shipments." if E else "Tulis spesifik: bea cukai dapat menahan deskripsi samar seperti “hadiah” atau “barang”. Hadiah diperlakukan sebagai kiriman komersial."}</p>
+<label class="req" style="margin-top:14px;display:block">{"Optional extras" if E else "Layanan tambahan (opsional)"}</label>
+<label class="check"><input type="checkbox" name="opt_insurance"><span>{"Insurance for the declared value" if E else "Asuransi untuk nilai barang yang dideklarasikan"}</span></label>
+<label class="check"><input type="checkbox" name="opt_signature"><span>{"Signature required on delivery" if E else "Tanda tangan penerima saat pengantaran"}</span></label>
+<label class="check"><input type="checkbox" name="opt_ddp"><span>{"Duties and taxes paid by me (DDP), so the receiver pays nothing" if E else "Bea masuk dan pajak saya yang bayar (DDP), penerima tidak membayar apa pun"}</span></label>
+<p class="hint">{"Extras are requests: our team confirms availability and price for your destination before shipping." if E else "Layanan tambahan bersifat permintaan: tim kami mengonfirmasi ketersediaan dan harga untuk tujuan Anda sebelum pengiriman."}</p>
+{nav(True, True, "Next: review" if E else "Lanjut: tinjau")}
+</div>
+
+<div class="bstp hidden" data-bstep="4">
+<div data-review class="notice info"></div>
+<div style="margin-top:14px">
 <label class="check"><input type="checkbox" name="no_prohibited"><span>{'My shipment contains no <a href="prohibited-items.html" target="_blank">prohibited or restricted items</a>, and the description and value are true.' if E else 'Kiriman saya tidak berisi <a href="prohibited-items.html" target="_blank">barang terlarang atau dibatasi</a>, dan deskripsi serta nilainya benar.'}</span></label>
 <label class="check"><input type="checkbox" name="terms_accepted"><span>{'I accept the <a href="terms.html" target="_blank">Terms &amp; Conditions</a>.' if E else 'Saya menyetujui <a href="terms.html" target="_blank">Syarat &amp; Ketentuan</a>.'}</span></label>
 <label class="check"><input type="checkbox" name="privacy_consent"><span>{'I agree that PCW uses my data and the receiver’s data to handle this shipment, as described in the <a href="privacy.html" target="_blank">Privacy Policy</a>.' if E else 'Saya setuju PCW menggunakan data saya dan data penerima untuk menangani kiriman ini, sesuai <a href="privacy.html" target="_blank">Kebijakan Privasi</a>.'}</span></label>
-</fieldset>
-<button class="btn btn-a" type="submit" style="width:100%;padding:15px">{"Send booking request" if E else "Kirim permintaan booking"}</button>
-<p class="hint" style="text-align:center">{"The price is recalculated from our published rates; our team confirms the final price before shipping." if E else "Harga dihitung ulang dari published rate kami; tim kami mengonfirmasi harga final sebelum pengiriman."}</p>
+</div>
+<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:18px"><button class="btn btn-o" type="button" data-bback>{"Back" if E else "Kembali"}</button><button class="btn btn-a" type="submit" style="flex:1;padding:15px">{"Confirm and send booking request" if E else "Konfirmasi dan kirim permintaan booking"}</button></div>
+<p class="hint" style="text-align:center">{"The price is recalculated from our published rates; our team confirms the final price after weighing, then issues your AWB." if E else "Harga dihitung ulang dari published rate kami; tim kami mengonfirmasi harga final setelah penimbangan, lalu menerbitkan AWB Anda."}</p>
+</div>
 </form>
 <div data-out style="margin-top:20px"></div>
-</div></section>'''
+</div></section>"""
 
 def track(lang):
     E = lang == 'en'

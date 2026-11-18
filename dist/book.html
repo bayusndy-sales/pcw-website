@@ -21,11 +21,13 @@
 <a class="btn btn-p btn-sm hide-m" href="rates.html">Get a rate</a>
 </div></header>
 <main id="main">
-<div class="page-head"><div class="wrap"><div class="crumb"><a href="index.html">Home</a> / Book</div><h1>Book a shipment</h1><p>Send your shipment details. You receive a PCW reference at once; our team confirms weight, price and pickup before shipping.</p></div></div>
+<div class="page-head"><div class="wrap"><div class="crumb"><a href="index.html">Home</a> / Book</div><h1>Book a shipment</h1><p>Four short steps. You receive a PCW reference at once; our team confirms weight, price and pickup before shipping.</p></div></div>
 <section class="s"><div class="wrap" style="max-width:900px">
-<form class="box" data-book novalidate>
+<form class="box" data-book data-bsteps novalidate>
 <input class="hp" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
-<fieldset><legend>1. Shipment</legend>
+<ol class="stepper"><li class="on" data-s="1"><b>1</b> Shipment</li><li data-s="2"><b>2</b> Addresses</li><li data-s="3"><b>3</b> Contents</li><li data-s="4"><b>4</b> Review &amp; confirm</li></ol>
+
+<div class="bstp" data-bstep="1">
 <div class="row r2">
 <div><label for="b_prod" class="req">Service</label><select id="b_prod" name="product" required><option value="Priority">PCW Priority Express</option><option value="Economy">PCW Economy Express</option></select></div>
 <div><label for="b_c" class="req">Destination country</label><select id="b_c" name="dest_country" required><option value="">…</option></select></div>
@@ -34,20 +36,21 @@
 <div><label class="req">Type</label><div class="seg"><label><input type="radio" name="shipment_type" value="Parcel" checked><span>Parcel</span></label><label><input type="radio" name="shipment_type" value="Document"><span>Document</span></label></div></div>
 <div><label for="b_pcs" class=req>Pieces</label><input id="b_pcs" name="pieces" type="number" required min="1" max="50" value="1"></div>
 <div><label for="b_kg" class=req>Total weight (kg)</label><input id="b_kg" name="actual_kg" type="number" required min="0.1" step="0.1"></div>
-<div><label for="b_val">Declared value (IDR)</label><input id="b_val" name="declared_value" type="text" inputmode="numeric"></div>
 </div>
 <div class="row r3" style="margin-top:14px">
 <div><label for="b_l">Length per piece (cm)</label><input id="b_l" name="l" type="number" min="0" step="0.1"></div>
 <div><label for="b_w">Width (cm)</label><input id="b_w" name="w" type="number" min="0" step="0.1"></div>
 <div><label for="b_h">Height (cm)</label><input id="b_h" name="h" type="number" min="0" step="0.1"></div>
 </div>
-<div style="margin-top:14px"><label for="b_cont" class="req">Contents description</label><textarea id="b_cont" name="contents" required placeholder="e.g. cotton T-shirts, 20 pcs"></textarea></div>
-</fieldset>
+<p class="hint">Chargeable weight is the higher of actual weight and L × W × H / 5000. Final charges follow weighing and measuring.</p>
+<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:18px"><button class="btn btn-a" type="button" data-bnext>Next: addresses</button></div>
+</div>
 
-<fieldset><legend>2. Shipper (you)</legend>
+<div class="bstp hidden" data-bstep="2">
+<h3 style="margin:0 0 10px">Shipper (you)</h3>
 <div class="row r2"><div><label for="b_sn" class=req>Your full name</label><input id="b_sn" name="shipper_name" type="text" required ></div><div><label for="b_sc">Company</label><input id="b_sc" name="shipper_company" type="text" ></div></div>
 <div class="row r2" style="margin-top:14px"><div><label for="b_se" class=req>Email</label><input id="b_se" name="shipper_email" type="email" required ></div><div><label for="b_sw" class=req>WhatsApp number</label><input id="b_sw" name="shipper_whatsapp" type="tel" required placeholder="0811…"></div></div>
-<div style="margin-top:14px"><label class="req">Pickup or drop-off</label><div class="seg"><label><input type="radio" name="pickup_or_dropoff" value="Pickup" checked><span>Pickup</span></label><label><input type="radio" name="pickup_or_dropoff" value="Drop-off"><span>Drop-off</span></label></div></div>
+<div style="margin-top:14px"><label class="req">Handover: pickup or drop-off</label><div class="seg"><label><input type="radio" name="pickup_or_dropoff" value="Pickup" checked><span>Pickup</span></label><label><input type="radio" name="pickup_or_dropoff" value="Drop-off"><span>Drop-off</span></label></div></div>
 <div data-pickup style="margin-top:14px">
 <div><label for="b_pa" class="req">Pickup address</label><textarea id="b_pa" name="pickup_address" required></textarea></div>
 <div class="row r3" style="margin-top:14px"><div><label for="b_pc" class=req>City</label><input id="b_pc" name="pickup_city" type="text" required ></div><div><label for="b_pp">Postcode</label><input id="b_pp" name="pickup_postcode" type="text" ></div><div><label for="b_pd">Preferred date</label><input id="b_pd" name="pickup_date" type="date" ></div></div>
@@ -55,21 +58,36 @@
 <div data-eco-warn class="notice warn hidden">Economy pickup outside Jakarta is arranged by request.
 <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px"><a class="btn btn-wa btn-sm" href="https://wa.me/6281199896752?text=Hello%20PCW%2C%20I%20would%20like%20to%20request%20an%20Economy%20pickup%20outside%20Jakarta.">WhatsApp</a><a class="btn btn-o btn-sm" href="mailto:info@pcwfreight.com?subject=Economy pickup request">Email</a></div>
 <div class="hint">Or choose Drop-off, or PCW Priority Express (pickup anywhere).</div></div>
-</fieldset>
-
-<fieldset><legend>3. Receiver</legend>
+<h3 style="margin:24px 0 10px">Receiver</h3>
 <div class="row r2"><div><label for="b_cn" class=req>Receiver name</label><input id="b_cn" name="consignee_name" type="text" required ></div><div><label for="b_cc">Company</label><input id="b_cc" name="consignee_company" type="text" ></div></div>
-<div style="margin-top:14px"><label for="b_ca" class="req">Receiver address</label><textarea id="b_ca" name="consignee_address" required></textarea></div>
-<div class="row" style="margin-top:14px"><div><label for="b_cy" class=req>Receiver city</label><input id="b_cy" name="consignee_city" type="text" required ></div><div><label for="b_cp">Postcode</label><input id="b_cp" name="consignee_postcode" type="text" ></div><div><label for="b_ct" class=req>Receiver phone</label><input id="b_ct" name="consignee_phone" type="tel" required ></div><div><label for="b_ce">Email</label><input id="b_ce" name="consignee_email" type="email" ></div></div>
-</fieldset>
+<div style="margin-top:14px"><label for="b_ca" class="req">Receiver address (no PO Box)</label><textarea id="b_ca" name="consignee_address" required></textarea></div>
+<div class="row" style="margin-top:14px"><div><label for="b_cy" class=req>Receiver city</label><input id="b_cy" name="consignee_city" type="text" required ></div><div><label for="b_cp">Postcode</label><input id="b_cp" name="consignee_postcode" type="text" ></div><div><label for="b_ct" class=req>Receiver phone</label><input id="b_ct" name="consignee_phone" type="tel" required ></div><div><label for="b_ce" class=req>Receiver email</label><input id="b_ce" name="consignee_email" type="email" required ></div></div>
+<p class="hint">The receiver’s email and phone are needed for delivery updates and customs. PO Box addresses cannot be delivered.</p>
+<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:18px"><button class="btn btn-o" type="button" data-bback>Back</button><button class="btn btn-a" type="button" data-bnext>Next: contents</button></div>
+</div>
 
-<fieldset><legend>4. Confirm</legend>
+<div class="bstp hidden" data-bstep="3">
+<div><label for="b_cont" class="req">Contents description (in English)</label><textarea id="b_cont" name="contents" required maxlength="200" placeholder="e.g. cotton T-shirts, 20 pcs"></textarea></div>
+<div class="row r2" style="margin-top:14px"><div><label for="b_val" class=req>Total declared value (IDR)</label><input id="b_val" name="declared_value" type="text" required inputmode="numeric"></div></div>
+<p class="hint">Be specific: customs may hold vague descriptions such as “gift” or “goods”. Gifts are treated as commercial shipments.</p>
+<label class="req" style="margin-top:14px;display:block">Optional extras</label>
+<label class="check"><input type="checkbox" name="opt_insurance"><span>Insurance for the declared value</span></label>
+<label class="check"><input type="checkbox" name="opt_signature"><span>Signature required on delivery</span></label>
+<label class="check"><input type="checkbox" name="opt_ddp"><span>Duties and taxes paid by me (DDP), so the receiver pays nothing</span></label>
+<p class="hint">Extras are requests: our team confirms availability and price for your destination before shipping.</p>
+<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:18px"><button class="btn btn-o" type="button" data-bback>Back</button><button class="btn btn-a" type="button" data-bnext>Next: review</button></div>
+</div>
+
+<div class="bstp hidden" data-bstep="4">
+<div data-review class="notice info"></div>
+<div style="margin-top:14px">
 <label class="check"><input type="checkbox" name="no_prohibited"><span>My shipment contains no <a href="prohibited-items.html" target="_blank">prohibited or restricted items</a>, and the description and value are true.</span></label>
 <label class="check"><input type="checkbox" name="terms_accepted"><span>I accept the <a href="terms.html" target="_blank">Terms &amp; Conditions</a>.</span></label>
 <label class="check"><input type="checkbox" name="privacy_consent"><span>I agree that PCW uses my data and the receiver’s data to handle this shipment, as described in the <a href="privacy.html" target="_blank">Privacy Policy</a>.</span></label>
-</fieldset>
-<button class="btn btn-a" type="submit" style="width:100%;padding:15px">Send booking request</button>
-<p class="hint" style="text-align:center">The price is recalculated from our published rates; our team confirms the final price before shipping.</p>
+</div>
+<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:18px"><button class="btn btn-o" type="button" data-bback>Back</button><button class="btn btn-a" type="submit" style="flex:1;padding:15px">Confirm and send booking request</button></div>
+<p class="hint" style="text-align:center">The price is recalculated from our published rates; our team confirms the final price after weighing, then issues your AWB.</p>
+</div>
 </form>
 <div data-out style="margin-top:20px"></div>
 </div></section>

@@ -150,10 +150,53 @@
     form.addEventListener('change', refresh); form.addEventListener('input', function (e) { if (e.target.name === 'pickup_city') refresh(); });
     refresh();
 
+    /* four-step flow: Shipment > Addresses > Contents > Review */
+    var bsteps = $all('.bstp', form), bdots = $all('.stepper li', form), cur = 1, ID = LANG === 'id';
+    function go(n) {
+      cur = n;
+      bsteps.forEach(function (p) { p.classList.toggle('hidden', p.getAttribute('data-bstep') !== String(n)); });
+      bdots.forEach(function (d) { var k = +d.getAttribute('data-s'); d.classList.toggle('on', k === n); d.classList.toggle('done', k < n); });
+      if (n === 4) review();
+      form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+    function stepOk(n) {
+      var pane = bsteps[n - 1], els = $all('input,select,textarea', pane).filter(function (el) { return el.required && !el.closest('.hidden'); });
+      for (var i = 0; i < els.length; i++) { if (!String(els[i].value).trim() || !els[i].checkValidity()) { els[i].reportValidity(); return false; } }
+      if (n === 2 && submit.disabled) return false;
+      return true;
+    }
+    function opts() {
+      var o = [];
+      if (form.elements.opt_insurance.checked) o.push('Insurance');
+      if (form.elements.opt_signature.checked) o.push('Signature');
+      if (form.elements.opt_ddp.checked) o.push('DDP');
+      return o;
+    }
+    function review() {
+      var e = form.elements, v = function (k) { return esc(String(e[k].value || '').trim() || '-'); }, rows = [
+        [ID ? 'Layanan' : 'Service', 'PCW ' + v('product') + ' Express'],
+        [ID ? 'Tujuan' : 'To', v('dest_country') + ' · ' + esc(e.shipment_type.value)],
+        [ID ? 'Berat / koli' : 'Weight / pieces', v('actual_kg') + ' kg · ' + v('pieces') + ' pcs'],
+        [ID ? 'Pengirim' : 'Shipper', v('shipper_name') + ' · ' + v('shipper_email') + ' · ' + v('shipper_whatsapp')],
+        [ID ? 'Serah terima' : 'Handover', esc(e.pickup_or_dropoff.value) + (e.pickup_or_dropoff.value === 'Pickup' ? ' · ' + v('pickup_city') : '')],
+        [ID ? 'Penerima' : 'Receiver', v('consignee_name') + ' · ' + v('consignee_city') + ' · ' + v('consignee_email')],
+        [ID ? 'Isi kiriman' : 'Contents', v('contents') + ' · IDR ' + v('declared_value')],
+        [ID ? 'Layanan tambahan' : 'Extras', esc(opts().join(', ') || '-')]
+      ];
+      $('[data-review]', form).innerHTML = '<strong>' + (ID ? 'Periksa sebelum mengirim' : 'Check before you send') + '</strong><table style="width:100%;margin-top:8px">' +
+        rows.map(function (r) { return '<tr><td style="padding:4px 10px 4px 0;color:var(--muted);white-space:nowrap;vertical-align:top">' + r[0] + '</td><td style="padding:4px 0">' + r[1] + '</td></tr>'; }).join('') + '</table>';
+    }
+    $all('[data-bnext]', form).forEach(function (b) { b.addEventListener('click', function () { if (stepOk(cur)) go(cur + 1); }); });
+    $all('[data-bback]', form).forEach(function (b) { b.addEventListener('click', function () { go(cur - 1); }); });
+    if (q.country && q.kg) go(2);
+
     form.addEventListener('submit', function (ev) {
       ev.preventDefault();
+      if (cur < 4) { if (stepOk(cur)) go(cur + 1); return; }
       var f = new FormData(form), b = { action: 'book', lang: LANG };
       f.forEach(function (v, k) { b[k] = typeof v === 'string' ? v.trim() : v; });
+      if (opts().length) b.contents = (b.contents + ' | Options: ' + opts().join(', ')).slice(0, 295);
+      ['opt_insurance', 'opt_signature', 'opt_ddp'].forEach(function (k) { delete b[k]; });
       b.terms_accepted = form.elements.terms_accepted.checked;
       b.privacy_consent = form.elements.privacy_consent.checked;
       b.no_prohibited = form.elements.no_prohibited.checked;
@@ -177,7 +220,9 @@
           (r.pickup_outside_jakarta ? '<div class="notice warn">' + (LANG === 'id' ? 'Biaya pickup dari kota Anda akan kami konfirmasi sebelum pengiriman.' : 'We will confirm the pickup cost from your city before shipping.') + '</div>' : '') +
           '<p>' + (LANG === 'id' ? 'Status: menunggu konfirmasi tim kami. Konfirmasi juga dikirim ke email Anda.' : 'Status: awaiting confirmation by our team. A confirmation was also sent to your email.') + '</p>' +
           '<p style="display:flex;gap:10px;flex-wrap:wrap"><a class="btn btn-wa" href="' + waLink(waText) + '">' + (LANG === 'id' ? 'Kirim detail lewat WhatsApp' : 'Send details on WhatsApp') + '</a>' +
-          '<a class="btn btn-o" href="' + trackUrl + '">' + (LANG === 'id' ? 'Lacak kiriman ini' : 'Track this shipment') + '</a></p></div>';
+          '<a class="btn btn-o" href="' + trackUrl + '">' + (LANG === 'id' ? 'Lacak kiriman ini' : 'Track this shipment') + '</a>' +
+          '<button class="btn btn-o" type="button" onclick="window.print()">' + (LANG === 'id' ? 'Cetak ringkasan booking' : 'Print booking summary') + '</button></p>' +
+          '<p class="hint">' + (LANG === 'id' ? 'Langkah berikutnya: tim kami menimbang dan mengonfirmasi harga final, lalu menerbitkan AWB untuk ditempel pada kiriman.' : 'Next: our team weighs and confirms the final price, then issues the AWB to attach to your parcel.') + '</p></div>';
         out.scrollIntoView({ behavior: 'smooth' });
       }).catch(function () { submit.disabled = false; submit.innerHTML = label; out.innerHTML = '<div class="notice err">' + T.err + '</div>'; });
     });

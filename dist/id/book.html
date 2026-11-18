@@ -21,11 +21,13 @@
 <a class="btn btn-p btn-sm hide-m" href="../id/rates.html">Cek tarif</a>
 </div></header>
 <main id="main">
-<div class="page-head"><div class="wrap"><div class="crumb"><a href="../id/index.html">Beranda</a> / Booking</div><h1>Booking pengiriman</h1><p>Kirim detail kiriman Anda. Nomor referensi PCW langsung terbit; tim kami mengonfirmasi berat, harga, dan pickup sebelum pengiriman.</p></div></div>
+<div class="page-head"><div class="wrap"><div class="crumb"><a href="../id/index.html">Beranda</a> / Booking</div><h1>Booking pengiriman</h1><p>Empat langkah singkat. Nomor referensi PCW langsung terbit; tim kami mengonfirmasi berat, harga, dan pickup sebelum pengiriman.</p></div></div>
 <section class="s"><div class="wrap" style="max-width:900px">
-<form class="box" data-book novalidate>
+<form class="box" data-book data-bsteps novalidate>
 <input class="hp" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
-<fieldset><legend>1. Kiriman</legend>
+<ol class="stepper"><li class="on" data-s="1"><b>1</b> Kiriman</li><li data-s="2"><b>2</b> Alamat</li><li data-s="3"><b>3</b> Isi kiriman</li><li data-s="4"><b>4</b> Tinjau &amp; konfirmasi</li></ol>
+
+<div class="bstp" data-bstep="1">
 <div class="row r2">
 <div><label for="b_prod" class="req">Layanan</label><select id="b_prod" name="product" required><option value="Priority">PCW Priority Express</option><option value="Economy">PCW Economy Express</option></select></div>
 <div><label for="b_c" class="req">Negara tujuan</label><select id="b_c" name="dest_country" required><option value="">…</option></select></div>
@@ -34,20 +36,21 @@
 <div><label class="req">Jenis</label><div class="seg"><label><input type="radio" name="shipment_type" value="Parcel" checked><span>Paket</span></label><label><input type="radio" name="shipment_type" value="Document"><span>Dokumen</span></label></div></div>
 <div><label for="b_pcs" class=req>Jumlah koli</label><input id="b_pcs" name="pieces" type="number" required min="1" max="50" value="1"></div>
 <div><label for="b_kg" class=req>Total berat (kg)</label><input id="b_kg" name="actual_kg" type="number" required min="0.1" step="0.1"></div>
-<div><label for="b_val">Nilai barang (IDR)</label><input id="b_val" name="declared_value" type="text" inputmode="numeric"></div>
 </div>
 <div class="row r3" style="margin-top:14px">
 <div><label for="b_l">Panjang per koli (cm)</label><input id="b_l" name="l" type="number" min="0" step="0.1"></div>
 <div><label for="b_w">Lebar (cm)</label><input id="b_w" name="w" type="number" min="0" step="0.1"></div>
 <div><label for="b_h">Tinggi (cm)</label><input id="b_h" name="h" type="number" min="0" step="0.1"></div>
 </div>
-<div style="margin-top:14px"><label for="b_cont" class="req">Deskripsi isi kiriman</label><textarea id="b_cont" name="contents" required placeholder="contoh: kaos katun, 20 pcs"></textarea></div>
-</fieldset>
+<p class="hint">Berat tagih adalah yang lebih besar antara berat aktual dan P × L × T / 5000. Biaya final mengikuti hasil timbang dan ukur.</p>
+<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:18px"><button class="btn btn-a" type="button" data-bnext>Lanjut: alamat</button></div>
+</div>
 
-<fieldset><legend>2. Pengirim (Anda)</legend>
+<div class="bstp hidden" data-bstep="2">
+<h3 style="margin:0 0 10px">Pengirim (Anda)</h3>
 <div class="row r2"><div><label for="b_sn" class=req>Nama lengkap Anda</label><input id="b_sn" name="shipper_name" type="text" required ></div><div><label for="b_sc">Perusahaan</label><input id="b_sc" name="shipper_company" type="text" ></div></div>
 <div class="row r2" style="margin-top:14px"><div><label for="b_se" class=req>Email</label><input id="b_se" name="shipper_email" type="email" required ></div><div><label for="b_sw" class=req>Nomor WhatsApp</label><input id="b_sw" name="shipper_whatsapp" type="tel" required placeholder="0811…"></div></div>
-<div style="margin-top:14px"><label class="req">Pickup atau drop-off</label><div class="seg"><label><input type="radio" name="pickup_or_dropoff" value="Pickup" checked><span>Pickup</span></label><label><input type="radio" name="pickup_or_dropoff" value="Drop-off"><span>Drop-off</span></label></div></div>
+<div style="margin-top:14px"><label class="req">Serah terima: pickup atau drop-off</label><div class="seg"><label><input type="radio" name="pickup_or_dropoff" value="Pickup" checked><span>Pickup</span></label><label><input type="radio" name="pickup_or_dropoff" value="Drop-off"><span>Drop-off</span></label></div></div>
 <div data-pickup style="margin-top:14px">
 <div><label for="b_pa" class="req">Alamat pickup</label><textarea id="b_pa" name="pickup_address" required></textarea></div>
 <div class="row r3" style="margin-top:14px"><div><label for="b_pc" class=req>Kota</label><input id="b_pc" name="pickup_city" type="text" required ></div><div><label for="b_pp">Kode pos</label><input id="b_pp" name="pickup_postcode" type="text" ></div><div><label for="b_pd">Tanggal diinginkan</label><input id="b_pd" name="pickup_date" type="date" ></div></div>
@@ -55,21 +58,36 @@
 <div data-eco-warn class="notice warn hidden">Pickup Economy di luar Jakarta diatur melalui permintaan.
 <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px"><a class="btn btn-wa btn-sm" href="https://wa.me/6281199896752?text=Halo%20PCW%2C%20saya%20ingin%20meminta%20pickup%20Economy%20di%20luar%20Jakarta.">WhatsApp</a><a class="btn btn-o btn-sm" href="mailto:info@pcwfreight.com?subject=Permintaan pickup Economy">Email</a></div>
 <div class="hint">Atau pilih Drop-off, atau PCW Priority Express (pickup di mana saja).</div></div>
-</fieldset>
-
-<fieldset><legend>3. Penerima</legend>
+<h3 style="margin:24px 0 10px">Penerima</h3>
 <div class="row r2"><div><label for="b_cn" class=req>Nama penerima</label><input id="b_cn" name="consignee_name" type="text" required ></div><div><label for="b_cc">Perusahaan</label><input id="b_cc" name="consignee_company" type="text" ></div></div>
-<div style="margin-top:14px"><label for="b_ca" class="req">Alamat penerima</label><textarea id="b_ca" name="consignee_address" required></textarea></div>
-<div class="row" style="margin-top:14px"><div><label for="b_cy" class=req>Kota penerima</label><input id="b_cy" name="consignee_city" type="text" required ></div><div><label for="b_cp">Kode pos</label><input id="b_cp" name="consignee_postcode" type="text" ></div><div><label for="b_ct" class=req>Telepon penerima</label><input id="b_ct" name="consignee_phone" type="tel" required ></div><div><label for="b_ce">Email</label><input id="b_ce" name="consignee_email" type="email" ></div></div>
-</fieldset>
+<div style="margin-top:14px"><label for="b_ca" class="req">Alamat penerima (bukan PO Box)</label><textarea id="b_ca" name="consignee_address" required></textarea></div>
+<div class="row" style="margin-top:14px"><div><label for="b_cy" class=req>Kota penerima</label><input id="b_cy" name="consignee_city" type="text" required ></div><div><label for="b_cp">Kode pos</label><input id="b_cp" name="consignee_postcode" type="text" ></div><div><label for="b_ct" class=req>Telepon penerima</label><input id="b_ct" name="consignee_phone" type="tel" required ></div><div><label for="b_ce" class=req>Email penerima</label><input id="b_ce" name="consignee_email" type="email" required ></div></div>
+<p class="hint">Email dan telepon penerima diperlukan untuk info pengiriman dan bea cukai. Alamat PO Box tidak dapat dikirimi.</p>
+<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:18px"><button class="btn btn-o" type="button" data-bback>Kembali</button><button class="btn btn-a" type="button" data-bnext>Lanjut: isi kiriman</button></div>
+</div>
 
-<fieldset><legend>4. Konfirmasi</legend>
+<div class="bstp hidden" data-bstep="3">
+<div><label for="b_cont" class="req">Deskripsi isi kiriman (dalam bahasa Inggris)</label><textarea id="b_cont" name="contents" required maxlength="200" placeholder="contoh: cotton T-shirts, 20 pcs"></textarea></div>
+<div class="row r2" style="margin-top:14px"><div><label for="b_val" class=req>Total nilai barang (IDR)</label><input id="b_val" name="declared_value" type="text" required inputmode="numeric"></div></div>
+<p class="hint">Tulis spesifik: bea cukai dapat menahan deskripsi samar seperti “hadiah” atau “barang”. Hadiah diperlakukan sebagai kiriman komersial.</p>
+<label class="req" style="margin-top:14px;display:block">Layanan tambahan (opsional)</label>
+<label class="check"><input type="checkbox" name="opt_insurance"><span>Asuransi untuk nilai barang yang dideklarasikan</span></label>
+<label class="check"><input type="checkbox" name="opt_signature"><span>Tanda tangan penerima saat pengantaran</span></label>
+<label class="check"><input type="checkbox" name="opt_ddp"><span>Bea masuk dan pajak saya yang bayar (DDP), penerima tidak membayar apa pun</span></label>
+<p class="hint">Layanan tambahan bersifat permintaan: tim kami mengonfirmasi ketersediaan dan harga untuk tujuan Anda sebelum pengiriman.</p>
+<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:18px"><button class="btn btn-o" type="button" data-bback>Kembali</button><button class="btn btn-a" type="button" data-bnext>Lanjut: tinjau</button></div>
+</div>
+
+<div class="bstp hidden" data-bstep="4">
+<div data-review class="notice info"></div>
+<div style="margin-top:14px">
 <label class="check"><input type="checkbox" name="no_prohibited"><span>Kiriman saya tidak berisi <a href="prohibited-items.html" target="_blank">barang terlarang atau dibatasi</a>, dan deskripsi serta nilainya benar.</span></label>
 <label class="check"><input type="checkbox" name="terms_accepted"><span>Saya menyetujui <a href="terms.html" target="_blank">Syarat &amp; Ketentuan</a>.</span></label>
 <label class="check"><input type="checkbox" name="privacy_consent"><span>Saya setuju PCW menggunakan data saya dan data penerima untuk menangani kiriman ini, sesuai <a href="privacy.html" target="_blank">Kebijakan Privasi</a>.</span></label>
-</fieldset>
-<button class="btn btn-a" type="submit" style="width:100%;padding:15px">Kirim permintaan booking</button>
-<p class="hint" style="text-align:center">Harga dihitung ulang dari published rate kami; tim kami mengonfirmasi harga final sebelum pengiriman.</p>
+</div>
+<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:18px"><button class="btn btn-o" type="button" data-bback>Kembali</button><button class="btn btn-a" type="submit" style="flex:1;padding:15px">Konfirmasi dan kirim permintaan booking</button></div>
+<p class="hint" style="text-align:center">Harga dihitung ulang dari published rate kami; tim kami mengonfirmasi harga final setelah penimbangan, lalu menerbitkan AWB Anda.</p>
+</div>
 </form>
 <div data-out style="margin-top:20px"></div>
 </div></section>
