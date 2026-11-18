@@ -62,6 +62,34 @@ if ($att) {
   $headers .= "Content-Type: text/plain; charset=UTF-8\r\nContent-Transfer-Encoding: base64";
   $msg = chunk_split(base64_encode($body));
 }
-if (!function_exists('mail')) out(['ok' => false, 'error' => 'no_mail_fn', 'php' => PHP_VERSION], 500);
-$ok = mail(implode(', ', $to), $enc($subject), $msg, $headers, '-f' . FROM);
-out(['ok' => (bool)$ok, 'php' => PHP_VERSION], $ok ? 200 : 502);
+// Send through the server's own mail server (PHP mail() is disabled on this host).
+$data = 'To: ' . implode(', ', $to) . "\r\nSubject: " . $enc($subject) . "\r\nDate: " . date('r') . "\r\nMessage-ID: <" . md5(uniqid('', true)) . "@pcwfreight.com>\r\n" . $headers . "\r\n\r\n" . $msg;
+$res = smtp_send(FROM, $to, $data);
+out(['ok' => $res === true, 'error' => $res === true ? null : $res], $res === true ? 200 : 502);
+
+function smtp_send($from, $to, $data) {
+  $creds = @file_get_contents('/home/pcws3397/.pcw_smtp'); // optional "user\npass" for AUTH LOGIN
+  $tries = [['tcp://127.0.0.1', 25], ['tcp://localhost', 587]];
+  $last = '';
+  foreach ($tries as $t) {
+    $fp = @stream_socket_client($t[0] . ':' . $t[1], $en, $es, 10);
+    if (!$fp) { $last = 'connect ' . $t[1] . ' ' . $es; continue; }
+    stream_set_timeout($fp, 20);
+    $r = function () use ($fp) { $o = ''; while (($l = fgets($fp, 1024)) !== false) { $o .= $l; if (strlen($l) < 4 || $l[3] === ' ') break; } return $o; };
+    $c = function ($cmd, $ok) use ($fp, $r) { fwrite($fp, $cmd . "\r\n"); $o = $r(); return (strpos($o, $ok) === 0) ? true : trim($o); };
+    $g = $r(); if (strpos($g, '220') !== 0) { $last = 'greet ' . trim($g); fclose($fp); continue; }
+    $e = $c('EHLO pcwfreight.com', '250'); if ($e !== true) { $last = 'ehlo ' . $e; fclose($fp); continue; }
+    if ($creds) {
+      list($u, $p) = array_pad(explode("\n", trim($creds), 2), 2, '');
+      if ($c('AUTH LOGIN', '334') === true && $c(base64_encode($u), '334') === true) { $a = $c(base64_encode($p), '235'); if ($a !== true) { $last = 'auth ' . $a; } }
+    }
+    $m = $c('MAIL FROM:<' . $from . '>', '250'); if ($m !== true) { $last = 'from ' . $m; $c('QUIT', '221'); fclose($fp); continue; }
+    foreach ($to as $rcpt) { $x = $c('RCPT TO:<' . $rcpt . '>', '25'); if ($x !== true) { $last = 'rcpt ' . $x; $c('QUIT', '221'); fclose($fp); continue 2; } }
+    if (($d = $c('DATA', '354')) !== true) { $last = 'data ' . $d; fclose($fp); continue; }
+    $body = preg_replace('/^\./m', '..', str_replace(["\r\n", "\r"], "\n", $data));
+    $body = str_replace("\n", "\r\n", $body);
+    $f = $c($body . "\r\n.", '250'); $c('QUIT', '221'); fclose($fp);
+    if ($f === true) return true; $last = 'end ' . $f;
+  }
+  return substr($last, 0, 200);
+}
