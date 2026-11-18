@@ -7,6 +7,10 @@ TERMS_MD = sys.argv[1] if len(sys.argv) > 1 else ''
 WA = '6281199896752'
 SITE = 'https://pcwfreight.com/'
 
+import hashlib as _h, os as _o
+_AD = _o.path.join(_o.path.dirname(_o.path.abspath(__file__)), 'assets')
+ASSET_V = {n: _h.md5(open(_o.path.join(_AD, n), 'rb').read()).hexdigest()[:8] for n in ('style.css', 'app.js')}
+
 def wa(text):
     from urllib.parse import quote
     return f'https://wa.me/{WA}?text={quote(text)}'
@@ -47,7 +51,7 @@ def page(lang, slug, title, desc, body, head_extra=''):
 <meta property="og:title" content="{html.escape(title)}"><meta property="og:description" content="{html.escape(desc)}"><meta property="og:type" content="website">
 <link rel="icon" type="image/png" sizes="32x32" href="{root}assets/favicon-32.png"><link rel="icon" type="image/png" sizes="192x192" href="{root}assets/icon-192.png"><link rel="apple-touch-icon" href="{root}assets/apple-touch-icon.png">
 <meta property="og:image" content="{SITE}assets/og-image.png"><meta name="theme-color" content="#004aad">
-<link rel="stylesheet" href="{root}assets/style.css">{head_extra}
+<link rel="stylesheet" href="{root}assets/style.css?v={ASSET_V["style.css"]}">{head_extra}
 </head>
 <body data-root="{root}">
 <a class="skip" href="#main">{t['skip']}</a>
@@ -72,7 +76,7 @@ def page(lang, slug, title, desc, body, head_extra=''):
 <div class="legal"><span>© 2026 PT Prabaswara Catur Widantara</span><span><a style="display:inline" href="{base}terms.html">{'Terms' if lang=='en' else 'Syarat'}</a> · <a style="display:inline" href="{base}privacy.html">{'Privacy' if lang=='en' else 'Privasi'}</a></span></div>
 </div></footer>
 <a class="wa-float" href="{wa(t['wa_txt'])}" aria-label="WhatsApp">{WA_SVG}<span>{t['chat']}</span></a>
-<script src="{root}assets/app.js" defer></script>
+<script src="{root}assets/app.js?v={ASSET_V["app.js"]}" defer></script>
 </body></html>'''
 
 def head(lang, title, sub, crumb):
