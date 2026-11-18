@@ -136,7 +136,9 @@ function demandCode_(country) {
 function dateStr_(v) {
   if (!v) return '';
   if (v instanceof Date) return Utilities.formatDate(v, TZ, 'yyyy-MM-dd');
-  return String(v).slice(0, 10);
+  const sv = String(v);
+  if (sv.indexOf('T') > 0) { const d = new Date(sv); if (!isNaN(d)) return Utilities.formatDate(d, TZ, 'yyyy-MM-dd'); }
+  return sv.slice(0, 10);
 }
 function demandPerKg_(country, s) {
   if (String(s.Demand_On || 'Y').toUpperCase() === 'N') return { rate: 0 };
