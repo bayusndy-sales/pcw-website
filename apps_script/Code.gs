@@ -257,12 +257,12 @@ function book_(b) {
   const required = {
     product: prod, dest_country: b.dest_country, contents: b.contents, shipper_name: b.shipper_name,
     shipper_email: email, shipper_whatsapp: wa, consignee_name: b.consignee_name,
-    consignee_address: b.consignee_address, consignee_city: b.consignee_city, consignee_phone: b.consignee_phone
+    consignee_address: b.consignee_address, consignee_city: b.consignee_city, consignee_phone: b.consignee_phone, consignee_email: b.consignee_email, declared_value: b.declared_value
   };
   const missing = Object.keys(required).filter(function (k) { return !String(required[k] || '').trim(); });
   if (pickup === 'Pickup' && !String(b.pickup_address || '').trim()) missing.push('pickup_address');
   if (missing.length) return { ok: false, error: 'missing_fields', fields: missing };
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return { ok: false, error: 'invalid_email' };
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(b.consignee_email).trim())) return { ok: false, error: 'invalid_email' }; if (/p\.?\s?o\.?\s?box/i.test(String(b.consignee_address))) return { ok: false, error: 'po_box_not_accepted' };
   if (wa.length < 9 || wa.length > 15) return { ok: false, error: 'invalid_whatsapp' };
   if (b.terms_accepted !== true || b.privacy_consent !== true || b.no_prohibited !== true) {
     return { ok: false, error: 'consent_required' };
@@ -287,7 +287,7 @@ function book_(b) {
     const now = new Date();
     const dims = (num_(b.l) > 0 && num_(b.w) > 0 && num_(b.h) > 0)
       ? r.pieces + ' x ' + num_(b.l) + 'x' + num_(b.w) + 'x' + num_(b.h) + ' cm' : '';
-    const notes = ['Web booking (published rate estimate)'];
+    const notes = ['Web booking (published rate estimate)']; const xm = String(b.contents || '').match(/\| Options: (.*)$/); if (xm) notes.push('EXTRAS REQUESTED: ' + xm[1] + ' (confirm availability and price)');
     if (outside) notes.push('PICKUP OUTSIDE JAKARTA: confirm pickup cost');
     if (quote) notes.push('ABOVE PUBLISHED TABLE: quote needed');
 

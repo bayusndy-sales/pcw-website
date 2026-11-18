@@ -208,7 +208,7 @@
       apiPost(b).then(function (r) {
         submit.disabled = false; submit.innerHTML = label;
         if (!r.ok) {
-          var m = { missing_fields: T.missing + (r.fields || []).join(', '), consent_required: T.consent, economy_pickup_outside_jakarta: T.ecoOut, too_many_requests: T.tooMany, invalid_email: T.invEmail, invalid_whatsapp: T.invWa, country_not_listed: T.notListed }[r.error] || T.err;
+          var m = { missing_fields: T.missing + (r.fields || []).join(', '), consent_required: T.consent, economy_pickup_outside_jakarta: T.ecoOut, too_many_requests: T.tooMany, invalid_email: T.invEmail, invalid_whatsapp: T.invWa, country_not_listed: T.notListed, po_box_not_accepted: (LANG === 'id' ? 'Alamat PO Box tidak dapat dikirimi. Mohon isi alamat jalan lengkap.' : 'PO Box addresses cannot be delivered. Please enter a full street address.') }[r.error] || T.err;
           out.innerHTML = '<div class="notice err">' + esc(m) + '</div>'; out.scrollIntoView({ behavior: 'smooth' }); return;
         }
         form.classList.add('hidden');
