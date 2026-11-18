@@ -22,19 +22,26 @@
 </div></header>
 <main id="main">
 <div class="page-head"><div class="wrap"><div class="crumb"><a href="index.html">Home</a> / Rates</div><h1>Shipping rates</h1><p>Published rates for PCW Priority Express and PCW Economy Express. Business accounts get lower rates.</p></div></div>
-<section class="s"><div class="wrap"><form class="box" data-rate>
-<div class="row">
-<div><label for="r_c" class="req">Destination country</label><select id="r_c" name="country" required><option value="">Loading…</option></select></div>
-<div><label class="req">Shipment type</label><div class="seg"><label><input type="radio" name="type" value="Parcel" checked><span>Parcel</span></label><label><input type="radio" name="type" value="Document"><span>Document</span></label></div></div>
-<div><label for="r_kg" class="req">Total actual weight (kg)</label><input id="r_kg" name="kg" type="number" min="0.1" step="0.1" required></div>
-<div style="display:flex;align-items:flex-end"><button class="btn btn-a" type="submit" style="width:100%">Get rate</button></div>
+<section class="s"><div class="wrap"><form class="box" data-rate data-steps>
+<ol class="stepper"><li class="on" data-s="1"><b>1</b> Destination</li><li data-s="2"><b>2</b> Package</li><li data-s="3"><b>3</b> Rates</li></ol>
+<div class="stp" data-step="1">
+<div class="row r2">
+<div><label for="r_c" class="req">Where is it going?</label><select id="r_c" name="country" required><option value="">Loading…</option></select></div>
+<div><label class="req">What are you sending?</label><div class="seg"><label><input type="radio" name="type" value="Parcel" checked><span>Parcel</span></label><label><input type="radio" name="type" value="Document"><span>Document</span></label></div></div>
 </div>
-<div class="row" style="margin-top:14px">
+<div style="margin-top:16px"><button class="btn btn-a" type="button" data-next>Next: package details</button></div>
+</div>
+<div class="stp hidden" data-step="2">
+<div class="row r5">
+<div><label for="r_kg" class="req">Total actual weight (kg)</label><input id="r_kg" name="kg" type="number" min="0.1" step="0.1" required></div>
 <div><label for="r_pcs">Pieces</label><input id="r_pcs" name="pieces" type="number" min="1" max="50" value="1"></div>
 <div><label for="r_l">Length (cm)</label><input id="r_l" name="l" type="number" min="0" step="0.1" placeholder="optional"></div>
 <div><label for="r_w">Width (cm)</label><input id="r_w" name="w" type="number" min="0" step="0.1"></div>
 <div><label for="r_h">Height (cm)</label><input id="r_h" name="h" type="number" min="0" step="0.1"></div>
-</div><p class="hint">Dimensions are per piece. Chargeable weight is the higher of actual weight and L × W × H / 5000.</p>
+</div>
+<p class="hint">Dimensions are per piece. Chargeable weight is the higher of actual weight and L × W × H / 5000.</p>
+<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:6px"><button class="btn btn-o" type="button" data-back>Back</button><button class="btn btn-a" type="submit">Show rates</button></div>
+</div>
 </form><div data-out style="margin-top:20px"></div>
 <div class="notice info" style="margin-top:20px">Estimate only: the final price follows weighing and measuring. Economy pickup outside Jakarta is arranged by request. Situational surcharges are told to you before booking. Destination duties and taxes are not included. No VAT (PPN) is charged.</div>
 </div></section>

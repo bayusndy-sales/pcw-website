@@ -159,3 +159,12 @@ footer .legal{border-top:1px solid #26366b;margin-top:28px;padding-top:16px;font
 .tile{text-decoration:none;color:var(--ink);transition:transform .15s,box-shadow .15s}
 .tile:hover{transform:translateY(-2px);border-color:var(--blue)}
 .tile h3{color:var(--blue-d);margin-top:0}
+/* stepwise rate form */
+.stepper{display:flex;gap:8px;list-style:none;margin:0 0 18px;padding:0;flex-wrap:wrap}
+.stepper li{display:flex;align-items:center;gap:8px;padding:8px 14px;border-radius:999px;background:#eef2f9;color:var(--muted);font-weight:650;font-size:14px}
+.stepper li b{display:grid;place-items:center;width:22px;height:22px;border-radius:50%;background:#cfd8ea;color:#fff;font-size:12px}
+.stepper li.on{background:var(--blue-l);color:var(--blue-d)}.stepper li.on b{background:var(--blue)}
+.stepper li.done b{background:#1a9b53}
+.row.r5{grid-template-columns:repeat(5,1fr)}
+@media (max-width:900px){.row.r5{grid-template-columns:1fr 1fr}}
+@media (max-width:460px){.row.r5{grid-template-columns:1fr}}

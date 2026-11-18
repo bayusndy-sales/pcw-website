@@ -221,3 +221,20 @@
   });
   if (location.hash === '#track') btns[1].click();
 })();
+/* stepwise rate form */
+(function () {
+  var form = document.querySelector('form[data-steps]'); if (!form) return;
+  var steps = form.querySelectorAll('.stp'), dots = form.querySelectorAll('.stepper li');
+  function go(n) {
+    Array.prototype.forEach.call(steps, function (p) { p.classList.toggle('hidden', p.getAttribute('data-step') !== String(Math.min(n, 2))); });
+    Array.prototype.forEach.call(dots, function (d) { var k = +d.getAttribute('data-s'); d.classList.toggle('on', k === n); d.classList.toggle('done', k < n); });
+  }
+  form.querySelector('[data-next]').addEventListener('click', function () {
+    var c = form.elements.country; if (!c.value) { c.reportValidity(); return; } go(2);
+    var kg = form.elements.kg; if (kg) kg.focus();
+  });
+  form.querySelector('[data-back]').addEventListener('click', function () { go(1); });
+  form.addEventListener('submit', function () { go(3); }, true);
+  form.addEventListener('input', function (e) { if (e.target.name === 'kg' || e.target.name === 'country') go(e.target.name === 'country' ? 1 : 2); });
+  if (/[?&]kg=/.test(location.search)) go(3);
+})();

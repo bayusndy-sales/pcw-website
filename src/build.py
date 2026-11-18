@@ -90,6 +90,28 @@ def rate_form(lang, quick=False):
 <div><label for="r_w">{"Width (cm)" if E else "Lebar (cm)"}</label><input id="r_w" name="w" type="number" min="0" step="0.1"></div>
 <div><label for="r_h">{"Height (cm)" if E else "Tinggi (cm)"}</label><input id="r_h" name="h" type="number" min="0" step="0.1"></div>
 </div><p class="hint">{"Dimensions are per piece. Chargeable weight is the higher of actual weight and L × W × H / 5000." if E else "Ukuran per koli. Berat tagih adalah yang lebih besar antara berat aktual dan P × L × T / 5000."}</p>'''
+    if not quick:
+        return f'''<form class="box" data-rate data-steps>
+<ol class="stepper"><li class="on" data-s="1"><b>1</b> {"Destination" if E else "Tujuan"}</li><li data-s="2"><b>2</b> {"Package" if E else "Paket"}</li><li data-s="3"><b>3</b> {"Rates" if E else "Tarif"}</li></ol>
+<div class="stp" data-step="1">
+<div class="row r2">
+<div><label for="r_c" class="req">{"Where is it going?" if E else "Dikirim ke mana?"}</label><select id="r_c" name="country" required><option value="">{"Loading…" if E else "Memuat…"}</option></select></div>
+<div><label class="req">{"What are you sending?" if E else "Apa yang dikirim?"}</label><div class="seg"><label><input type="radio" name="type" value="Parcel" checked><span>{"Parcel" if E else "Paket"}</span></label><label><input type="radio" name="type" value="Document"><span>{"Document" if E else "Dokumen"}</span></label></div></div>
+</div>
+<div style="margin-top:16px"><button class="btn btn-a" type="button" data-next>{"Next: package details" if E else "Lanjut: detail paket"}</button></div>
+</div>
+<div class="stp hidden" data-step="2">
+<div class="row r5">
+<div><label for="r_kg" class="req">{"Total actual weight (kg)" if E else "Total berat aktual (kg)"}</label><input id="r_kg" name="kg" type="number" min="0.1" step="0.1" required></div>
+<div><label for="r_pcs">{"Pieces" if E else "Jumlah koli"}</label><input id="r_pcs" name="pieces" type="number" min="1" max="50" value="1"></div>
+<div><label for="r_l">{"Length (cm)" if E else "Panjang (cm)"}</label><input id="r_l" name="l" type="number" min="0" step="0.1" placeholder="{"optional" if E else "opsional"}"></div>
+<div><label for="r_w">{"Width (cm)" if E else "Lebar (cm)"}</label><input id="r_w" name="w" type="number" min="0" step="0.1"></div>
+<div><label for="r_h">{"Height (cm)" if E else "Tinggi (cm)"}</label><input id="r_h" name="h" type="number" min="0" step="0.1"></div>
+</div>
+<p class="hint">{"Dimensions are per piece. Chargeable weight is the higher of actual weight and L × W × H / 5000." if E else "Ukuran per koli. Berat tagih adalah yang lebih besar antara berat aktual dan P × L × T / 5000."}</p>
+<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:6px"><button class="btn btn-o" type="button" data-back>{"Back" if E else "Kembali"}</button><button class="btn btn-a" type="submit">{"Show rates" if E else "Tampilkan tarif"}</button></div>
+</div>
+</form>'''
     return f'''<form class="box" data-rate{" data-quick" if quick else ""}>
 <div class="row">
 <div><label for="r_c" class="req">{"Destination country" if E else "Negara tujuan"}</label><select id="r_c" name="country" required><option value="">{"Loading…" if E else "Memuat…"}</option></select></div>
