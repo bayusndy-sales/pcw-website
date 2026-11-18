@@ -35,7 +35,7 @@ def page(lang, slug, title, desc, body, head_extra=''):
     canon = SITE + ('id/' if lang == 'id' else '') + ('' if slug == 'index.html' else slug)
     alt_en = SITE + ('' if slug == 'index.html' else slug); alt_id = SITE + 'id/' + ('' if slug == 'index.html' else slug)
     fs = [('international-express.html','PCW International Express'),('priority-express.html','PCW Priority Express'),('economy-express.html','PCW Economy Express'),('other-services.html', 'Other services' if lang=='en' else 'Layanan lain')]
-    fh = [('rates.html', 'Rates' if lang=='en' else 'Tarif'),('track.html','Track' if lang=='en' else 'Lacak kiriman'),('faq.html','FAQ'),('prohibited-items.html','Prohibited items' if lang=='en' else 'Barang terlarang'),('terms.html','Terms & Conditions' if lang=='en' else 'Syarat & Ketentuan'),('privacy.html','Privacy Policy' if lang=='en' else 'Kebijakan Privasi')]
+    fh = [('rates.html', 'Rates' if lang=='en' else 'Tarif'),('track.html','Track' if lang=='en' else 'Lacak kiriman'),('faq.html','FAQ'),('surcharges-customs.html','Surcharges & customs' if lang=='en' else 'Surcharge & kepabeanan'),('prohibited-items.html','Prohibited items' if lang=='en' else 'Barang terlarang'),('terms.html','Terms & Conditions' if lang=='en' else 'Syarat & Ketentuan'),('privacy.html','Privacy Policy' if lang=='en' else 'Kebijakan Privasi')]
     flinks = lambda items: ''.join(f'<a href="{base}{h}">{n}</a>' for h, n in items)
     return f'''<!DOCTYPE html>
 <html lang="{lang}">
@@ -129,43 +129,10 @@ def home(lang):
 <h2>{"What are you looking for today?" if E else "Apa yang Anda cari hari ini?"}</h2>
 <div class="grid g4 tiles">
 <a class="card tile" href="international-express.html"><h3>{"Shipping services" if E else "Layanan pengiriman"}</h3><p>{"Compare Priority and Economy Express." if E else "Bandingkan Priority dan Economy Express."}</p></a>
-<a class="card tile" href="rates.html"><h3>{"Rates & surcharges" if E else "Tarif & surcharge"}</h3><p>{"Published rates and how chargeable weight works." if E else "Tarif publikasi dan cara berat tagih dihitung."}</p></a>
+<a class="card tile" href="surcharges-customs.html"><h3>{"Surcharges & customs" if E else "Surcharge & kepabeanan"}</h3><p>{"Chargeable weight, fuel, duties and DDP/DDU explained." if E else "Berat tagih, fuel, bea masuk, dan DDP/DDU dijelaskan."}</p></a>
 <a class="card tile" href="prohibited-items.html"><h3>{"Prohibited items" if E else "Barang terlarang"}</h3><p>{"Check what we cannot accept before you pack." if E else "Cek barang yang tidak dapat kami terima sebelum mengemas."}</p></a>
 <a class="card tile" href="faq.html"><h3>{"Duties, payment & FAQ" if E else "Bea masuk, pembayaran & FAQ"}</h3><p>{"Answers on duties, payment, pickup and claims." if E else "Jawaban soal bea masuk, pembayaran, pickup, dan klaim."}</p></a>
 </div></div></section>
-
-<section class="s"><div class="wrap">
-<h2>{"Two services. One clear price." if E else "Dua layanan. Satu harga yang jelas."}</h2>
-<p class="sub">{"Choose speed or budget. Both are door to door, from pickup in Indonesia to the receiver's address." if E else "Pilih cepat atau hemat. Keduanya door to door, dari pickup di Indonesia sampai alamat penerima."}</p>
-<div class="grid g2">
-<div class="card prod"><span class="tag">{"Fastest" if E else "Tercepat"}</span><h3>PCW Priority Express</h3>
-<ul class="ticks"><li>{"For documents, samples and urgent goods" if E else "Untuk dokumen, sampel, dan barang mendesak"}</li><li>{"Pickup anywhere in Indonesia" if E else "Pickup di seluruh Indonesia"}</li><li>{"Price = base rate + fuel surcharge" if E else "Harga = tarif dasar + fuel surcharge"}</li></ul>
-<a class="btn btn-o" href="priority-express.html">{"See details" if E else "Lihat detail"}</a></div>
-<div class="card prod eco"><span class="tag eco">{"Best value" if E else "Paling hemat"}</span><h3>PCW Economy Express</h3>
-<ul class="ticks"><li>{"For parcels that are not urgent" if E else "Untuk paket yang tidak mendesak"}</li><li>{"All-in price, fuel included" if E else "Harga all-in, sudah termasuk fuel"}</li><li>{"Pickup in Jakarta; other cities by request" if E else "Pickup di Jakarta; kota lain melalui permintaan"}</li></ul>
-<a class="btn btn-o" href="economy-express.html">{"See details" if E else "Lihat detail"}</a></div>
-</div></div></section>
-
-<section class="s alt"><div class="wrap">
-<h2>{"How it works" if E else "Cara kerjanya"}</h2>
-<div class="grid g4 steps">
-<div class="card"><h3>{"Get a rate" if E else "Cek tarif"}</h3><p>{"Enter destination and weight. See both services side by side." if E else "Isi tujuan dan berat. Lihat kedua layanan berdampingan."}</p></div>
-<div class="card"><h3>{"Book online" if E else "Booking online"}</h3><p>{"Send shipment details. You get a PCW reference number at once." if E else "Kirim detail kiriman. Anda langsung mendapat nomor referensi PCW."}</p></div>
-<div class="card"><h3>{"We confirm" if E else "Kami konfirmasi"}</h3><p>{"Our team checks weight, price and documents, then arranges pickup or drop-off." if E else "Tim kami memeriksa berat, harga, dan dokumen, lalu mengatur pickup atau drop-off."}</p></div>
-<div class="card"><h3>{"Track" if E else "Lacak"}</h3><p>{"Follow every status update with your PCW reference, or ask us on WhatsApp." if E else "Ikuti setiap update status dengan nomor referensi PCW, atau tanya kami di WhatsApp."}</p></div>
-</div></div></section>
-
-<section class="s"><div class="wrap">
-<h2>{"Why shippers choose PCW Freight" if E else "Mengapa pengirim memilih PCW Freight"}</h2>
-<div class="grid g4">
-<div class="card"><h3>{"A real person" if E else "Dilayani langsung"}</h3><p>{"WhatsApp answered by our team during working hours." if E else "WhatsApp dijawab langsung oleh tim kami pada jam kerja."}</p></div>
-<div class="card"><h3>{"Full price first" if E else "Total harga di awal"}</h3><p>{"Chargeable weight and every charge shown before you agree." if E else "Berat tagih dan seluruh biaya ditunjukkan sebelum Anda setuju."}</p></div>
-<div class="card"><h3>{"Document help" if E else "Bantuan dokumen"}</h3><p>{"Commercial invoice and packing list prepared with you." if E else "Commercial invoice dan packing list kami bantu siapkan."}</p></div>
-<div class="card"><h3>{"Business rates" if E else "Tarif bisnis"}</h3><p>{"Regular shippers get their own discounted rates." if E else "Pengirim rutin mendapat tarif khusus."}</p></div>
-</div></div></section>
-
-<section class="band"><div class="wrap"><h2>{"Ready to ship?" if E else "Siap mengirim?"}</h2>
-<div style="display:flex;gap:10px;flex-wrap:wrap"><a class="btn btn-a" href="book.html">{"Book now" if E else "Booking sekarang"}</a><a class="btn btn-wa" href="{wa(L[lang]['wa_txt'])}">{L[lang]['chat']}</a></div></div></section>
 
 <section class="s"><div class="wrap">
 <h2>{"Two services. One clear price." if E else "Dua layanan. Satu harga yang jelas."}</h2>
@@ -344,6 +311,35 @@ def faq(lang):
     items = ''.join(f'<details class="faq"><summary>{q if E else qi}</summary><p>{a if E else ai}</p></details>' for q, qi, a, ai in FAQ)
     return head(lang, "Frequently asked questions" if E else "Pertanyaan yang sering diajukan", "", "FAQ") + f'<section class="s"><div class="wrap prose">{items}</div></section>'
 
+def surcharges(lang):
+    E = lang == 'en'
+    t = lambda en, idn: en if E else idn
+    rows = [
+     (t("Fuel surcharge","Fuel surcharge"), t("Priority Express: added to the base rate and updated every month. Economy Express: already included (all-in).","Priority Express: ditambahkan ke tarif dasar dan diperbarui setiap bulan. Economy Express: sudah termasuk (all-in)."), t("Shown in your quote","Tercantum di penawaran")),
+     ("Remote area", t("Delivery to an address in a remote area.","Pengiriman ke alamat di area terpencil."), t("Told to you before booking when known; otherwise billed after shipment","Diinformasikan sebelum booking jika diketahui; jika tidak, ditagihkan setelah pengiriman")),
+     ("Oversize", t("Pieces larger than the carrier's size limits.","Koli yang melebihi batas ukuran pengangkut."), t("Same as above","Sama seperti di atas")),
+     ("Address correction", t("The address is incomplete or wrong and must be corrected.","Alamat tidak lengkap atau salah sehingga perlu dikoreksi."), t("Billed to the sender","Ditagihkan kepada Pengirim")),
+     (t("Duties & taxes","Bea masuk & pajak"), t("Charged by the destination country's customs.","Dikenakan oleh bea cukai negara tujuan."), t("The receiver, unless agreed otherwise in writing","Penerima, kecuali disepakati lain secara tertulis")),
+    ]
+    tr = ''.join(f'<tr><td><b>{a}</b></td><td>{b}</td><td>{c}</td></tr>' for a, b, c in rows)
+    return head(lang, t("Surcharges & customs","Surcharge & kepabeanan"), t("What can change the price, and who pays what. We tell you before you agree.","Apa saja yang dapat mengubah harga, dan siapa yang membayar. Kami informasikan sebelum Anda setuju."), t("Surcharges & customs","Surcharge & kepabeanan")) + f'''
+<section class="s"><div class="wrap prose">
+<h2>{t("1. Chargeable weight","1. Berat tagih (chargeable weight)")}</h2>
+<p>{t("We charge on the higher of the actual weight and the volumetric weight. Volumetric weight = length × width × height (cm) ÷ 5000.","Kami menagih berdasarkan yang lebih besar antara berat aktual dan berat volumetrik. Berat volumetrik = panjang × lebar × tinggi (cm) ÷ 5000.")}</p>
+<p><b>{t("Example:","Contoh:")}</b> {t("a box of 40 × 30 × 30 cm weighing 5 kg. Volumetric weight = 36,000 ÷ 5000 = 7.2 kg. You are charged for 7.2 kg, not 5 kg.","kotak 40 × 30 × 30 cm dengan berat 5 kg. Berat volumetrik = 36.000 ÷ 5000 = 7,2 kg. Anda ditagih untuk 7,2 kg, bukan 5 kg.")}</p>
+<h2>{t("2. Charges that can apply","2. Biaya yang dapat berlaku")}</h2>
+<div style="overflow-x:auto"><table class="rates"><thead><tr><th>{t("Charge","Biaya")}</th><th>{t("When it applies","Kapan berlaku")}</th><th>{t("Who pays","Siapa yang membayar")}</th></tr></thead><tbody>{tr}</tbody></table></div>
+<p class="hint">{t("Amounts depend on destination and service, so we confirm them in your quote. Charges that arise after shipment are billed to the sender and are due within 7 days of the invoice.","Besarnya biaya tergantung tujuan dan layanan, sehingga kami konfirmasi di penawaran. Biaya yang timbul setelah pengiriman ditagihkan kepada Pengirim dan jatuh tempo paling lambat 7 hari setelah tagihan diterbitkan.")}</p>
+<h2>{t("3. Duties & taxes at the destination","3. Bea masuk & pajak di negara tujuan")}</h2>
+<p>{t("Import duties and taxes are set by the destination country. By default the receiver pays them. If the receiver refuses to pay, the duties, taxes and the cost of returning or destroying the goods are billed to the sender.","Bea masuk dan pajak ditetapkan oleh negara tujuan. Secara standar Penerima yang membayar. Jika Penerima menolak membayar, bea masuk, pajak, serta biaya pengembalian atau pemusnahan barang ditagihkan kepada Pengirim.")}</p>
+<div class="notice info"><b>DDU</b> (Delivered Duty Unpaid) = {t("the receiver pays duties and taxes. This is our default.","Penerima membayar bea masuk dan pajak. Ini ketentuan standar kami.")}<br><b>DDP</b> (Delivered Duty Paid) = {t("the sender pays them in advance. Only available if we agree in writing first. Ask us on WhatsApp.","Pengirim membayar di muka. Hanya tersedia jika kita sepakati tertulis terlebih dahulu. Tanyakan lewat WhatsApp.")}</div>
+<h2>{t("4. Documents and customs","4. Dokumen dan kepabeanan")}</h2>
+<ul class="ticks"><li>{t("For goods: a commercial invoice and a packing list. We help you prepare them.","Untuk barang: commercial invoice dan packing list. Kami bantu menyiapkannya.")}</li><li>{t("Declare contents and value truthfully. Costs and fines from a wrong declaration are the sender's responsibility.","Nyatakan isi dan nilai dengan benar. Biaya dan denda akibat pernyataan yang tidak benar menjadi tanggung jawab Pengirim.")}</li><li>{t("Customs delays are outside our control and are not grounds for a claim.","Keterlambatan akibat proses kepabeanan di luar kendali kami dan bukan dasar pengajuan klaim.")}</li><li>{t("Lithium batteries and dangerous goods are only accepted after our written approval.","Baterai lithium dan barang berbahaya hanya diterima setelah persetujuan tertulis dari kami.")} <a href="prohibited-items.html">{t("See prohibited and restricted items","Lihat barang terlarang dan dibatasi")}</a>.</li></ul>
+<h2>{t("5. Tax on our price","5. Pajak atas harga kami")}</h2>
+<p>{t("Our prices carry no VAT (PPN) at present.","Saat ini harga kami tidak dikenakan PPN.")}</p>
+<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:22px"><a class="btn btn-a" href="rates.html">{t("Get a rate","Cek tarif")}</a><a class="btn btn-wa" href="{wa(L[lang]['wa_txt'])}">{L[lang]['chat']}</a></div>
+</div></section>'''
+
 PROHIB = [
  ("Explosives, fireworks, ammunition and weapons","Bahan peledak, kembang api, amunisi, dan senjata"),
  ("Flammable liquids and gases, aerosols, lighters","Cairan dan gas mudah terbakar, aerosol, korek api"),
@@ -430,6 +426,7 @@ PAGES = [
  ('about.html', about, ('About | PCW Freight','Tentang | PCW Freight'), ('About PCW Freight, a brand of PT Prabaswara Catur Widantara.','Tentang PCW Freight, merek PT Prabaswara Catur Widantara.')),
  ('contact.html', contact, ('Contact | PCW Freight','Kontak | PCW Freight'), ('Contact PCW Freight by WhatsApp, email or at our Sentul City office.','Hubungi PCW Freight lewat WhatsApp, email, atau di kantor Sentul City.')),
  ('faq.html', faq, ('FAQ | PCW Freight',)*2, ('Answers about pricing, duties, payment, pickup and claims.','Jawaban seputar harga, bea masuk, pembayaran, pickup, dan klaim.')),
+ ('surcharges-customs.html', surcharges, ('Surcharges & Customs | PCW Freight','Surcharge & Kepabeanan | PCW Freight'), ('Fuel surcharge, chargeable weight, duties and taxes explained for PCW International Express.','Fuel surcharge, berat tagih, bea masuk dan pajak untuk PCW International Express dijelaskan.')),
  ('prohibited-items.html', prohibited, ('Prohibited Items | PCW Freight','Barang Terlarang | PCW Freight'), ('Items we do not accept and items that need checking before shipping.','Barang yang tidak kami terima dan barang yang perlu diperiksa sebelum dikirim.')),
  ('terms.html', terms, ('Terms & Conditions | PCW Freight','Syarat & Ketentuan | PCW Freight'), ('Terms and conditions of PCW International Express.','Syarat dan ketentuan layanan PCW International Express.')),
  ('privacy.html', privacy, ('Privacy Policy | PCW Freight','Kebijakan Privasi | PCW Freight'), ('How PCW Freight handles personal data.','Cara PCW Freight mengelola data pribadi.')),
