@@ -45,13 +45,15 @@ def page(lang, slug, title, desc, body, head_extra=''):
 <meta name="description" content="{html.escape(desc)}">
 <link rel="canonical" href="{canon}"><link rel="alternate" hreflang="en" href="{alt_en}"><link rel="alternate" hreflang="id" href="{alt_id}">
 <meta property="og:title" content="{html.escape(title)}"><meta property="og:description" content="{html.escape(desc)}"><meta property="og:type" content="website">
+<link rel="icon" type="image/png" sizes="32x32" href="{root}assets/favicon-32.png"><link rel="icon" type="image/png" sizes="192x192" href="{root}assets/icon-192.png"><link rel="apple-touch-icon" href="{root}assets/apple-touch-icon.png">
+<meta property="og:image" content="{SITE}assets/og-image.png"><meta name="theme-color" content="#004aad">
 <link rel="stylesheet" href="{root}assets/style.css">{head_extra}
 </head>
 <body data-root="{root}">
 <a class="skip" href="#main">{t['skip']}</a>
 <div class="top"><div class="wrap"><span>{t['hours']}</span><a href="mailto:info@pcwfreight.com">info@pcwfreight.com</a><a href="{wa(t['wa_txt'])}">+62 811 9989 6752</a></div></div>
 <header class="nav"><div class="wrap">
-<a class="brand" href="{base}index.html"><span class="mark">PCW</span><span>PCW Freight<small>International Express</small></span></a>
+<a class="brand" href="{base}index.html"><picture><source srcset="{root}assets/logo.webp" type="image/webp"><img src="{root}assets/logo.png" alt="PCW - Prabaswara Catur Widantara" width="44" height="47"></picture><span>PCW Freight<small>International Express</small></span></a>
 <button class="burger" aria-label="{t['menu']}">☰</button>
 <nav class="menu">{nav}</nav>
 <a class="lang" href="{other}" hreflang="{'en' if lang=='id' else 'id'}">{'EN' if lang=='id' else 'ID'}</a>
@@ -62,7 +64,7 @@ def page(lang, slug, title, desc, body, head_extra=''):
 </main>
 <footer><div class="wrap">
 <div class="grid">
-<div><a class="brand" style="color:#fff" href="{base}index.html"><span class="mark">PCW</span><span>PCW Freight</span></a><p style="margin-top:12px">{t['legal']}</p><p>{t['novat']}</p></div>
+<div><a class="brand foot" href="{base}index.html"><span class="logo-tile"><img src="{root}assets/logo.png" alt="PCW - Prabaswara Catur Widantara" width="40" height="43" loading="lazy"></span><span>PCW Freight</span></a><p style="margin-top:12px">{t['legal']}</p><p>{t['novat']}</p></div>
 <div><h4>{t['f_services']}</h4>{flinks(fs)}</div>
 <div><h4>{t['f_help']}</h4>{flinks(fh)}</div>
 <div><h4>{t['f_contact']}</h4><p style="margin:5px 0">{ADDR}</p><a href="mailto:info@pcwfreight.com">info@pcwfreight.com</a><a href="{wa(t['wa_txt'])}">WhatsApp +62 811 9989 6752</a><p style="margin:5px 0">{t['hours']}</p></div>
