@@ -393,7 +393,35 @@ def build():
     open(os.path.join(DIST, 'robots.txt'), 'w').write(f'User-agent: *\nAllow: /\nSitemap: {SITE}sitemap.xml\n')
     urls = ''.join(f'<url><loc>{SITE}{p}{"" if s=="index.html" else s}</loc></url>' for s, *_ in PAGES if s != '404.html' for p in ['', 'id/'])
     open(os.path.join(DIST, 'sitemap.xml'), 'w').write(f'<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">{urls}</urlset>')
-    open(os.path.join(DIST, '.htaccess'), 'w').write('ErrorDocument 404 /404.html\nDirectoryIndex index.html\nOptions -Indexes\n<IfModule mod_headers.c>\nHeader set X-Content-Type-Options "nosniff"\nHeader set Referrer-Policy "strict-origin-when-cross-origin"\nHeader set X-Frame-Options "SAMEORIGIN"\n</IfModule>\n')
+    HT = """ErrorDocument 404 /404.html
+DirectoryIndex index.html
+Options -Indexes
+<IfModule mod_rewrite.c>
+RewriteEngine On
+# force https (keep certificate renewal path open)
+RewriteCond %{HTTPS} !=on
+RewriteCond %{REQUEST_URI} !^/\\.well-known/
+RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [R=301,L]
+# www -> bare domain
+RewriteCond %{HTTP_HOST} ^www\\.(.+)$ [NC]
+RewriteRule ^ https://%1%{REQUEST_URI} [R=301,L]
+# old WordPress addresses -> new pages
+RewriteRule ^about-us/?$ /about.html [R=301,L]
+RewriteRule ^contact-us(-2)?/?$ /contact.html [R=301,L]
+RewriteRule ^services/?$ /international-express.html [R=301,L]
+RewriteRule ^track-shipment/?$ /track.html [R=301,L]
+RewriteRule ^check-shipping-rates/?$ /rates.html [R=301,L]
+RewriteRule ^privacy-policy/?$ /privacy.html [R=301,L]
+RewriteRule ^terms-and-conditions/?$ /terms.html [R=301,L]
+RewriteRule ^(blogs|blog|news)(/.*)?$ / [R=301,L]
+</IfModule>
+<IfModule mod_headers.c>
+Header set X-Content-Type-Options "nosniff"
+Header set Referrer-Policy "strict-origin-when-cross-origin"
+Header set X-Frame-Options "SAMEORIGIN"
+</IfModule>
+"""
+    open(os.path.join(DIST, '.htaccess'), 'w').write(HT)
     print('built', len(PAGES) * 2, 'pages')
 
 if __name__ == '__main__': build()
