@@ -36,7 +36,7 @@ function doGet(e) {
 function doPost(e) {
   try {
     const body = JSON.parse((e && e.postData && e.postData.contents) || '{}');
-    delete body.__member; delete body.__disc; delete body.__pub; const ar = authRoute_(body) || admRoute_(body); if (ar) return json_(ar); if (body.action === 'book') return json_(book_(body)); if (body.action === 'portal_login') return json_(portalLogin_(body)); if (body.action === 'portal_list') return json_(portalList_(body)); if (body.action === 'portal_book') return json_(portalBook_(body));
+    delete body.__member; delete body.__disc; delete body.__pub; const ar = authRoute_(body) || admRoute_(body) || admRoute2_(body); if (ar) return json_(ar); if (body.action === 'book') return json_(book_(body)); if (body.action === 'portal_login') return json_(portalLogin_(body)); if (body.action === 'portal_list') return json_(portalList_(body)); if (body.action === 'portal_book') return json_(portalBook_(body));
     return json_({ ok: false, error: 'unknown_action' });
   } catch (err) {
     console.error(err);
@@ -126,7 +126,7 @@ function rate_(p) {
   const kg = num_(p.kg);
   if (!country || !(kg > 0) || kg > 1000) return { ok: false, error: 'invalid_input' };
   if (countries_().indexOf(country) === -1) return { ok: false, error: 'country_not_listed' };
-  const l = num_(p.l) || 0, w = num_(p.w) || 0, h = num_(p.h) || 0;
+  const l = Math.ceil(num_(p.l) || 0), w = Math.ceil(num_(p.w) || 0), h = Math.ceil(num_(p.h) || 0);
   const divisor = Number(s.Volumetric_Divisor) || 5000;
   const vol = (l > 0 && w > 0 && h > 0) ? pieces * l * w * h / divisor : 0;
   const basis = Math.max(kg, vol);

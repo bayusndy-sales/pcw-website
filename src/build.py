@@ -93,7 +93,7 @@ def rate_form(lang, quick=False):
 <div><label for="r_l">{"Length (cm)" if E else "Panjang (cm)"}</label><input id="r_l" name="l" type="number" min="0" step="0.1" placeholder="{"optional" if E else "opsional"}"></div>
 <div><label for="r_w">{"Width (cm)" if E else "Lebar (cm)"}</label><input id="r_w" name="w" type="number" min="0" step="0.1"></div>
 <div><label for="r_h">{"Height (cm)" if E else "Tinggi (cm)"}</label><input id="r_h" name="h" type="number" min="0" step="0.1"></div>
-</div><p class="hint">{"Dimensions are per piece. Chargeable weight is the higher of actual weight and L × W × H / 5000." if E else "Ukuran per koli. Berat tagih adalah yang lebih besar antara berat aktual dan P × L × T / 5000."}</p>'''
+</div><p class="hint">{"Dimensions are per piece, each rounded up to the next whole cm. Chargeable weight is the higher of actual weight and L × W × H / 5000." if E else "Ukuran per koli, masing-masing dibulatkan ke atas ke cm penuh. Berat tagih adalah yang lebih besar antara berat aktual dan P × L × T / 5000."}</p>'''
     if not quick:
         return f'''<form class="box" data-rate data-steps>
 <ol class="stepper"><li class="on" data-s="1"><b>1</b> {"Destination" if E else "Tujuan"}</li><li data-s="2"><b>2</b> {"Package" if E else "Paket"}</li><li data-s="3"><b>3</b> {"Rates" if E else "Tarif"}</li></ol>
@@ -112,7 +112,7 @@ def rate_form(lang, quick=False):
 <div><label for="r_w">{"Width (cm)" if E else "Lebar (cm)"}</label><input id="r_w" name="w" type="number" min="0" step="0.1"></div>
 <div><label for="r_h">{"Height (cm)" if E else "Tinggi (cm)"}</label><input id="r_h" name="h" type="number" min="0" step="0.1"></div>
 </div>
-<p class="hint">{"Dimensions are per piece. Chargeable weight is the higher of actual weight and L × W × H / 5000." if E else "Ukuran per koli. Berat tagih adalah yang lebih besar antara berat aktual dan P × L × T / 5000."}</p>
+<p class="hint">{"Dimensions are per piece, each rounded up to the next whole cm. Chargeable weight is the higher of actual weight and L × W × H / 5000." if E else "Ukuran per koli, masing-masing dibulatkan ke atas ke cm penuh. Berat tagih adalah yang lebih besar antara berat aktual dan P × L × T / 5000."}</p>
 <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:6px"><button class="btn btn-o" type="button" data-back>{"Back" if E else "Kembali"}</button><button class="btn btn-a" type="submit">{"Show rates" if E else "Tampilkan tarif"}</button></div>
 </div>
 </form>'''
