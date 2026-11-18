@@ -118,37 +118,96 @@ function countries_() {
   return list;
 }
 
+/* ---- demand surcharge + multi-package rating ---- */
+const DEMAND_RATE = { CH: 2000, AS: 2000, OC: 10000, EU: 26000, AM: 30000, ME: 24000, RW: 17000 }; // IDR per billing kg, DHL Indonesia origin, 1 Oct 2026 - 5 Feb 2027
+const DEMAND_GROUPS = {
+  CH: ["China", "Hong Kong", "Macau"],
+  AS: ["Bangladesh", "Bhutan", "Brunei", "Cambodia", "India", "Japan", "Laos", "Malaysia (West)", "Maldives", "Mongolia", "Myanmar", "Nepal", "Pakistan", "Philippines", "Singapore", "South Korea", "Sri Lanka", "Taiwan", "Thailand", "Timor-Leste", "Vietnam"],
+  OC: ["Australia", "Cook Islands", "Fiji", "Kiribati", "Nauru", "New Caledonia", "New Zealand", "Niue", "Papua New Guinea", "Samoa", "Solomon Islands", "Tahiti (French Polynesia)", "Tonga", "Tuvalu", "Vanuatu"],
+  EU: ["Albania", "Andorra", "Austria", "Belgium", "Bosnia & Herzegovina", "Bulgaria", "Canary Islands", "Croatia", "Cyprus", "Czech Republic", "Denmark", "Estonia", "Finland", "France", "Germany", "Gibraltar", "Greece", "Guernsey", "Hungary", "Iceland", "Ireland", "Italy", "Jersey", "Kosovo", "Latvia", "Liechtenstein", "Lithuania", "Luxembourg", "Malta", "Moldova", "Monaco", "Montenegro", "Netherlands", "North Macedonia", "Norway", "Poland", "Portugal", "Romania", "San Marino", "Serbia", "Slovakia", "Slovenia", "Spain", "Sweden", "Switzerland", "Turkey", "United Kingdom", "Vatican City"],
+  AM: ["American Samoa", "Anguilla", "Antigua & Barbuda", "Argentina", "Aruba", "Bahamas", "Barbados", "Belize", "Bermuda", "Bolivia", "Bonaire", "Brazil", "British Virgin Islands", "Canada", "Cayman Islands", "Chile", "Colombia", "Costa Rica", "Curacao", "Dominica", "Dominican Republic", "Ecuador", "El Salvador", "French Guiana", "Grenada", "Guadeloupe", "Guam", "Guatemala", "Guyana", "Haiti", "Honduras", "Jamaica", "Marshall Islands", "Martinique", "Mexico", "Micronesia", "Montserrat", "Nevis", "Nicaragua", "Northern Mariana Islands", "Palau", "Panama", "Paraguay", "Peru", "Puerto Rico", "St. Barthelemy", "St. Eustatius", "St. Kitts", "St. Lucia", "St. Maarten", "St. Vincent", "Suriname", "Trinidad & Tobago", "Turks & Caicos", "US Virgin Islands", "United States", "Uruguay"],
+  ME: ["Algeria", "Bahrain", "Egypt", "Jordan", "Kuwait", "Lebanon", "Morocco", "Oman", "Qatar", "Saudi Arabia", "Tunisia", "United Arab Emirates"],
+};  // every other country = RW
+
+function demandCode_(country) {
+  for (const k in DEMAND_GROUPS) if (DEMAND_GROUPS[k].indexOf(country) !== -1) return k;
+  return 'RW';
+}
+function dateStr_(v) {
+  if (!v) return '';
+  if (v instanceof Date) return Utilities.formatDate(v, TZ, 'yyyy-MM-dd');
+  return String(v).slice(0, 10);
+}
+function demandPerKg_(country, s) {
+  if (String(s.Demand_On || 'Y').toUpperCase() === 'N') return { rate: 0 };
+  const from = dateStr_(s.Demand_From) || '2026-10-01', to = dateStr_(s.Demand_To) || '2027-02-05';
+  const today = Utilities.formatDate(new Date(), TZ, 'yyyy-MM-dd');
+  if (today < from || today > to) return { rate: 0 };
+  const f = Number(s.Demand_Factor); const factor = f > 0 ? f : 0.9;
+  return { rate: Math.round(DEMAND_RATE[demandCode_(country)] * factor), to: to };
+}
+function items_(p) {
+  let arr = null;
+  if (p.items) { try { arr = typeof p.items === 'string' ? JSON.parse(p.items) : p.items; } catch (e) { arr = null; } }
+  if (!Array.isArray(arr) || !arr.length) {
+    const pcs = Math.max(1, Math.min(50, parseInt(p.pieces, 10) || 1));
+    arr = [{ q: pcs, kg: num_(p.kg) / pcs, l: p.l, w: p.w, h: p.h }];
+  }
+  if (arr.length > 20) return null;
+  const out = [];
+  for (let i = 0; i < arr.length; i++) {
+    const a = arr[i] || {};
+    const q = Math.max(1, Math.min(50, parseInt(a.q, 10) || 1));
+    const kg = num_(a.kg);
+    if (!(kg > 0) || kg > 1000) return null;
+    out.push({ q: q, kg: kg, l: Math.ceil(num_(a.l) || 0), w: Math.ceil(num_(a.w) || 0), h: Math.ceil(num_(a.h) || 0) });
+  }
+  return out;
+}
+
 function rate_(p) {
   const s = settings_();
   const country = String(p.country || '').trim();
   const type = p.type === 'Document' ? 'Document' : 'Parcel';
-  const pieces = Math.max(1, Math.min(50, parseInt(p.pieces, 10) || 1));
-  const kg = num_(p.kg);
-  if (!country || !(kg > 0) || kg > 1000) return { ok: false, error: 'invalid_input' };
+  const items = items_(p);
+  if (!country || !items) return { ok: false, error: 'invalid_input' };
   if (countries_().indexOf(country) === -1) return { ok: false, error: 'country_not_listed' };
-  const l = Math.ceil(num_(p.l) || 0), w = Math.ceil(num_(p.w) || 0), h = Math.ceil(num_(p.h) || 0);
   const divisor = Number(s.Volumetric_Divisor) || 5000;
-  const vol = (l > 0 && w > 0 && h > 0) ? pieces * l * w * h / divisor : 0;
-  const basis = Math.max(kg, vol);
+  let pieces = 0, actual = 0, vol = 0, basis = 0;
+  items.forEach(function (it) {
+    const v = (it.l > 0 && it.w > 0 && it.h > 0) ? it.l * it.w * it.h / divisor : 0;
+    it.vol = v;
+    pieces += it.q; actual += it.kg * it.q; vol += v * it.q;
+    basis += ceilStep_(Math.max(it.kg, v), 0.5) * it.q;
+  });
+  if (pieces > 200) return { ok: false, error: 'invalid_input' };
+  const dem = demandPerKg_(country, s);
+  const fuelPct = Number(s.Fuel_Pct) || 0;
   const out = {
-    ok: true, country: country, type: type, pieces: pieces,
-    actual_kg: round2_(kg), volumetric_kg: round2_(vol),
-    fuel_pct: Number(s.Fuel_Pct) || 0, options: []
+    ok: true, country: country, type: type, pieces: pieces, items: items.map(function (it) { return { q: it.q, kg: it.kg, l: it.l, w: it.w, h: it.h }; }),
+    actual_kg: round2_(actual), volumetric_kg: round2_(vol),
+    fuel_pct: fuelPct, demand_per_kg: dem.rate, demand_until: dem.to || '', options: []
   };
-  [['Priority', Number(s.Priority_Step_Kg) || 0.5], ['Economy', Number(s.Economy_Step_Kg) || 1]]
-    .forEach(function (pair) {
-      const prod = pair[0];
-      const cw = ceilStep_(basis, pair[1]);
-      let row = null;
-      if (prod === 'Priority') {
-        row = pick_(prod, type, country, cw);
-        if (!row && type === 'Document') row = pick_(prod, 'Parcel', country, cw); // documents above table weight
-      } else {
-        row = pick_(prod, 'Parcel', country, cw);
-      }
-      if (row) out.options.push({ product: prod, chargeable_kg: cw, base: row.b, fuel: row.f, total: row.t });
-      else out.options.push({ product: prod, chargeable_kg: cw, quote: true });
-    });
+  ['Priority', 'Economy'].forEach(function (prod) {
+    const cw = prod === 'Priority' ? ceilStep_(basis, basis <= 30 ? 0.5 : 1) : ceilStep_(basis, 1);
+    let row = null;
+    if (prod === 'Priority') {
+      row = pick_(prod, type, country, cw);
+      if (!row && type === 'Document') row = pick_(prod, 'Parcel', country, cw);
+    } else {
+      row = pick_(prod, 'Parcel', country, cw);
+    }
+    if (!row) { out.options.push({ product: prod, chargeable_kg: cw, quote: true }); return; }
+    let base = row.b, fuel = row.f;
+    if (prod === 'Priority' && cw > 30 && row.w > 0) {
+      const k = cw / row.w;                       // heavy bands are priced per kg
+      base = Math.ceil(row.b * k / 1000) * 1000;
+      fuel = Math.round(base * (row.f / row.b));
+    }
+    const demand = prod === 'Priority' ? dem.rate * cw : 0;
+    if (demand) fuel += Math.round(fuelPct * demand);
+    out.options.push({ product: prod, chargeable_kg: cw, base: base, demand: demand, fuel: fuel, total: base + demand + fuel });
+  });
   return out;
 }
 
@@ -274,10 +333,10 @@ function book_(b) {
   }
 
   // price is recalculated here, never taken from the browser
-  const r = rate_({ country: b.dest_country, type: b.shipment_type, kg: b.actual_kg, pieces: b.pieces, l: b.l, w: b.w, h: b.h });
+  const r = rate_({ country: b.dest_country, type: b.shipment_type, kg: b.actual_kg, pieces: b.pieces, l: b.l, w: b.w, h: b.h, items: b.items });
   if (!r.ok) return r;
   const opt = r.options.filter(function (o) { return o.product === prod; })[0];
-  const quote = (b.__member && !b.__disc && !b.__pub) || !opt || !!opt.quote; if (b.__disc && opt && !opt.quote) { const dk = 1 - b.__disc; opt.base = Math.round(opt.base * dk); opt.fuel = Math.round(opt.fuel * dk); opt.total = Math.round(opt.total * dk); }
+  const quote = (b.__member && !b.__disc && !b.__pub) || !opt || !!opt.quote; if (b.__disc && opt && !opt.quote) { const dk = 1 - b.__disc; opt.base = Math.round(opt.base * dk); opt.demand = Math.round((opt.demand || 0) * dk); opt.fuel = Math.round(opt.fuel * dk); opt.total = Math.round(opt.total * dk); }
 
   const lock = LockService.getScriptLock();
   lock.waitLock(20000);
@@ -285,8 +344,7 @@ function book_(b) {
   try {
     ref = nextRef_(PRODUCT_CODE[prod]);
     const now = new Date();
-    const dims = (num_(b.l) > 0 && num_(b.w) > 0 && num_(b.h) > 0)
-      ? r.pieces + ' x ' + num_(b.l) + 'x' + num_(b.w) + 'x' + num_(b.h) + ' cm' : '';
+    const dims = r.items.map(function (it) { return it.q + ' x ' + it.kg + 'kg' + ((it.l > 0 && it.w > 0 && it.h > 0) ? ' ' + it.l + 'x' + it.w + 'x' + it.h + ' cm' : ''); }).join('; ');
     const notes = ['Web booking (published rate estimate)']; const xm = String(b.contents || '').match(/\| Options: (.*)$/); if (xm) notes.push('EXTRAS REQUESTED: ' + xm[1] + ' (confirm availability and price)');
     if (outside) notes.push('PICKUP OUTSIDE JAKARTA: confirm pickup cost');
     if (b.__member) notes.push('PORTAL MEMBER BOOKING (' + safe_(b.shipper_company) + '): price per member agreement, not published rate' + (b.__disc ? ' (' + Math.round(b.__disc * 100) + '% off published)' : '')); else if (quote) notes.push('ABOVE PUBLISHED TABLE: quote needed');
@@ -307,7 +365,7 @@ function book_(b) {
       ref, now, PRODUCT_NAME[prod], safe_(b.shipper_company || b.shipper_name), safe_(b.shipper_name), "'" + wa,
       safe_(pickupCity || 'Drop-off'), safe_(r.country), safe_((b.consignee_company ? b.consignee_company + ', ' : '') + b.consignee_city),
       safe_(b.contents), safe_(b.declared_value, 40), r.pieces, r.actual_kg, safe_(dims), opt ? opt.chargeable_kg : '',
-      '', '', '', quote ? '' : opt.base, quote ? '' : opt.fuel, '', '',
+      '', '', '', quote ? '' : opt.base, quote ? '' : opt.fuel, quote ? '' : (opt.demand || ''), '',
       '=IF(S' + row + '="","",S' + row + '+T' + row + '+U' + row + '+V' + row + ')',
       '=IF(OR(W' + row + '="",R' + row + '=""),"",W' + row + '-R' + row + ')',
       '=IF(OR(X' + row + '="",W' + row + '=0),"",X' + row + '/W' + row + ')',

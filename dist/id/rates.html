@@ -8,7 +8,7 @@
 <meta property="og:title" content="Tarif Pengiriman | PCW Freight"><meta property="og:description" content="Cek published rate ekspres internasional berdasarkan tujuan dan berat."><meta property="og:type" content="website">
 <link rel="icon" type="image/png" sizes="32x32" href="../assets/favicon-32.png"><link rel="icon" type="image/png" sizes="192x192" href="../assets/icon-192.png"><link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
 <meta property="og:image" content="https://pcwfreight.com/assets/og-image.png"><meta name="theme-color" content="#004aad">
-<link rel="stylesheet" href="../assets/style.css?v=b97e3cb8">
+<link rel="stylesheet" href="../assets/style.css?v=d3cc4cba">
 </head>
 <body data-root="../">
 <a class="skip" href="#main">Langsung ke konten</a>
@@ -25,21 +25,20 @@
 <section class="s"><div class="wrap"><form class="box" data-rate data-steps>
 <ol class="stepper"><li class="on" data-s="1"><b>1</b> Tujuan</li><li data-s="2"><b>2</b> Paket</li><li data-s="3"><b>3</b> Tarif</li></ol>
 <div class="stp" data-step="1">
-<div class="row r2">
-<div><label for="r_c" class="req">Dikirim ke mana?</label><select id="r_c" name="country" required><option value="">Memuat…</option></select></div>
-<div><label class="req">Apa yang dikirim?</label><div class="seg"><label><input type="radio" name="type" value="Parcel" checked><span>Paket</span></label><label><input type="radio" name="type" value="Document"><span>Dokumen</span></label></div></div>
+<div class="od">
+<div class="odc"><h4>Asal</h4>
+<div><label>Negara / wilayah</label><input value="Indonesia" disabled></div>
+<div class="row r2" style="margin-top:12px"><div><label for="r_oz">Kode pos</label><input id="r_oz" name="o_zip" inputmode="numeric" maxlength="10" autocomplete="postal-code"></div><div><label for="r_oc">Kota</label><input id="r_oc" name="o_city" maxlength="60"></div></div></div>
+<div class="odc"><h4>Tujuan</h4>
+<div><label for="r_c" class="req">Negara / wilayah</label><select id="r_c" name="country" required><option value="">Memuat…</option></select></div>
+<div class="row r2" style="margin-top:12px"><div><label for="r_dz">Kode pos</label><input id="r_dz" name="d_zip" maxlength="12"></div><div><label for="r_dc">Kota</label><input id="r_dc" name="d_city" maxlength="60"></div></div></div>
 </div>
+<div style="margin-top:14px"><label class="req">Apa yang dikirim?</label><div class="seg"><label><input type="radio" name="type" value="Parcel" checked><span>Paket</span></label><label><input type="radio" name="type" value="Document"><span>Dokumen</span></label></div></div>
 <div style="margin-top:16px"><button class="btn btn-a" type="button" data-next>Lanjut: detail paket</button></div>
 </div>
 <div class="stp hidden" data-step="2">
-<div class="row r5">
-<div><label for="r_kg" class="req">Total berat aktual (kg)</label><input id="r_kg" name="kg" type="number" min="0.1" step="0.1" required></div>
-<div><label for="r_pcs">Jumlah koli</label><input id="r_pcs" name="pieces" type="number" min="1" max="50" value="1"></div>
-<div><label for="r_l">Panjang (cm)</label><input id="r_l" name="l" type="number" min="0" step="0.1" placeholder="opsional"></div>
-<div><label for="r_w">Lebar (cm)</label><input id="r_w" name="w" type="number" min="0" step="0.1"></div>
-<div><label for="r_h">Tinggi (cm)</label><input id="r_h" name="h" type="number" min="0" step="0.1"></div>
-</div>
-<p class="hint">Ukuran per koli, masing-masing dibulatkan ke atas ke cm penuh. Berat tagih adalah yang lebih besar antara berat aktual dan P × L × T / 5000.</p>
+<div data-pkgs></div>
+<p class="hint">Berat dan ukuran dihitung per koli. Setiap ukuran dibulatkan ke atas ke cm penuh; tiap koli ditagih sesuai yang lebih besar antara berat aktual dan P × L × T / 5000, dibulatkan ke atas ke 0,5 kg. Tambahkan baris terpisah untuk setiap ukuran paket yang berbeda.</p>
 <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:6px"><button class="btn btn-o" type="button" data-back>Kembali</button><button class="btn btn-a" type="submit">Tampilkan tarif</button></div>
 </div>
 </form><div data-out style="margin-top:20px"></div>
@@ -56,5 +55,5 @@
 <div class="legal"><span>© 2026 PT Prabaswara Catur Widantara</span><span><a style="display:inline" href="../id/terms.html">Syarat</a> · <a style="display:inline" href="../id/privacy.html">Privasi</a></span></div>
 </div></footer>
 <a class="wa-float" href="https://wa.me/6281199896752?text=Halo%20PCW%2C%20saya%20ingin%20minta%20penawaran%20pengiriman%20internasional." aria-label="WhatsApp"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm5.3 14.1c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .3-3.4-.7-2.9-1.2-4.7-4.1-4.8-4.3-.1-.2-1.2-1.6-1.2-3s.7-2.1 1-2.4c.3-.3.6-.3.8-.3h.6c.2 0 .4 0 .6.5l.9 2.1c.1.2.1.4 0 .6l-.4.6-.4.4c-.1.1-.3.3-.1.6.2.3.8 1.3 1.7 2.1 1.2 1 2.1 1.3 2.4 1.5.3.1.5.1.6-.1l.9-1c.2-.3.4-.2.7-.1l2 1c.3.1.5.2.5.3.1.2.1.7-.1 1.3z"/></svg><span>Chat WhatsApp</span></a>
-<script src="../assets/app.js?v=362c2f69" defer></script>
+<script src="../assets/app.js?v=39b10071" defer></script>
 </body></html>

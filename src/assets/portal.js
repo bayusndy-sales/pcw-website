@@ -96,6 +96,7 @@
   var root = $('#pRoot');
   if (root) {
     var ME = null, ITEMS = [], PREFILL = null;
+    function PREFILL_ITEMS() { return PREFILL && PREFILL.items ? PREFILL.items : null; }
     function renderLogin(msg) {
       root.innerHTML = (msg || '') + '<form id="lf" class="box" style="max-width:460px"><h2 style="margin-top:0">' + t('Sign in', 'Masuk') + '</h2><div id="lm"></div>' +
         fld('email', 'Email', 'email', true, 'autocomplete="username"') + '<div style="margin-top:14px">' + fld('password', 'Password', 'password', true, 'autocomplete="current-password"') + '</div>' +
@@ -183,22 +184,23 @@
       var p = $('[data-pane=rates]', root);
       p.innerHTML = '<form id="rf" class="box"><h3 style="margin-top:0">' + t('Check rates', 'Cek tarif') + '</h3><div class="row r3"><div><label class="req">' + t('Destination', 'Tujuan') + '</label><select name="country" required>' + opts(COUNTRIES) + '</select></div>' +
         '<div><label>' + t('Type', 'Jenis') + '</label><select name="type"><option value="Parcel">' + t('Parcel', 'Paket') + '</option><option value="Document">' + t('Document', 'Dokumen') + '</option></select></div>' +
-        fld('pieces', t('Pieces', 'Koli'), 'number', true, 'min="1" max="50" value="1"') + '</div><div class="row r4" style="margin-top:14px">' + fld('kg', t('Weight (kg)', 'Berat (kg)'), 'number', true, 'min="0.1" step="0.1"') +
-        fld('l', t('L (cm)', 'P (cm)'), 'number', false, 'min="0" step="0.1"') + fld('w', t('W (cm)', 'L (cm)'), 'number', false, 'min="0" step="0.1"') + fld('h', t('H (cm)', 'T (cm)'), 'number', false, 'min="0" step="0.1"') + '</div>' +
+        '</div><div id="rpk" data-pkgs style="margin-top:14px"></div>' +
         '<button class="btn btn-a" type="submit" style="margin-top:14px">' + t('Get rate', 'Lihat tarif') + '</button><p class="hint">' + t('Each dimension is rounded up to the next whole cm. Chargeable weight is the higher of actual and volumetric weight (L × W × H ÷ 5000). Remote area, duties and taxes are extra where applicable.', 'Setiap ukuran dibulatkan ke atas ke cm penuh. Berat tagih adalah yang lebih besar antara berat aktual dan volumetrik (P × L × T ÷ 5000). Remote area, bea, dan pajak dikenakan terpisah bila berlaku.') + '</p></form><div id="ro" style="margin-top:14px"></div>';
+      if (window.PCWPkg) PCWPkg.mount($('#rpk'), PREFILL_ITEMS());
       $('#rf').addEventListener('submit', function (ev) {
         ev.preventDefault(); var f = ev.target, btn = $('[type=submit]', f), o = $('#ro'); busy(btn, true);
-        var b = { action: 'rate_m', token: store('pt') }; ['country', 'type', 'pieces', 'kg', 'l', 'w', 'h'].forEach(function (k) { b[k] = f.elements[k].value; });
+        var b = { action: 'rate_m', token: store('pt') }; ['country', 'type'].forEach(function (k) { b[k] = f.elements[k].value; });
+        var gp = PCWPkg.get($('#rpk')); if (gp.bad || !gp.items.length) { busy(btn, false); if (gp.bad) gp.bad.focus(); return; } b.items = gp.items;
         post(b).then(function (r) {
           busy(btn, false);
           if (!r.ok) { if (r.error === 'session') return expired(); o.innerHTML = notice('err', err(r)); return; }
-          o.innerHTML = '<div class="box"><div class="hint">' + esc(r.country) + ' · ' + r.pieces + ' ' + t('pc', 'koli') + ' · ' + t('actual', 'aktual') + ' ' + r.actual_kg + ' kg' + (r.volumetric_kg ? ' · ' + t('volumetric', 'volumetrik') + ' ' + r.volumetric_kg + ' kg' : '') + '</div>' +
-            table([t('Service', 'Layanan'), t('Chargeable', 'Berat tagih'), t('Base', 'Dasar'), t('Fuel', 'Fuel'), t('Total', 'Total'), ''], r.options.map(function (op) {
+          o.innerHTML = '<div class="box"><div class="hint">' + esc(r.country) + ' · ' + r.pieces + ' ' + t('pc', 'koli') + ' (' + (r.items || []).map(function (it) { return it.q + '×' + it.kg + 'kg'; }).join(', ') + ') · ' + t('actual', 'aktual') + ' ' + r.actual_kg + ' kg' + (r.volumetric_kg ? ' · ' + t('volumetric', 'volumetrik') + ' ' + r.volumetric_kg + ' kg' : '') + '</div>' +
+            table([t('Service', 'Layanan'), t('Chargeable', 'Berat tagih'), t('Transportation', 'Transportasi'), t('Demand surcharge', 'Demand surcharge'), t('Fuel', 'Fuel'), t('Total', 'Total'), ''], r.options.map(function (op) {
               var nm = 'PCW ' + op.product + ' Express';
-              if (op.quote) return tr([nm, op.chargeable_kg + ' kg', { colspan: 0 } && '', '', '<em>' + t('Quote needed', 'Perlu penawaran') + '</em>', '<a class="btn btn-o btn-sm" href="' + wl('Hello PCW, I would like a quote: ' + r.country + ', ' + op.chargeable_kg + ' kg, ' + nm) + '">WhatsApp</a>']);
-              return tr([nm, op.chargeable_kg + ' kg', idr(op.base), idr(op.fuel), '<strong>' + idr(op.total) + '</strong>', '<button class="btn btn-a btn-sm" type="button" data-bk="' + op.product + '">' + t('Book', 'Booking') + '</button>']);
-            })) + '<p class="hint">' + (r.plan === 'member' ? t('Your member rate. ', 'Tarif member Anda. ') : t('Published rate. ', 'Published rate. ')) + t('Final price is confirmed after weighing.', 'Harga final dikonfirmasi setelah penimbangan.') + '</p></div>';
-          $$('[data-bk]', o).forEach(function (bt) { bt.onclick = function () { PREFILL = { product: bt.getAttribute('data-bk'), country: r.country, type: r.type, pieces: r.pieces, kg: r.actual_kg, l: f.elements.l.value, w: f.elements.w.value, h: f.elements.h.value }; fillNew(); window._go('new'); }; });
+              if (op.quote) return tr([nm, op.chargeable_kg + ' kg', '', '', '', '<em>' + t('Quote needed', 'Perlu penawaran') + '</em>', '<a class="btn btn-o btn-sm" href="' + wl('Hello PCW, I would like a quote: ' + r.country + ', ' + op.chargeable_kg + ' kg, ' + nm) + '">WhatsApp</a>']);
+              return tr([nm, op.chargeable_kg + ' kg', op.product === 'Priority' ? idr(op.base) : '—', op.product === 'Priority' ? idr(op.demand || 0) : '—', op.product === 'Priority' ? idr(op.fuel) : '—', '<strong>' + idr(op.total) + '</strong>', '<button class="btn btn-a btn-sm" type="button" data-bk="' + op.product + '">' + t('Book', 'Booking') + '</button>']);
+            })) + '<p class="hint">' + (r.plan === 'member' ? t('Your member rate. ', 'Tarif member Anda. ') : t('Published rate. ', 'Published rate. ')) + (r.demand_per_kg ? t('Demand surcharge IDR ' + r.demand_per_kg + ' per chargeable kg until ' + r.demand_until + '. ', 'Demand surcharge Rp ' + r.demand_per_kg + ' per kg berat tagih sampai ' + r.demand_until + '. ') : '') + t('Final price is confirmed after weighing.', 'Harga final dikonfirmasi setelah penimbangan.') + '</p></div>';
+          $$('[data-bk]', o).forEach(function (bt) { bt.onclick = function () { PREFILL = { product: bt.getAttribute('data-bk'), country: r.country, type: r.type, items: r.items }; fillNew(); window._go('new'); }; });
         }).catch(function () { busy(btn, false); o.innerHTML = notice('err', err()); });
       });
     }
@@ -206,8 +208,7 @@
       var p = $('[data-pane=new]', root);
       p.innerHTML = '<form id="nf" class="box" novalidate><input class="hp" name="website" tabindex="-1" autocomplete="off" aria-hidden="true"><h3 style="margin-top:0">' + t('New shipment', 'Kiriman baru') + '</h3>' +
         '<div class="row r2"><div><label class="req">' + t('Service', 'Layanan') + '</label><select name="product"><option value="Priority">PCW Priority Express</option><option value="Economy">PCW Economy Express</option></select></div><div><label class="req">' + t('Destination country', 'Negara tujuan') + '</label><select name="dest_country" required><option value="">…</option>' + opts(COUNTRIES) + '</select></div></div>' +
-        '<div class="row r3" style="margin-top:14px"><div><label>' + t('Type', 'Jenis') + '</label><select name="shipment_type"><option value="Parcel">' + t('Parcel', 'Paket') + '</option><option value="Document">' + t('Document', 'Dokumen') + '</option></select></div>' + fld('pieces', t('Pieces', 'Jumlah koli'), 'number', true, 'min="1" max="50" value="1"') + fld('actual_kg', t('Total weight (kg)', 'Total berat (kg)'), 'number', true, 'min="0.1" step="0.1"') + '</div>' +
-        '<div class="row r3" style="margin-top:14px">' + fld('l', t('Length (cm)', 'Panjang (cm)'), 'number', false, 'min="0" step="0.1"') + fld('w', t('Width (cm)', 'Lebar (cm)'), 'number', false, 'min="0" step="0.1"') + fld('h', t('Height (cm)', 'Tinggi (cm)'), 'number', false, 'min="0" step="0.1"') + '</div>' +
+        '<div class="row r3" style="margin-top:14px"><div><label>' + t('Type', 'Jenis') + '</label><select name="shipment_type"><option value="Parcel">' + t('Parcel', 'Paket') + '</option><option value="Document">' + t('Document', 'Dokumen') + '</option></select></div>' + '</div><div id="npk" data-pkgs style="margin-top:14px"></div><input type="hidden" name="pieces" value="1"><input type="hidden" name="actual_kg" value="">' +
         '<h3 style="margin:22px 0 10px">' + t('Shipper and handover', 'Pengirim dan serah terima') + '</h3><div class="row r2">' + fld('shipper_name', t('Contact name', 'Nama kontak')) + fld('shipper_whatsapp', t('WhatsApp number', 'Nomor WhatsApp'), 'tel', true, 'placeholder="0811…"') + '</div>' +
         '<div class="row r2" style="margin-top:14px"><div><label>' + t('Handover', 'Serah terima') + '</label><select name="pickup_or_dropoff"><option value="Pickup">Pickup</option><option value="Drop-off">Drop-off</option></select></div>' + fld('pickup_date', t('Preferred pickup date', 'Tanggal pickup'), 'date', false) + '</div>' +
         '<div style="margin-top:14px"><label>' + t('Pickup address (if Pickup)', 'Alamat pickup (jika Pickup)') + '</label><textarea name="pickup_address"></textarea></div>' +
@@ -223,10 +224,11 @@
         '<label class="check"><input type="checkbox" name="terms_accepted"><span>' + t('I accept the <a href="terms.html" target="_blank">Terms &amp; Conditions</a>.', 'Saya menyetujui <a href="terms.html" target="_blank">Syarat &amp; Ketentuan</a>.') + '</span></label>' +
         '<label class="check"><input type="checkbox" name="privacy_consent"><span>' + t('I agree to the <a href="privacy.html" target="_blank">Privacy Policy</a>.', 'Saya setuju dengan <a href="privacy.html" target="_blank">Kebijakan Privasi</a>.') + '</span></label></div>' +
         '<button class="btn btn-a" type="submit" style="margin-top:18px;padding:15px">' + t('Send booking request', 'Kirim permintaan booking') + '</button><p class="hint">' + t('Our team confirms weight and price, then issues the AWB.', 'Tim kami mengonfirmasi berat dan harga, lalu menerbitkan AWB.') + '</p></form><div id="no" style="margin-top:14px"></div>';
-      var f = $('#nf'); try { var w = localStorage.getItem('pcw_wa'); if (w) f.elements.shipper_whatsapp.value = w; } catch (e) {}
+      var f = $('#nf'); if (window.PCWPkg) PCWPkg.mount($('#npk'), PREFILL_ITEMS(), function (s) { f.elements.pieces.value = s.items.reduce(function (a, x) { return a + x.q; }, 0) || 1; f.elements.actual_kg.value = Math.round(s.items.reduce(function (a, x) { return a + x.q * x.kg; }, 0) * 100) / 100 || ''; }); try { var w = localStorage.getItem('pcw_wa'); if (w) f.elements.shipper_whatsapp.value = w; } catch (e) {}
       f.addEventListener('submit', function (ev) {
         ev.preventDefault(); var fd = new FormData(f), out = $('#no'), b = { action: 'book_m', token: store('pt') };
         fd.forEach(function (v, k) { b[k] = typeof v === 'string' ? v.trim() : v; });
+        var gp = PCWPkg.get($('#npk')); if (gp.bad || !gp.items.length) { out.innerHTML = notice('err', t('Please enter weight for every package line.', 'Mohon isi berat untuk setiap baris paket.')); if (gp.bad) gp.bad.focus(); return; } b.items = gp.items;
         var ex = []; { var map = { opt_insurance: 'Insurance', opt_signature: 'Signature', opt_ddp: 'DDP' }; Object.keys(map).forEach(function (k) { if (f.elements[k].checked) ex.push(map[k]); delete b[k]; }); }
         if (ex.length) b.contents = (b.contents + ' | Options: ' + ex.join(', ')).slice(0, 295);
         b.terms_accepted = f.elements.terms_accepted.checked; b.privacy_consent = f.elements.privacy_consent.checked; b.no_prohibited = f.elements.no_prohibited.checked;
@@ -243,7 +245,7 @@
     }
     function fillNew() {
       var f = $('#nf'), p = PREFILL; if (!f) return;
-      if (p) { f.elements.product.value = p.product; f.elements.dest_country.value = p.country; f.elements.shipment_type.value = p.type; f.elements.pieces.value = p.pieces; f.elements.actual_kg.value = p.kg; f.elements.l.value = p.l; f.elements.w.value = p.w; f.elements.h.value = p.h; }
+      if (p) { f.elements.product.value = p.product; f.elements.dest_country.value = p.country; f.elements.shipment_type.value = p.type; if (window.PCWPkg && p.items) PCWPkg.mount($('#npk'), p.items, function (s) { f.elements.pieces.value = s.items.reduce(function (a, x) { return a + x.q; }, 0) || 1; f.elements.actual_kg.value = Math.round(s.items.reduce(function (a, x) { return a + x.q * x.kg; }, 0) * 100) / 100 || ''; }); }
       if (ME) { if (!f.elements.shipper_name.value) f.elements.shipper_name.value = ME.name; if (!f.elements.shipper_whatsapp.value && ME.phone) f.elements.shipper_whatsapp.value = ME.phone; }
     }
     function buildProfile() {

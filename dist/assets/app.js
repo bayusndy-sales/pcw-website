@@ -11,7 +11,7 @@
     en: {
       loading: 'Loading…', calc: 'Calculating…', err: 'Sorry, something went wrong. Please try again or chat with us on WhatsApp.',
       invalid: 'Please fill in destination and weight.', notListed: 'This country is not in our published table yet. Ask us for a quote.',
-      product: 'Service', base: 'Base rate', fuel: 'Fuel surcharge (51%)', total: 'Total', allin: 'All-in price',
+      product: 'Service', base: 'Transportation', demand: 'Demand surcharge', fuel: 'Fuel surcharge', demandNote: 'Demand surcharge: IDR {r} per chargeable kg, valid until {d}.', pcsWord: 'piece(s)', total: 'Total', allin: 'All-in price',
       chargeable: 'Chargeable weight', actual: 'Actual weight', vol: 'Volumetric weight', kg: 'kg',
       book: 'Book this', quote: 'Request a quote', quoteNote: 'Above our published table: we quote this personally.',
       Priority: 'PCW Priority Express', Economy: 'PCW Economy Express',
@@ -24,7 +24,7 @@
     id: {
       loading: 'Memuat…', calc: 'Menghitung…', err: 'Maaf, terjadi kendala. Silakan coba lagi atau hubungi kami lewat WhatsApp.',
       invalid: 'Mohon isi negara tujuan dan berat.', notListed: 'Negara ini belum ada di tabel publikasi kami. Silakan minta penawaran.',
-      product: 'Layanan', base: 'Tarif dasar', fuel: 'Fuel surcharge (51%)', total: 'Total', allin: 'Harga all-in',
+      product: 'Layanan', base: 'Transportasi', demand: 'Demand surcharge', fuel: 'Fuel surcharge', demandNote: 'Demand surcharge: IDR {r} per kg berat tagih, berlaku sampai {d}.', pcsWord: 'koli', total: 'Total', allin: 'Harga all-in',
       chargeable: 'Berat tagih (chargeable)', actual: 'Berat aktual', vol: 'Berat volumetrik', kg: 'kg',
       book: 'Booking', quote: 'Minta penawaran', quoteNote: 'Di atas tabel publikasi: kami hitungkan langsung.',
       Priority: 'PCW Priority Express', Economy: 'PCW Economy Express',
@@ -77,63 +77,131 @@
     }).catch(function () { sel.innerHTML = '<option value="">' + esc(T.err) + '</option>'; });
   }
 
+
+  /* package lines (DHL-style: one line per package size, each with its own quantity, weight and dimensions) */
+  var PK = (function () {
+    var ID = LANG === 'id';
+    var L = { qty: ID ? 'Jumlah' : 'Quantity', kg: ID ? 'Berat per koli (kg)' : 'Weight per piece (kg)', l: ID ? 'P (cm)' : 'Length (cm)', w: ID ? 'L (cm)' : 'Width (cm)', h: ID ? 'T (cm)' : 'Height (cm)', add: ID ? '+ Tambah paket lain' : '+ Add another package', rm: ID ? 'Hapus baris' : 'Remove line', line: ID ? 'Paket' : 'Package' };
+    function lineHtml(it, i) {
+      return '<div class="pk" data-pk>' +
+        '<div><label>' + L.qty + '</label><input type="number" min="1" max="50" step="1" data-f="q" value="' + (it.q || 1) + '"></div>' +
+        '<div><label>' + L.kg + '</label><input type="number" min="0.1" step="0.1" data-f="kg" value="' + (it.kg || '') + '" placeholder="0.5"></div>' +
+        '<div><label>' + L.l + '</label><input type="number" min="0" step="0.1" data-f="l" value="' + (it.l || '') + '"></div>' +
+        '<div><label>' + L.w + '</label><input type="number" min="0" step="0.1" data-f="w" value="' + (it.w || '') + '"></div>' +
+        '<div><label>' + L.h + '</label><input type="number" min="0" step="0.1" data-f="h" value="' + (it.h || '') + '"></div>' +
+        '<button type="button" class="rm" data-rm title="' + L.rm + '" aria-label="' + L.rm + '">×</button></div>';
+    }
+    function mount(box, items, onChange) {
+      var list = (items && items.length ? items : [{ q: 1 }]).slice(0, 20);
+      box.innerHTML = '<div data-lines></div><button type="button" class="btn btn-o btn-sm pkadd" data-add>' + L.add + '</button><div class="pksum" data-sum></div>';
+      var wrap = $('[data-lines]', box);
+      function sync() {
+        var lines = $all('[data-pk]', wrap);
+        lines.forEach(function (ln) { $('[data-rm]', ln).disabled = lines.length === 1; });
+        $('[data-add]', box).classList.toggle('hidden', lines.length >= 20);
+        var s = get(box), pcs = 0, kg = 0;
+        s.items.forEach(function (x) { pcs += x.q; kg += x.q * x.kg; });
+        $('[data-sum]', box).textContent = s.items.length ? (ID ? 'Total: ' : 'Total: ') + pcs + (ID ? ' koli · ' : ' piece(s) · ') + (Math.round(kg * 100) / 100) + ' kg' : '';
+        if (onChange) onChange(s);
+      }
+      list.forEach(function (it) { wrap.insertAdjacentHTML('beforeend', lineHtml(it)); });
+      box.oninput = sync;
+      box.onclick = function (e) {
+        if (e.target.closest('[data-add]')) { wrap.insertAdjacentHTML('beforeend', lineHtml({ q: 1 })); sync(); var ins = $all('[data-f=kg]', wrap); ins[ins.length - 1].focus(); }
+        var rm = e.target.closest('[data-rm]');
+        if (rm && $all('[data-pk]', wrap).length > 1) { rm.closest('[data-pk]').remove(); sync(); }
+      };
+      sync();
+    }
+    function get(box) {
+      var items = [], bad = null;
+      $all('[data-pk]', box).forEach(function (ln, i) {
+        var v = function (k) { return $('[data-f=' + k + ']', ln).value; };
+        var q = parseInt(v('q'), 10), kg = parseFloat(v('kg'));
+        if (!(kg > 0) || !(q >= 1)) { if (!bad) bad = $('[data-f=kg]', ln); return; }
+        items.push({ q: q, kg: kg, l: parseFloat(v('l')) || 0, w: parseFloat(v('w')) || 0, h: parseFloat(v('h')) || 0 });
+      });
+      return { items: items, bad: bad };
+    }
+    function legacy(q) {
+      if (q.items) { try { var a = JSON.parse(q.items); if (a && a.length) return a; } catch (e) {} }
+      var kg = parseFloat(q.kg), pcs = parseInt(q.pieces, 10) || 1;
+      if (!(kg > 0)) return null;
+      return [{ q: pcs, kg: Math.round(kg / pcs * 100) / 100, l: q.l, w: q.w, h: q.h }];
+    }
+    return { mount: mount, get: get, legacy: legacy };
+  })();
+  window.PCWPkg = PK;
+
   /* rate calculator (quick form on home + full form on rates page) */
   function rateForm(form) {
     var out = $('[data-out]', form.parentNode) || $('[data-out]');
-    fillCountries($('[name=country]', form), qs().country);
+    var quick = form.hasAttribute('data-quick'), pkBox = $('[data-pkgs]', form), q = qs();
+    fillCountries($('[name=country]', form), q.country);
+    if (pkBox) PK.mount(pkBox, PK.legacy(q));
+    ['o_zip', 'o_city', 'd_zip', 'd_city'].forEach(function (k) { if (q[k] && form.elements[k]) form.elements[k].value = q[k]; });
+    if (q.type && !quick) $all('[name=type]', form).forEach(function (r) { r.checked = r.value === q.type; });
     form.addEventListener('submit', function (ev) {
       ev.preventDefault();
-      var f = new FormData(form);
-      var p = { action: 'rate', country: f.get('country') || '', type: f.get('type') || 'Parcel', kg: f.get('kg') || '', pieces: f.get('pieces') || 1, l: f.get('l') || '', w: f.get('w') || '', h: f.get('h') || '' };
-      if (form.hasAttribute('data-quick')) {
-        location.href = ROOT + (LANG === 'id' ? 'id/' : '') + 'rates.html?' + Object.keys(p).filter(function (k) { return k !== 'action'; }).map(function (k) { return k + '=' + encodeURIComponent(p[k]); }).join('&') + '#go';
+      var f = new FormData(form), p;
+      if (quick) {
+        p = { country: f.get('country') || '', type: f.get('type') || 'Parcel', kg: f.get('kg') || '' };
+        location.href = ROOT + (LANG === 'id' ? 'id/' : '') + 'rates.html?' + Object.keys(p).map(function (k) { return k + '=' + encodeURIComponent(p[k]); }).join('&') + '#go';
         return;
       }
-      if (!p.country || !(parseFloat(p.kg) > 0)) { out.innerHTML = '<div class="notice err">' + T.invalid + '</div>'; return; }
+      var g = PK.get(pkBox);
+      if (!f.get('country') || g.bad || !g.items.length) { out.innerHTML = '<div class="notice err">' + T.invalid + '</div>'; if (g.bad) g.bad.focus(); return; }
+      p = { action: 'rate', country: f.get('country'), type: f.get('type') || 'Parcel', items: JSON.stringify(g.items) };
+      var extra = { d_zip: f.get('d_zip') || '', d_city: f.get('d_city') || '' };
       out.innerHTML = '<div class="notice info">' + T.calc + '</div>';
       apiGet(p).then(function (r) {
         if (!r.ok) { out.innerHTML = '<div class="notice err">' + (r.error === 'country_not_listed' ? T.notListed : T.err) + '</div>'; return; }
-        out.innerHTML = renderRates(r, p);
+        out.innerHTML = renderRates(r, p, extra);
       }).catch(function () { out.innerHTML = '<div class="notice err">' + T.err + '</div>'; });
     });
-    var q = qs();
-    if (!form.hasAttribute('data-quick') && q.kg) {
-      ['type', 'kg', 'pieces', 'l', 'w', 'h'].forEach(function (k) {
-        if (!q[k]) return; var el = form.elements[k];
-        if (el && el.length && el[0] && el[0].type === 'radio') { $all('[name=' + k + ']', form).forEach(function (r) { r.checked = r.value === q[k]; }); }
-        else if (el) el.value = q[k];
-      });
+    if (!quick && q.country && PK.legacy(q)) {
       countries().then(function () { setTimeout(function () { form.requestSubmit ? form.requestSubmit() : form.dispatchEvent(new Event('submit')); }, 50); });
     }
   }
 
-  function renderRates(r, p) {
+  function renderRates(r, p, extra) {
+    extra = extra || {};
+    var hasDem = r.demand_per_kg > 0;
+    var cols = hasDem ? 3 : 2;
     var rows = r.options.map(function (o) {
-      var bookUrl = ROOT + (LANG === 'id' ? 'id/' : '') + 'book.html?' + ['product=' + o.product, 'country=' + encodeURIComponent(r.country), 'type=' + r.type, 'kg=' + p.kg, 'pieces=' + p.pieces, 'l=' + p.l, 'w=' + p.w, 'h=' + p.h].join('&');
+      var bookUrl = ROOT + (LANG === 'id' ? 'id/' : '') + 'book.html?' + ['product=' + o.product, 'country=' + encodeURIComponent(r.country), 'type=' + r.type, 'items=' + encodeURIComponent(p.items || JSON.stringify(r.items)), 'cz=' + encodeURIComponent(extra.d_zip || ''), 'cc=' + encodeURIComponent(extra.d_city || '')].join('&');
       if (o.quote) {
-        return '<tr><td><strong>' + T[o.product] + '</strong><div class="hint">' + T.chargeable + ': ' + o.chargeable_kg + ' ' + T.kg + '</div></td><td colspan="3">' + T.quoteNote + '</td><td><a class="btn btn-wa btn-sm" href="' + waLink((LANG === 'id' ? 'Halo PCW, mohon penawaran ' : 'Hello PCW, please quote ') + T[o.product] + ' ' + r.country + ' ' + o.chargeable_kg + ' kg') + '">' + T.quote + '</a></td></tr>';
+        return '<tr><td><strong>' + T[o.product] + '</strong><div class="hint">' + T.chargeable + ': ' + o.chargeable_kg + ' ' + T.kg + '</div></td><td colspan="' + (cols + 1) + '">' + T.quoteNote + '</td><td><a class="btn btn-wa btn-sm" href="' + waLink((LANG === 'id' ? 'Halo PCW, mohon penawaran ' : 'Hello PCW, please quote ') + T[o.product] + ' ' + r.country + ' ' + o.chargeable_kg + ' kg') + '">' + T.quote + '</a></td></tr>';
       }
       var isP = o.product === 'Priority';
       return '<tr><td><strong>' + T[o.product] + '</strong><div class="hint">' + T.chargeable + ': ' + o.chargeable_kg + ' ' + T.kg + '</div></td>' +
-        '<td class="n">' + (isP ? idr(o.base) : '—') + '</td><td class="n">' + (isP ? idr(o.fuel) : '—') + '</td>' +
+        '<td class="n">' + (isP ? idr(o.base) : '—') + '</td>' + (hasDem ? '<td class="n">' + (isP ? idr(o.demand || 0) : '—') + '</td>' : '') + '<td class="n">' + (isP ? idr(o.fuel) : '—') + '</td>' +
         '<td class="n"><span class="price">' + idr(o.total) + '</span>' + (isP ? '' : '<div class="hint">' + T.allin + '</div>') + '</td>' +
         '<td><a class="btn btn-p btn-sm" href="' + bookUrl + '">' + T.book + '</a></td></tr>';
     }).join('');
-    var head = '<div class="pub">' + (LANG === 'id' ? 'Published rate' : 'Published rate') + ' · ' + esc(r.country) + ' · ' + (r.type === 'Document' ? (LANG === 'id' ? 'Dokumen' : 'Document') : (LANG === 'id' ? 'Paket' : 'Parcel')) + '</div>' +
+    var lines = (r.items || []).map(function (it) { return it.q + ' × ' + it.kg + ' ' + T.kg + ((it.l > 0 && it.w > 0 && it.h > 0) ? ' (' + it.l + '×' + it.w + '×' + it.h + ' cm)' : ''); }).join(' · ');
+    var head = '<div class="pub">' + 'Published rate' + ' · ' + (LANG === 'id' ? 'Indonesia → ' : 'Indonesia → ') + esc(r.country) + ' · ' + (r.type === 'Document' ? (LANG === 'id' ? 'Dokumen' : 'Document') : (LANG === 'id' ? 'Paket' : 'Parcel')) + '</div>' +
+      '<div class="hint">' + esc(lines) + '</div>' +
       '<div class="hint">' + T.actual + ': ' + r.actual_kg + ' ' + T.kg + (r.volumetric_kg ? ' · ' + T.vol + ': ' + r.volumetric_kg + ' ' + T.kg : '') + '</div>';
-    var table = '<table class="rates"><thead><tr><th>' + T.product + '</th><th class="n">' + T.base + '</th><th class="n">' + T.fuel + '</th><th class="n">' + T.total + '</th><th></th></tr></thead><tbody>' + rows + '</tbody></table>';
+    var table = '<table class="rates"><thead><tr><th>' + T.product + '</th><th class="n">' + T.base + '</th>' + (hasDem ? '<th class="n">' + T.demand + '</th>' : '') + '<th class="n">' + T.fuel + '</th><th class="n">' + T.total + '</th><th></th></tr></thead><tbody>' + rows + '</tbody></table>';
+    var note = hasDem ? '<p class="hint">' + T.demandNote.replace('{r}', Number(r.demand_per_kg).toLocaleString('id-ID')).replace('{d}', esc(r.demand_until)) + '</p>' : '';
     var biz = '<div class="notice info"><strong>' + (LANG === 'id' ? 'Akun bisnis mendapat tarif lebih rendah.' : 'Business accounts get lower rates.') + '</strong> ' +
       '<a class="btn btn-a btn-sm" style="margin-left:8px" href="' + waLink(LANG === 'id' ? 'Halo PCW, saya ingin tarif bisnis untuk pengiriman ke ' + r.country + '.' : 'Hello PCW, I would like a business rate for shipments to ' + r.country + '.') + '">' + (LANG === 'id' ? 'Dapatkan tarif bisnis' : 'Get your business rate') + '</a></div>';
-    return '<div class="box" id="go">' + head + table + biz + '</div>';
+    return '<div class="box" id="go">' + head + table + note + biz + '</div>';
   }
 
   /* booking form */
   function bookForm(form) {
     var q = qs(), out = $('[data-out]');
     fillCountries($('[name=dest_country]', form), q.country);
-    ['product', 'type', 'kg', 'pieces', 'l', 'w', 'h'].forEach(function (k) {
+    var pkBox = $('[data-pkgs]', form);
+    function syncPk(s) { form.elements.pieces.value = s.items.reduce(function (a, x) { return a + x.q; }, 0) || 1; form.elements.actual_kg.value = Math.round(s.items.reduce(function (a, x) { return a + x.q * x.kg; }, 0) * 100) / 100 || ''; }
+    PK.mount(pkBox, PK.legacy(q), syncPk);
+    if (q.cc && form.elements.consignee_city) form.elements.consignee_city.value = q.cc;
+    if (q.cz && form.elements.consignee_postcode) form.elements.consignee_postcode.value = q.cz;
+    ['product', 'type'].forEach(function (k) {
       if (!q[k] || q[k] === 'undefined') return;
-      var name = { type: 'shipment_type', kg: 'actual_kg' }[k] || k, el = form.elements[name];
+      var name = { type: 'shipment_type' }[k] || k, el = form.elements[name];
       if (!el) return;
       if (el.length && el[0] && el[0].type === 'radio') $all('[name=' + name + ']', form).forEach(function (r) { r.checked = r.value === q[k]; });
       else el.value = q[k];
@@ -162,6 +230,7 @@
     function stepOk(n) {
       var pane = bsteps[n - 1], els = $all('input,select,textarea', pane).filter(function (el) { return el.required && !el.closest('.hidden'); });
       for (var i = 0; i < els.length; i++) { if (!String(els[i].value).trim() || !els[i].checkValidity()) { els[i].reportValidity(); return false; } }
+      if (n === 1) { var g1 = PK.get(pkBox); if (g1.bad || !g1.items.length) { if (g1.bad) g1.bad.focus(); return false; } }
       if (n === 2 && submit.disabled) return false;
       return true;
     }
@@ -176,7 +245,7 @@
       var e = form.elements, v = function (k) { return esc(String(e[k].value || '').trim() || '-'); }, rows = [
         [ID ? 'Layanan' : 'Service', 'PCW ' + v('product') + ' Express'],
         [ID ? 'Tujuan' : 'To', v('dest_country') + ' · ' + esc(e.shipment_type.value)],
-        [ID ? 'Berat / koli' : 'Weight / pieces', v('actual_kg') + ' kg · ' + v('pieces') + ' pcs'],
+        [ID ? 'Berat / koli' : 'Weight / pieces', v('actual_kg') + ' kg · ' + v('pieces') + ' pcs (' + PK.get(pkBox).items.length + (ID ? ' baris' : ' line(s)') + ')'],
         [ID ? 'Pengirim' : 'Shipper', v('shipper_name') + ' · ' + v('shipper_email') + ' · ' + v('shipper_whatsapp')],
         [ID ? 'Serah terima' : 'Handover', esc(e.pickup_or_dropoff.value) + (e.pickup_or_dropoff.value === 'Pickup' ? ' · ' + v('pickup_city') : '')],
         [ID ? 'Penerima' : 'Receiver', v('consignee_name') + ' · ' + v('consignee_city') + ' · ' + v('consignee_email')],
@@ -188,13 +257,14 @@
     }
     $all('[data-bnext]', form).forEach(function (b) { b.addEventListener('click', function () { if (stepOk(cur)) go(cur + 1); }); });
     $all('[data-bback]', form).forEach(function (b) { b.addEventListener('click', function () { go(cur - 1); }); });
-    if (q.country && q.kg) go(2);
+    if (q.country && PK.legacy(q)) go(2);
 
     form.addEventListener('submit', function (ev) {
       ev.preventDefault();
       if (cur < 4) { if (stepOk(cur)) go(cur + 1); return; }
       var f = new FormData(form), b = { action: 'book', lang: LANG };
       f.forEach(function (v, k) { b[k] = typeof v === 'string' ? v.trim() : v; });
+      var gp = PK.get(pkBox); if (gp.bad || !gp.items.length) { out.innerHTML = '<div class="notice err">' + T.invalid + '</div>'; return; } b.items = gp.items;
       if (opts().length) b.contents = (b.contents + ' | Options: ' + opts().join(', ')).slice(0, 295);
       ['opt_insurance', 'opt_signature', 'opt_ddp'].forEach(function (k) { delete b[k]; });
       b.terms_accepted = form.elements.terms_accepted.checked;

@@ -87,32 +87,25 @@ def head(lang, title, sub, crumb):
 # ---------- shared form pieces ----------
 def rate_form(lang, quick=False):
     E = lang == 'en'
-    dims = '' if quick else f'''
-<div class="row" style="margin-top:14px">
-<div><label for="r_pcs">{"Pieces" if E else "Jumlah koli"}</label><input id="r_pcs" name="pieces" type="number" min="1" max="50" value="1"></div>
-<div><label for="r_l">{"Length (cm)" if E else "Panjang (cm)"}</label><input id="r_l" name="l" type="number" min="0" step="0.1" placeholder="{"optional" if E else "opsional"}"></div>
-<div><label for="r_w">{"Width (cm)" if E else "Lebar (cm)"}</label><input id="r_w" name="w" type="number" min="0" step="0.1"></div>
-<div><label for="r_h">{"Height (cm)" if E else "Tinggi (cm)"}</label><input id="r_h" name="h" type="number" min="0" step="0.1"></div>
-</div><p class="hint">{"Dimensions are per piece, each rounded up to the next whole cm. Chargeable weight is the higher of actual weight and L × W × H / 5000." if E else "Ukuran per koli, masing-masing dibulatkan ke atas ke cm penuh. Berat tagih adalah yang lebih besar antara berat aktual dan P × L × T / 5000."}</p>'''
+    dims = ''
     if not quick:
         return f'''<form class="box" data-rate data-steps>
 <ol class="stepper"><li class="on" data-s="1"><b>1</b> {"Destination" if E else "Tujuan"}</li><li data-s="2"><b>2</b> {"Package" if E else "Paket"}</li><li data-s="3"><b>3</b> {"Rates" if E else "Tarif"}</li></ol>
 <div class="stp" data-step="1">
-<div class="row r2">
-<div><label for="r_c" class="req">{"Where is it going?" if E else "Dikirim ke mana?"}</label><select id="r_c" name="country" required><option value="">{"Loading…" if E else "Memuat…"}</option></select></div>
-<div><label class="req">{"What are you sending?" if E else "Apa yang dikirim?"}</label><div class="seg"><label><input type="radio" name="type" value="Parcel" checked><span>{"Parcel" if E else "Paket"}</span></label><label><input type="radio" name="type" value="Document"><span>{"Document" if E else "Dokumen"}</span></label></div></div>
+<div class="od">
+<div class="odc"><h4>{"From" if E else "Asal"}</h4>
+<div><label>{"Country / territory" if E else "Negara / wilayah"}</label><input value="Indonesia" disabled></div>
+<div class="row r2" style="margin-top:12px"><div><label for="r_oz">{"Postal code" if E else "Kode pos"}</label><input id="r_oz" name="o_zip" inputmode="numeric" maxlength="10" autocomplete="postal-code"></div><div><label for="r_oc">{"City" if E else "Kota"}</label><input id="r_oc" name="o_city" maxlength="60"></div></div></div>
+<div class="odc"><h4>{"To" if E else "Tujuan"}</h4>
+<div><label for="r_c" class="req">{"Country / territory" if E else "Negara / wilayah"}</label><select id="r_c" name="country" required><option value="">{"Loading…" if E else "Memuat…"}</option></select></div>
+<div class="row r2" style="margin-top:12px"><div><label for="r_dz">{"Postal code" if E else "Kode pos"}</label><input id="r_dz" name="d_zip" maxlength="12"></div><div><label for="r_dc">{"City" if E else "Kota"}</label><input id="r_dc" name="d_city" maxlength="60"></div></div></div>
 </div>
+<div style="margin-top:14px"><label class="req">{"What are you sending?" if E else "Apa yang dikirim?"}</label><div class="seg"><label><input type="radio" name="type" value="Parcel" checked><span>{"Parcel" if E else "Paket"}</span></label><label><input type="radio" name="type" value="Document"><span>{"Document" if E else "Dokumen"}</span></label></div></div>
 <div style="margin-top:16px"><button class="btn btn-a" type="button" data-next>{"Next: package details" if E else "Lanjut: detail paket"}</button></div>
 </div>
 <div class="stp hidden" data-step="2">
-<div class="row r5">
-<div><label for="r_kg" class="req">{"Total actual weight (kg)" if E else "Total berat aktual (kg)"}</label><input id="r_kg" name="kg" type="number" min="0.1" step="0.1" required></div>
-<div><label for="r_pcs">{"Pieces" if E else "Jumlah koli"}</label><input id="r_pcs" name="pieces" type="number" min="1" max="50" value="1"></div>
-<div><label for="r_l">{"Length (cm)" if E else "Panjang (cm)"}</label><input id="r_l" name="l" type="number" min="0" step="0.1" placeholder="{"optional" if E else "opsional"}"></div>
-<div><label for="r_w">{"Width (cm)" if E else "Lebar (cm)"}</label><input id="r_w" name="w" type="number" min="0" step="0.1"></div>
-<div><label for="r_h">{"Height (cm)" if E else "Tinggi (cm)"}</label><input id="r_h" name="h" type="number" min="0" step="0.1"></div>
-</div>
-<p class="hint">{"Dimensions are per piece, each rounded up to the next whole cm. Chargeable weight is the higher of actual weight and L × W × H / 5000." if E else "Ukuran per koli, masing-masing dibulatkan ke atas ke cm penuh. Berat tagih adalah yang lebih besar antara berat aktual dan P × L × T / 5000."}</p>
+<div data-pkgs></div>
+<p class="hint">{"Weight and size are per piece. Each dimension is rounded up to the next whole cm; each piece is billed at the higher of actual weight and L × W × H / 5000, rounded up to 0.5 kg. Add a separate line for every different package size." if E else "Berat dan ukuran dihitung per koli. Setiap ukuran dibulatkan ke atas ke cm penuh; tiap koli ditagih sesuai yang lebih besar antara berat aktual dan P × L × T / 5000, dibulatkan ke atas ke 0,5 kg. Tambahkan baris terpisah untuk setiap ukuran paket yang berbeda."}</p>
 <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:6px"><button class="btn btn-o" type="button" data-back>{"Back" if E else "Kembali"}</button><button class="btn btn-a" type="submit">{"Show rates" if E else "Tampilkan tarif"}</button></div>
 </div>
 </form>'''
@@ -197,7 +190,7 @@ def home(lang):
 def express(lang):
     E = lang == 'en'
     rows = [("Best for","Cocok untuk","Documents, samples, urgent goods","Dokumen, sampel, barang mendesak","Non-urgent parcels","Paket tidak mendesak"),
-            ("Price","Harga","Base rate + fuel surcharge (51%)","Tarif dasar + fuel surcharge (51%)","All-in (fuel included)","All-in (sudah termasuk fuel)"),
+            ("Price","Harga","Transportation + demand surcharge + fuel surcharge","Transportasi + demand surcharge + fuel surcharge","All-in (fuel included)","All-in (sudah termasuk fuel)"),
             ("Pickup","Pickup","Anywhere in Indonesia","Seluruh Indonesia","Jakarta online; other cities by request","Jakarta online; kota lain melalui permintaan"),
             ("Weight rounding","Pembulatan berat","Up to the next 0.5 kg","Ke 0,5 kg berikutnya","Up to the next 1 kg","Ke 1 kg berikutnya"),
             ("Documents rate","Tarif dokumen","Yes, up to 2 kg","Ya, sampai 2 kg","Parcel rate","Tarif paket"),
@@ -212,7 +205,7 @@ def product(lang, which):
     E = lang == 'en'
     if which == 'p':
         t = 'PCW Priority Express'; sub = "Our fastest international service for documents, samples and urgent goods." if E else "Layanan internasional tercepat kami untuk dokumen, sampel, dan barang mendesak."
-        pts = [("Pickup anywhere in Indonesia","Pickup di seluruh Indonesia"),("Separate, lower rates for documents up to 2 kg","Tarif dokumen tersendiri yang lebih rendah sampai 2 kg"),("Price shown as base rate + fuel surcharge (51% this month)","Harga ditampilkan sebagai tarif dasar + fuel surcharge (51% bulan ini)"),("Weight rounded up to the next 0.5 kg","Berat dibulatkan ke 0,5 kg berikutnya"),("Transit time confirmed in your quote","Waktu transit dikonfirmasi di penawaran"),("Business accounts get their own rates","Akun bisnis mendapat tarif sendiri")]
+        pts = [("Pickup anywhere in Indonesia","Pickup di seluruh Indonesia"),("Separate, lower rates for documents up to 2 kg","Tarif dokumen tersendiri yang lebih rendah sampai 2 kg"),("Price shown as transportation + demand surcharge + fuel surcharge","Harga ditampilkan sebagai transportasi + demand surcharge + fuel surcharge"),("Weight rounded up to the next 0.5 kg","Berat dibulatkan ke 0,5 kg berikutnya"),("Transit time confirmed in your quote","Waktu transit dikonfirmasi di penawaran"),("Business accounts get their own rates","Akun bisnis mendapat tarif sendiri")]
     else:
         t = 'PCW Economy Express'; sub = "Lower-cost international delivery for parcels that are not urgent." if E else "Pengiriman internasional lebih hemat untuk paket yang tidak mendesak."
         pts = [("All-in price: fuel already included","Harga all-in: fuel sudah termasuk"),("Online pickup inside Jakarta","Pickup online di dalam Jakarta"),("Outside Jakarta: request pickup by WhatsApp or email; cost confirmed separately","Di luar Jakarta: minta pickup lewat WhatsApp atau email; biaya dikonfirmasi terpisah"),("Weight rounded up to the next 1 kg","Berat dibulatkan ke 1 kg berikutnya"),("Transit time confirmed in your quote","Waktu transit dikonfirmasi di penawaran"),("Lower liability limit than Priority: see Terms","Batas tanggung jawab lebih rendah dari Priority: lihat Syarat & Ketentuan")]
@@ -255,15 +248,9 @@ def book(lang):
 </div>
 <div class="row" style="margin-top:14px">
 <div><label class="req">{"Type" if E else "Jenis"}</label><div class="seg"><label><input type="radio" name="shipment_type" value="Parcel" checked><span>{"Parcel" if E else "Paket"}</span></label><label><input type="radio" name="shipment_type" value="Document"><span>{"Document" if E else "Dokumen"}</span></label></div></div>
-{f("b_pcs","pieces","Pieces" if E else "Jumlah koli","number",True,'min="1" max="50" value="1"')}
-{f("b_kg","actual_kg","Total weight (kg)" if E else "Total berat (kg)","number",True,'min="0.1" step="0.1"')}
 </div>
-<div class="row r3" style="margin-top:14px">
-{f("b_l","l","Length per piece (cm)" if E else "Panjang per koli (cm)","number",False,'min="0" step="0.1"')}
-{f("b_w","w","Width (cm)" if E else "Lebar (cm)","number",False,'min="0" step="0.1"')}
-{f("b_h","h","Height (cm)" if E else "Tinggi (cm)","number",False,'min="0" step="0.1"')}
-</div>
-<p class="hint">{"Chargeable weight is the higher of actual weight and L × W × H / 5000. Final charges follow weighing and measuring." if E else "Berat tagih adalah yang lebih besar antara berat aktual dan P × L × T / 5000. Biaya final mengikuti hasil timbang dan ukur."}</p>
+<div data-pkgs style="margin-top:14px"></div><input type="hidden" name="pieces" value="1"><input type="hidden" name="actual_kg" value="">
+<p class="hint">{"Weight and size are per piece. Each piece is billed at the higher of actual weight and L × W × H / 5000, rounded up to 0.5 kg. Final charges follow weighing and measuring." if E else "Berat dan ukuran dihitung per koli. Tiap koli ditagih sesuai yang lebih besar antara berat aktual dan P × L × T / 5000, dibulatkan ke atas ke 0,5 kg. Biaya final mengikuti hasil timbang dan ukur."}</p>
 {nav(False, True, "Next: addresses" if E else "Lanjut: alamat")}
 </div>
 
@@ -346,7 +333,7 @@ def contact(lang):
 </div></section>'''
 
 FAQ = [
- ("How is the price calculated?","Bagaimana harga dihitung?","We charge on chargeable weight: the higher of the actual weight and the volumetric weight (L × W × H in cm / 5000). Priority Express is shown as base rate plus fuel surcharge; Economy Express is all-in.","Kami menagih berdasarkan berat tagih: yang lebih besar antara berat aktual dan berat volumetrik (P × L × T dalam cm / 5000). Priority Express ditampilkan sebagai tarif dasar plus fuel surcharge; Economy Express all-in."),
+ ("How is the price calculated?","Bagaimana harga dihitung?","We charge on chargeable weight: the higher of the actual weight and the volumetric weight (L × W × H in cm / 5000). Priority Express is shown as transportation, demand surcharge and fuel surcharge on both; Economy Express is all-in. Each piece is weighed on its own and rounded up to 0.5 kg before the lines are added together.","Kami menagih berdasarkan berat tagih: yang lebih besar antara berat aktual dan berat volumetrik (P × L × T dalam cm / 5000). Priority Express ditampilkan sebagai transportasi, demand surcharge, dan fuel surcharge atas keduanya; Economy Express all-in. Setiap koli ditimbang sendiri dan dibulatkan ke atas ke 0,5 kg sebelum semua baris dijumlahkan."),
  ("Is the website price final?","Apakah harga di website sudah final?","It is our published rate and an estimate. The final price follows weighing and measuring. Situational surcharges are told to you before you agree. Business accounts receive their own lower rates.","Itu adalah published rate kami dan berupa estimasi. Harga final mengikuti hasil timbang dan ukur. Biaya situasional diinformasikan sebelum Anda setuju. Akun bisnis mendapat tarif sendiri yang lebih rendah."),
  ("Who pays duties and taxes abroad?","Siapa yang membayar bea masuk dan pajak di negara tujuan?","The receiver, unless we agree otherwise in writing.","Penerima, kecuali disepakati lain secara tertulis."),
  ("How long does delivery take?","Berapa lama pengirimannya?","Transit time depends on destination and service. We state it in your quote.","Waktu transit tergantung tujuan dan layanan. Kami cantumkan di penawaran."),
@@ -367,7 +354,8 @@ def surcharges(lang):
         return '<div style="overflow-x:auto"><table class="rates"><thead><tr><th>%s</th><th>%s</th><th>%s</th></tr></thead><tbody>%s</tbody></table></div>' % (t("Charge","Biaya"), t("When it applies","Kapan berlaku"), t("Indicative price (IDR)","Perkiraan harga (IDR)"), ''.join('<tr><td><b>%s</b></td><td>%s</td><td>%s</td></tr>' % r for r in rows))
     per_piece = t("per piece","per koli"); per_ship = t("per shipment","per pengiriman"); per_kg = t("per kg","per kg")
     prio = [
-     (t("Fuel surcharge","Fuel surcharge"), t("Added to the base rate; updated every month. Currently 51%.","Ditambahkan ke tarif dasar; diperbarui setiap bulan. Saat ini 51%."), t("Included in your quote","Tercantum di penawaran")),
+     (t("Fuel surcharge","Fuel surcharge"), t("Applied to transportation and the demand surcharge; updated every month. Currently 51%.","Dikenakan atas transportasi dan demand surcharge; diperbarui setiap bulan. Saat ini 51%."), t("Shown in your rate","Tercantum di tarif Anda")),
+     (t("Demand surcharge","Demand surcharge"), t("Peak-season surcharge per chargeable kg, by destination region. Temporary: applies to Priority Express from 1 Oct 2026 to 5 Feb 2027 and may change with notice.","Surcharge musim ramai per kg berat tagih, menurut wilayah tujuan. Bersifat sementara: berlaku untuk Priority Express mulai 1 Okt 2026 sampai 5 Feb 2027 dan dapat berubah dengan pemberitahuan."), t("Shown in your rate","Tercantum di tarif Anda")),
      (t("Remote area","Remote area"), t("Pickup or delivery in a remote area.","Pickup atau pengiriman ke area terpencil."), t("Up to 12,000 per kg, minimum up to 553,000 per shipment","Hingga 12.000 per kg, minimum hingga 553.000 per pengiriman")),
      (t("Oversize piece","Koli oversize"), t("Longest side over 100 cm, or second-longest side over 80 cm.","Sisi terpanjang lebih dari 100 cm, atau sisi terpanjang kedua lebih dari 80 cm."), t("Up to 644,000 per piece","Hingga 644.000 per koli")),
      (t("Additional handling","Additional handling"), t("Piece of 24-70 kg actual weight, or not fully enclosed in a corrugated carton, shrink-wrapped, round, or with wheels, handles or straps.","Koli berat aktual 24-70 kg, atau tidak sepenuhnya tertutup karton bergelombang, dibungkus shrink-wrap, berbentuk bulat, atau memiliki roda, pegangan, atau tali."), t("Up to 644,000 per piece","Hingga 644.000 per koli")),

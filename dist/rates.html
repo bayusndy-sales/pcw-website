@@ -8,7 +8,7 @@
 <meta property="og:title" content="Shipping Rates | PCW Freight"><meta property="og:description" content="Check published international express rates by destination and weight."><meta property="og:type" content="website">
 <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png"><link rel="icon" type="image/png" sizes="192x192" href="assets/icon-192.png"><link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
 <meta property="og:image" content="https://pcwfreight.com/assets/og-image.png"><meta name="theme-color" content="#004aad">
-<link rel="stylesheet" href="assets/style.css?v=b97e3cb8">
+<link rel="stylesheet" href="assets/style.css?v=d3cc4cba">
 </head>
 <body data-root="">
 <a class="skip" href="#main">Skip to content</a>
@@ -25,21 +25,20 @@
 <section class="s"><div class="wrap"><form class="box" data-rate data-steps>
 <ol class="stepper"><li class="on" data-s="1"><b>1</b> Destination</li><li data-s="2"><b>2</b> Package</li><li data-s="3"><b>3</b> Rates</li></ol>
 <div class="stp" data-step="1">
-<div class="row r2">
-<div><label for="r_c" class="req">Where is it going?</label><select id="r_c" name="country" required><option value="">Loading…</option></select></div>
-<div><label class="req">What are you sending?</label><div class="seg"><label><input type="radio" name="type" value="Parcel" checked><span>Parcel</span></label><label><input type="radio" name="type" value="Document"><span>Document</span></label></div></div>
+<div class="od">
+<div class="odc"><h4>From</h4>
+<div><label>Country / territory</label><input value="Indonesia" disabled></div>
+<div class="row r2" style="margin-top:12px"><div><label for="r_oz">Postal code</label><input id="r_oz" name="o_zip" inputmode="numeric" maxlength="10" autocomplete="postal-code"></div><div><label for="r_oc">City</label><input id="r_oc" name="o_city" maxlength="60"></div></div></div>
+<div class="odc"><h4>To</h4>
+<div><label for="r_c" class="req">Country / territory</label><select id="r_c" name="country" required><option value="">Loading…</option></select></div>
+<div class="row r2" style="margin-top:12px"><div><label for="r_dz">Postal code</label><input id="r_dz" name="d_zip" maxlength="12"></div><div><label for="r_dc">City</label><input id="r_dc" name="d_city" maxlength="60"></div></div></div>
 </div>
+<div style="margin-top:14px"><label class="req">What are you sending?</label><div class="seg"><label><input type="radio" name="type" value="Parcel" checked><span>Parcel</span></label><label><input type="radio" name="type" value="Document"><span>Document</span></label></div></div>
 <div style="margin-top:16px"><button class="btn btn-a" type="button" data-next>Next: package details</button></div>
 </div>
 <div class="stp hidden" data-step="2">
-<div class="row r5">
-<div><label for="r_kg" class="req">Total actual weight (kg)</label><input id="r_kg" name="kg" type="number" min="0.1" step="0.1" required></div>
-<div><label for="r_pcs">Pieces</label><input id="r_pcs" name="pieces" type="number" min="1" max="50" value="1"></div>
-<div><label for="r_l">Length (cm)</label><input id="r_l" name="l" type="number" min="0" step="0.1" placeholder="optional"></div>
-<div><label for="r_w">Width (cm)</label><input id="r_w" name="w" type="number" min="0" step="0.1"></div>
-<div><label for="r_h">Height (cm)</label><input id="r_h" name="h" type="number" min="0" step="0.1"></div>
-</div>
-<p class="hint">Dimensions are per piece, each rounded up to the next whole cm. Chargeable weight is the higher of actual weight and L × W × H / 5000.</p>
+<div data-pkgs></div>
+<p class="hint">Weight and size are per piece. Each dimension is rounded up to the next whole cm; each piece is billed at the higher of actual weight and L × W × H / 5000, rounded up to 0.5 kg. Add a separate line for every different package size.</p>
 <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:6px"><button class="btn btn-o" type="button" data-back>Back</button><button class="btn btn-a" type="submit">Show rates</button></div>
 </div>
 </form><div data-out style="margin-top:20px"></div>
@@ -56,5 +55,5 @@
 <div class="legal"><span>© 2026 PT Prabaswara Catur Widantara</span><span><a style="display:inline" href="terms.html">Terms</a> · <a style="display:inline" href="privacy.html">Privacy</a></span></div>
 </div></footer>
 <a class="wa-float" href="https://wa.me/6281199896752?text=Hello%20PCW%2C%20I%20would%20like%20a%20shipping%20quotation." aria-label="WhatsApp"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm5.3 14.1c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .3-3.4-.7-2.9-1.2-4.7-4.1-4.8-4.3-.1-.2-1.2-1.6-1.2-3s.7-2.1 1-2.4c.3-.3.6-.3.8-.3h.6c.2 0 .4 0 .6.5l.9 2.1c.1.2.1.4 0 .6l-.4.6-.4.4c-.1.1-.3.3-.1.6.2.3.8 1.3 1.7 2.1 1.2 1 2.1 1.3 2.4 1.5.3.1.5.1.6-.1l.9-1c.2-.3.4-.2.7-.1l2 1c.3.1.5.2.5.3.1.2.1.7-.1 1.3z"/></svg><span>Chat on WhatsApp</span></a>
-<script src="assets/app.js?v=362c2f69" defer></script>
+<script src="assets/app.js?v=39b10071" defer></script>
 </body></html>
