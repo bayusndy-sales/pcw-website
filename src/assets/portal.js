@@ -421,7 +421,7 @@
       FEDEX_ICCL: ['Copy the request message below and post it in the ICCL WhatsApp group.', 'Press I sent the request. The booking now waits for the ICCL team.', 'When ICCL replies with the FedEx tracking number and the pickup schedule, enter them below.', 'Press Mark as booked, then confirm the pickup.'],
       MARS: ['Create the booking in the Mars Portal with the details on the left (use the copy buttons).', 'Copy the request message below and send it to the Mars CX team on WhatsApp.', 'Press I sent the request. When Mars CX replies with the Mars AWB and pickup schedule, enter them below.', 'Press Mark as booked, then confirm the pickup.']
     };
-    var SITE = { DHL_OWN: ['Open DHL website', 'https://mydhl.express.dhl'], FEDEX_OWN: ['Open FedEx website', 'https://www.fedex.com'] };
+    var SITE = { DHL_OWN: ['Open DHL website', 'https://mydhl.express.dhl'], FEDEX_OWN: ['Open FedEx website', 'https://www.fedex.com'], MARS: ['Open Mars Portal', 'https://innovact.id/mecs/mzlogin'] };
     function ago(ms) { if (!ms) return '-'; var m = Math.max(0, Math.round((Date.now() - ms) / 60000)); if (m < 60) return m + ' min'; var h = Math.round(m / 60); if (h < 48) return h + ' h'; return Math.round(h / 24) + ' d'; }
     function slaStyle(i) { var lim = { 'To assign': 2, 'To book': 4, 'Requested': 3, 'Booked': 12 }[i.stage]; if (!lim || !i.since) return ''; var h = (Date.now() - i.since) / 36e5; return h > lim * 4 ? 'color:#b91c1c;font-weight:700' : h > lim ? 'color:#b45309;font-weight:700' : ''; }
     function badge(s) { return '<span style="display:inline-block;padding:2px 9px;border-radius:99px;font-size:.78rem;font-weight:700;color:#fff;background:' + (STC[s] || '#6b7280') + '">' + esc(s) + '</span>'; }
