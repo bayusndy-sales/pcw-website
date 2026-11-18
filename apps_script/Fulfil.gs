@@ -51,10 +51,13 @@ function ulGet_(b) {
   const ref = String(b.ref || '').trim().toUpperCase(); const d = a2Rows_(); let row = null;
   d.rows.forEach(function (r) { if (String(r[0]).toUpperCase() === ref) row = r; }); if (!row) return { ok: false, error: 'not_found' };
   const f = {}; d.hdr.forEach(function (h, i) { if (h) f[h] = row[i] instanceof Date ? dt_(row[i]) : row[i]; });
+  const sell = num_(f.Final_Price_IDR) > 0 ? num_(f.Final_Price_IDR) : num_(f.Est_Total_IDR);
   if (u.role !== 'SuperAdmin') { delete f.Est_Total_IDR; delete f.Final_Price_IDR; }
   const fr = fRows_().map[ref];
   const ev = []; sh_(TABS.track).getDataRange().getValues().forEach(function (r, i) { if (i > 0 && String(r[0]).toUpperCase() === ref) ev.push({ time: dt_(r[1]) || String(r[1]), status: r[2], note: r[5], by: r[6] }); });
-  return { ok: true, fields: f, ful: fObj_(fr ? fr.v : null), events: ev, channels: FUL_CH, role: u.role };
+  const fo = fObj_(fr ? fr.v : null); const cst = num_(fo.Cost_IDR);
+  const margin = u.role === 'SuperAdmin' ? { price: sell, cost: cst, gp: sell > 0 && cst > 0 ? Math.round(sell - cst) : null, pct: sell > 0 && cst > 0 ? Math.round((sell - cst) / sell * 1000) / 10 : null } : null;
+  return { ok: true, fields: f, ful: fo, events: ev, channels: FUL_CH, role: u.role, margin: margin };
 }
 
 function ordSync_(ref, kv) {
@@ -100,7 +103,10 @@ function ulAct_(b) {
       const cost = num_(String(b.cost || '').replace(/[^0-9.]/g, ''));
       set('Vendor_AWB', awb); set('Vendor_Booking_Ref', safe_(b.vendor_ref, 60)); if (cost > 0) set('Cost_IDR', cost);
       if (stageIdx < 3) { set('Booked_At', now); set('Booked_By', who); set('Stage', 'Booked'); }
-      const kv = { Source_INTERNAL: ch.src, Network_Tracking_No: awb, Handled_By: who }; if (cost > 0) kv.Cost_IDR = cost; ordSync_(ref, kv);
+      const kv = { Source_INTERNAL: ch.src, Network_Tracking_No: awb, Handled_By: who }; if (cost > 0) kv.Cost_IDR = cost;
+      const sell = num_(bk[H.indexOf('Final_Price_IDR')]) > 0 ? num_(bk[H.indexOf('Final_Price_IDR')]) : num_(bk[H.indexOf('Est_Total_IDR')]);
+      if (cost > 0 && sell > 0) { kv.Total_IDR = sell; kv.GP_IDR = Math.round(sell - cost); kv.GP_Pct = Math.round((sell - cost) / sell * 1000) / 10; }
+      ordSync_(ref, kv);
       if (!trackHas_(ref, ['Booked', 'Paid'])) trackAdd_(ref, 'Booked', '', u.email);
       detail = 'vendor awb ' + awb;
     } else if (op === 'confirm') {
