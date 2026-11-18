@@ -62,6 +62,7 @@
       '<div>' + fld('password2', t('Repeat password', 'Ulangi password'), 'password', true, 'autocomplete="new-password"') + '</div>' +
       '<label class="check" style="margin-top:14px"><input type="checkbox" name="terms"><span>' + t('I accept the <a href="terms.html" target="_blank">Terms &amp; Conditions</a>.', 'Saya menyetujui <a href="terms.html" target="_blank">Syarat &amp; Ketentuan</a>.') + '</span></label>' +
       '<label class="check"><input type="checkbox" name="privacy"><span>' + t('I agree to the <a href="privacy.html" target="_blank">Privacy Policy</a>.', 'Saya setuju dengan <a href="privacy.html" target="_blank">Kebijakan Privasi</a>.') + '</span></label>' +
+      '<div id="rgTs" style="margin-top:14px"></div>' +
       '<button class="btn btn-a" type="submit" style="margin-top:14px;padding:14px;width:100%">' + t('Create account', 'Buat akun') + '</button>' +
       '<p class="hint">' + t('Already registered? ', 'Sudah punya akun? ') + '<a href="portal.html">' + t('Sign in', 'Masuk') + '</a></p></form>' +
       '<form id="rgVerify" class="box hidden" style="max-width:460px"><h2 style="margin-top:0">' + t('Verify your email', 'Verifikasi email Anda') + '</h2><p id="rgSent"></p>' +
@@ -69,14 +70,19 @@
       '<button class="btn btn-a" type="submit" style="margin-top:14px">' + t('Verify', 'Verifikasi') + '</button></form>' +
       '<div id="rgDone" class="hidden box" style="max-width:460px"></div>';
     var rf = $('#rgForm'), rv = $('#rgVerify'), rm = $('#rgMsg'), remail = '';
+    var TSW = null;
+    window.pcwTs = function () { try { TSW = window.turnstile.render('#rgTs', { sitekey: '0x4AAAAAAGHwlY2DDDa1v8N3', theme: 'light' }); } catch (x) {} };
+    (function () { var sc = document.createElement('script'); sc.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?onload=pcwTs&render=explicit'; sc.async = true; document.head.appendChild(sc); })();
+    function tsTok() { try { return window.turnstile && TSW !== null ? (window.turnstile.getResponse(TSW) || '') : ''; } catch (x) { return ''; } }
+    function tsReset() { try { if (window.turnstile && TSW !== null) window.turnstile.reset(TSW); } catch (x) {} }
     rf.addEventListener('submit', function (ev) {
       ev.preventDefault(); var e = rf.elements, btn = $('[type=submit]', rf); rm.innerHTML = '';
       if (e.password.value !== e.password2.value) { rm.innerHTML = notice('err', t('Passwords do not match.', 'Password tidak sama.')); return; }
       if (!e.terms.checked || !e.privacy.checked) { rm.innerHTML = notice('err', ERR.consent_required); return; }
       busy(btn, true, t('Sending…', 'Mengirim…'));
-      post({ action: 'register', website: e.website.value, company: e.company.value.trim(), name: e.name.value.trim(), email: e.email.value.trim(), phone: e.phone.value.trim(), password: e.password.value, terms_accepted: true, privacy_consent: true }).then(function (r) {
+      post({ action: 'register', website: e.website.value, company: e.company.value.trim(), name: e.name.value.trim(), email: e.email.value.trim(), phone: e.phone.value.trim(), password: e.password.value, terms_accepted: true, privacy_consent: true, turnstile: tsTok() }).then(function (r) {
         busy(btn, false);
-        if (!r.ok) { rm.innerHTML = notice('err', err(r)); return; }
+        if (!r.ok) { tsReset(); rm.innerHTML = notice('err', err(r)); return; }
         remail = e.email.value.trim().toLowerCase(); rf.classList.add('hidden'); rv.classList.remove('hidden');
         $('#rgSent').textContent = t('We sent a 6-digit code to ', 'Kami mengirim kode 6 digit ke ') + remail + t('. It is valid for 30 minutes. Check your spam folder if needed.', '. Berlaku 30 menit. Cek folder spam bila perlu.');
       }).catch(function () { busy(btn, false); rm.innerHTML = notice('err', err()); });
