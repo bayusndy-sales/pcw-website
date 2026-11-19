@@ -13,6 +13,8 @@ function healthRun_() {
     checks.push({ name: name, ok: ok, info: info.slice(0, 160) });
   }
   add('Home page', function () { var r = hGet_(HEALTH_SITE + '/'); return r.getResponseCode() === 200 && /PCW Freight/.test(r.getContentText()) || 'HTTP ' + r.getResponseCode(); });
+  add('No IPv6 record on pcwfreight.com', function () { var j = hJson_(hGet_('https://dns.google/resolve?name=pcwfreight.com&type=AAAA')); return !!j && j.Status === 0 && !j.Answer || 'AAAA record present or DNS lookup failed: ' + JSON.stringify(j && j.Answer || j).slice(0, 100); });
+  add('Analytics beacon on home page', function () { var r = hGet_(HEALTH_SITE + '/'); return r.getResponseCode() === 200 && /cloudflareinsights\.com\/beacon\.min\.js/.test(r.getContentText()) && /ad77f003755d4f6db246556c703bce6f/.test(r.getContentText()) || 'beacon or token missing on home page'; });
   add('Booking page has bot check', function () { var r = hGet_(HEALTH_SITE + '/book.html'); return r.getResponseCode() === 200 && /cf-turnstile/.test(r.getContentText()) || 'HTTP ' + r.getResponseCode() + ' or widget missing'; });
   add('Register page script has bot check', function () { var r = hGet_(HEALTH_SITE + '/assets/portal.js'); return r.getResponseCode() === 200 && /rgTs/.test(r.getContentText()) || 'HTTP ' + r.getResponseCode() + ' or widget missing'; });
   add('Booking script sends bot token', function () { var r = hGet_(HEALTH_SITE + '/assets/app.js'); return r.getResponseCode() === 200 && /cf-turnstile-response/.test(r.getContentText()) && /action:\s*["']bt["']/.test(r.getContentText()) || 'token code missing'; });
