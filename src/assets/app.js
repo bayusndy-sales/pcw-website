@@ -157,6 +157,7 @@
       apiGet(p).then(function (r) {
         if (!r.ok) { out.innerHTML = '<div class="notice err">' + (r.error === 'country_not_listed' ? T.notListed : T.err) + '</div>'; return; }
         out.innerHTML = renderRates(r, p, extra);
+        var qb = $('[data-quote-pdf]', out); if (qb) qb.addEventListener('click', function () { quotePdf(r); });
       }).catch(function () { out.innerHTML = '<div class="notice err">' + T.err + '</div>'; });
     });
     if (!quick && q.country && PK.legacy(q)) {
@@ -187,7 +188,44 @@
     var note = hasDem ? '<p class="hint">' + T.demandNote.replace('{r}', Number(r.demand_per_kg).toLocaleString('id-ID')).replace('{d}', esc(r.demand_until)) + '</p>' : '';
     var biz = '<div class="notice info"><strong>' + (LANG === 'id' ? 'Akun bisnis mendapat tarif lebih rendah.' : 'Business accounts get lower rates.') + '</strong> ' +
       '<a class="btn btn-a btn-sm" style="margin-left:8px" href="' + waLink(LANG === 'id' ? 'Halo PCW, saya ingin tarif bisnis untuk pengiriman ke ' + r.country + '.' : 'Hello PCW, I would like a business rate for shipments to ' + r.country + '.') + '">' + (LANG === 'id' ? 'Dapatkan tarif bisnis' : 'Get your business rate') + '</a></div>';
-    return '<div class="box" id="go">' + head + table + note + biz + '</div>';
+    var dl = r.options.some(function (o) { return !o.quote; }) ? '<p style="margin:10px 0 0"><button type="button" class="btn btn-o btn-sm" data-quote-pdf>' + (LANG === 'id' ? 'Unduh penawaran (PDF)' : 'Download quote (PDF)') + '</button></p>' : '';
+    return '<div class="box" id="go">' + head + table + note + dl + biz + '</div>';
+  }
+
+  /* printable quote: opens the print dialog so the customer can save it as PDF (no data is sent anywhere) */
+  function quotePdf(r) {
+    var ID = LANG === 'id', now = new Date();
+    var pad = function (n) { return (n < 10 ? '0' : '') + n; };
+    var ymd = function (d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); };
+    var eom = new Date(now.getFullYear(), now.getMonth() + 1, 0), until = ymd(eom);
+    if (r.demand_per_kg > 0 && r.demand_until && r.demand_until < until) until = r.demand_until;
+    var hasDem = r.demand_per_kg > 0;
+    var L = ID ? { t: 'Penawaran Harga Pengiriman', sub: 'Tarif publikasi · ekspres internasional door to door', date: 'Tanggal', valid: 'Berlaku sampai', route: 'Rute', type: 'Jenis', pk: 'Paket', act: 'Berat aktual', vol: 'Berat volume', svc: 'Layanan', chg: 'Berat tagih', base: 'Transportasi', dem: 'Demand surcharge', fuel: 'Fuel surcharge', tot: 'Total', allin: 'Harga all-in', q: 'Di atas tabel publikasi: hubungi kami untuk penawaran.', doc: 'Dokumen', par: 'Paket',
+      notes: ['Harga dalam Rupiah (IDR), berdasarkan data yang Anda masukkan. Harga final mengikuti berat dan ukuran hasil timbang kami.', 'Berat tagih = yang lebih besar antara berat aktual dan berat volume (P x L x T / 5000), dibulatkan ke 0,5 kg.', 'Bea masuk dan pajak di negara tujuan dibayar penerima, kecuali disepakati lain.', 'Harga tidak dikenakan PPN.', 'Booking online: pcwfreight.com/book · WhatsApp +62 811 9989 6752'] }
+      : { t: 'Shipping Quotation', sub: 'Published rate · door-to-door international express', date: 'Date', valid: 'Valid until', route: 'Route', type: 'Type', pk: 'Packages', act: 'Actual weight', vol: 'Volumetric weight', svc: 'Service', chg: 'Chargeable weight', base: 'Transportation', dem: 'Demand surcharge', fuel: 'Fuel surcharge', tot: 'Total', allin: 'All-in price', q: 'Above our published table: contact us for a quote.', doc: 'Document', par: 'Parcel',
+      notes: ['Prices in Indonesian Rupiah (IDR), based on the details you entered. The final price follows the weight and size we measure.', 'Chargeable weight = the higher of actual weight and volumetric weight (L x W x H / 5000), rounded up to 0.5 kg.', 'Destination duties and taxes are paid by the receiver unless agreed otherwise.', 'Prices are not subject to VAT (PPN).', 'Book online: pcwfreight.com/book · WhatsApp +62 811 9989 6752'] };
+    var B = '#004aad';
+    var lines = (r.items || []).map(function (it) { return it.q + ' x ' + it.kg + ' kg' + ((it.l > 0 && it.w > 0 && it.h > 0) ? ' (' + it.l + 'x' + it.w + 'x' + it.h + ' cm)' : ''); }).join('<br>');
+    var th = 'style="text-align:left;border-bottom:2px solid ' + B + ';padding:6px;font-size:11px;color:' + B + '"', thn = th.replace('text-align:left', 'text-align:right');
+    var td = 'style="padding:6px;border-bottom:1px solid #dde3ee;font-size:12px"', tdn = td.replace('padding:6px', 'padding:6px;text-align:right');
+    var rows = r.options.map(function (o) {
+      var name = 'PCW ' + o.product + ' Express', isP = o.product === 'Priority';
+      if (o.quote) return '<tr><td ' + td + '><b>' + name + '</b></td><td ' + td + '>' + o.chargeable_kg + ' kg</td><td ' + td + ' colspan="' + (hasDem ? 4 : 3) + '">' + L.q + '</td></tr>';
+      return '<tr><td ' + td + '><b>' + name + '</b></td><td ' + td + '>' + o.chargeable_kg + ' kg</td><td ' + tdn + '>' + (isP ? idr(o.base) : '-') + '</td>' + (hasDem ? '<td ' + tdn + '>' + (isP ? idr(o.demand || 0) : '-') + '</td>' : '') + '<td ' + tdn + '>' + (isP ? idr(o.fuel) : '-') + '</td><td ' + tdn + '><b>' + idr(o.total) + '</b>' + (isP ? '' : '<div style="font-size:10px">' + L.allin + '</div>') + '</td></tr>';
+    }).join('');
+    var kv = function (k, v) { return '<tr><td style="padding:3px 10px 3px 0;color:#555;font-size:12px">' + k + '</td><td style="padding:3px 0;font-size:12px"><b>' + v + '</b></td></tr>'; };
+    var html = '<!DOCTYPE html><html><head><meta charset="utf-8"><title>PCW Freight quote ' + esc(r.country) + ' ' + ymd(now) + '</title><style>@page{size:A4;margin:16mm}body{font-family:Arial,sans-serif;color:#111;margin:0}</style></head><body>' +
+      '<table style="width:100%;border-collapse:collapse"><tr><td><img src="' + location.origin + '/assets/logo.png" style="height:46px;vertical-align:middle"> <span style="font-size:22px;font-weight:bold;color:' + B + ';vertical-align:middle">PCW Freight</span><div style="font-size:11px">PT Prabaswara Catur Widantara</div><div style="font-size:10px;color:#444">Jl. Bukit Golf Hijau Raya No. 18, Sentul City, Kab. Bogor 16810, Indonesia<br>+62 811 9989 6752 · info@pcwfreight.com · pcwfreight.com</div></td>' +
+      '<td style="text-align:right;vertical-align:top"><div style="font-size:18px;font-weight:bold;color:' + B + '">' + L.t + '</div><div style="font-size:11px">' + L.sub + '</div></td></tr></table>' +
+      '<div style="border-top:3px solid ' + B + ';margin:10px 0 14px"></div>' +
+      '<table style="border-collapse:collapse;margin-bottom:14px">' + kv(L.date, ymd(now)) + kv(L.valid, until) + kv(L.route, 'Indonesia → ' + esc(r.country)) + kv(L.type, r.type === 'Document' ? L.doc : L.par) + kv(L.pk, lines) + kv(L.act, r.actual_kg + ' kg') + (r.volumetric_kg ? kv(L.vol, r.volumetric_kg + ' kg') : '') + '</table>' +
+      '<table style="width:100%;border-collapse:collapse"><thead><tr><th ' + th + '>' + L.svc + '</th><th ' + th + '>' + L.chg + '</th><th ' + thn + '>' + L.base + '</th>' + (hasDem ? '<th ' + thn + '>' + L.dem + '</th>' : '') + '<th ' + thn + '>' + L.fuel + '</th><th ' + thn + '>' + L.tot + '</th></tr></thead><tbody>' + rows + '</tbody></table>' +
+      (hasDem ? '<p style="font-size:11px">' + T.demandNote.replace('{r}', Number(r.demand_per_kg).toLocaleString('id-ID')).replace('{d}', esc(r.demand_until)) + '</p>' : '') +
+      '<ul style="font-size:11px;color:#333;margin-top:18px;padding-left:16px">' + L.notes.map(function (n) { return '<li style="margin:3px 0">' + n + '</li>'; }).join('') + '</ul></body></html>';
+    var f = document.createElement('iframe'); f.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0'; document.body.appendChild(f);
+    var d = f.contentWindow.document; d.open(); d.write(html); d.close();
+    var go = function () { try { f.contentWindow.focus(); f.contentWindow.print(); } catch (e) { var w = window.open('', '_blank'); if (w) { w.document.write(html); w.document.close(); w.print(); } } setTimeout(function () { f.remove(); }, 60000); };
+    var img = d.querySelector('img'); if (img && !img.complete) { img.onload = img.onerror = go; } else go();
   }
 
   /* booking form */
