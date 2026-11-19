@@ -35,6 +35,12 @@ L = {
 ADDR = 'Jl. Bukit Golf Hijau Raya No. 18, Sentul City, Kab. Bogor 16810, Indonesia'
 WA_SVG = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm5.3 14.1c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .3-3.4-.7-2.9-1.2-4.7-4.1-4.8-4.3-.1-.2-1.2-1.6-1.2-3s.7-2.1 1-2.4c.3-.3.6-.3.8-.3h.6c.2 0 .4 0 .6.5l.9 2.1c.1.2.1.4 0 .6l-.4.6-.4.4c-.1.1-.3.3-.1.6.2.3.8 1.3 1.7 2.1 1.2 1 2.1 1.3 2.4 1.5.3.1.5.1.6-.1l.9-1c.2-.3.4-.2.7-.1l2 1c.3.1.5.2.5.3.1.2.1.7-.1 1.3z"/></svg>'
 
+# Cloudflare Web Analytics (cookieless). The token is public (it is in every page); empty = analytics off.
+CF_ANALYTICS_TOKEN = ''
+def cf_beacon(slug):
+    if not CF_ANALYTICS_TOKEN or slug in ('admin.html',): return ''
+    return "<script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{\"token\": \"%s\"}'></script>" % CF_ANALYTICS_TOKEN
+
 def page(lang, slug, title, desc, body, head_extra=''):
     root = '../' if lang == 'id' else ''
     other = (f'../{slug}' if lang == 'id' else f'id/{slug}')
@@ -82,7 +88,7 @@ def page(lang, slug, title, desc, body, head_extra=''):
 <div class="legal"><span>© 2026 PT Prabaswara Catur Widantara</span><span><a style="display:inline" href="{base}terms.html">{'Terms' if lang=='en' else 'Syarat'}</a> · <a style="display:inline" href="{base}privacy.html">{'Privacy' if lang=='en' else 'Privasi'}</a></span></div>
 </div></footer>
 <a class="wa-float" href="{wa(t['wa_txt'])}" aria-label="WhatsApp">{WA_SVG}<span>{t['chat']}</span></a>
-<script src="{root}assets/app.js?v={ASSET_V["app.js"]}" defer></script>
+<script src="{root}assets/app.js?v={ASSET_V["app.js"]}" defer></script>{cf_beacon(slug)}
 </body></html>'''
 
 def head(lang, title, sub, crumb):
