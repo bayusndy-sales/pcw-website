@@ -212,6 +212,9 @@ function rate_(p) {
     if (demand) fuel += Math.round(fuelPct * demand);
     out.options.push({ product: prod, chargeable_kg: cw, base: base, demand: demand, fuel: fuel, total: base + demand + fuel });
   });
+  // Economy has a 1 kg basis; when it is not cheaper than Priority for this shipment, the site does not offer it
+  const P = out.options[0], E = out.options[1];
+  if (P && E && !P.quote && !E.quote && E.total >= P.total) E.not_cheaper = true;
   return out;
 }
 

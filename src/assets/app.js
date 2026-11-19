@@ -13,7 +13,7 @@
       invalid: 'Please fill in destination and weight.', notListed: 'This country is not in our published table yet. Ask us for a quote.',
       product: 'Service', base: 'Transportation', demand: 'Demand surcharge', fuel: 'Fuel surcharge', demandNote: 'Demand surcharge: IDR {r} per chargeable kg, valid until {d}.', pcsWord: 'piece(s)', total: 'Total', allin: 'All-in price',
       chargeable: 'Chargeable weight', actual: 'Actual weight', vol: 'Volumetric weight', kg: 'kg',
-      book: 'Book this', quote: 'Request a quote', quoteNote: 'Above our published table: we quote this personally.',
+      book: 'Book this', quote: 'Request a quote', quoteNote: 'Above our published table: we quote this personally.', notCheaper: 'For this shipment, Priority is cheaper and faster.',
       Priority: 'PCW Priority Express', Economy: 'PCW Economy Express',
       notFound: 'We could not find this reference. Check the number or chat with us.', badRef: 'Please enter a valid PCW reference.',
       est: 'Estimated delivery', sending: 'Sending…', missing: 'Please complete the required fields: ',
@@ -26,7 +26,7 @@
       invalid: 'Mohon isi negara tujuan dan berat.', notListed: 'Negara ini belum ada di tabel publikasi kami. Silakan minta penawaran.',
       product: 'Layanan', base: 'Transportasi', demand: 'Demand surcharge', fuel: 'Fuel surcharge', demandNote: 'Demand surcharge: IDR {r} per kg berat tagih, berlaku sampai {d}.', pcsWord: 'koli', total: 'Total', allin: 'Harga all-in',
       chargeable: 'Berat tagih (chargeable)', actual: 'Berat aktual', vol: 'Berat volumetrik', kg: 'kg',
-      book: 'Booking', quote: 'Minta penawaran', quoteNote: 'Di atas tabel publikasi: kami hitungkan langsung.',
+      book: 'Booking', quote: 'Minta penawaran', quoteNote: 'Di atas tabel publikasi: kami hitungkan langsung.', notCheaper: 'Untuk kiriman ini, Priority lebih murah dan lebih cepat.',
       Priority: 'PCW Priority Express', Economy: 'PCW Economy Express',
       notFound: 'Nomor referensi tidak ditemukan. Periksa kembali atau hubungi kami.', badRef: 'Mohon masukkan nomor referensi PCW yang valid.',
       est: 'Estimasi tiba', sending: 'Mengirim…', missing: 'Mohon lengkapi kolom wajib: ',
@@ -174,6 +174,7 @@
       if (o.quote) {
         return '<tr><td><strong>' + T[o.product] + '</strong><div class="hint">' + T.chargeable + ': ' + o.chargeable_kg + ' ' + T.kg + '</div></td><td colspan="' + (cols + 1) + '">' + T.quoteNote + '</td><td><a class="btn btn-wa btn-sm" href="' + waLink((LANG === 'id' ? 'Halo PCW, mohon penawaran ' : 'Hello PCW, please quote ') + T[o.product] + ' ' + r.country + ' ' + o.chargeable_kg + ' kg') + '">' + T.quote + '</a></td></tr>';
       }
+      if (o.not_cheaper) return '<tr><td><strong>' + T[o.product] + '</strong><div class="hint">' + T.chargeable + ': ' + o.chargeable_kg + ' ' + T.kg + '</div></td><td colspan="' + (cols + 2) + '" class="hint">' + T.notCheaper + '</td></tr>';
       var isP = o.product === 'Priority';
       return '<tr><td><strong>' + T[o.product] + '</strong><div class="hint">' + T.chargeable + ': ' + o.chargeable_kg + ' ' + T.kg + '</div></td>' +
         '<td class="n">' + (isP ? idr(o.base) : '—') + '</td>' + (hasDem ? '<td class="n">' + (isP ? idr(o.demand || 0) : '—') + '</td>' : '') + '<td class="n">' + (isP ? idr(o.fuel) : '—') + '</td>' +
@@ -211,6 +212,7 @@
     var rows = r.options.map(function (o) {
       var name = 'PCW ' + o.product + ' Express', isP = o.product === 'Priority';
       if (o.quote) return '<tr><td ' + td + '><b>' + name + '</b></td><td ' + td + '>' + o.chargeable_kg + ' kg</td><td ' + td + ' colspan="' + (hasDem ? 4 : 3) + '">' + L.q + '</td></tr>';
+      if (o.not_cheaper) return '<tr><td ' + td + '><b>' + name + '</b></td><td ' + td + '>' + o.chargeable_kg + ' kg</td><td ' + td + ' colspan="' + (hasDem ? 4 : 3) + '">' + T.notCheaper + '</td></tr>';
       return '<tr><td ' + td + '><b>' + name + '</b></td><td ' + td + '>' + o.chargeable_kg + ' kg</td><td ' + tdn + '>' + (isP ? idr(o.base) : '-') + '</td>' + (hasDem ? '<td ' + tdn + '>' + (isP ? idr(o.demand || 0) : '-') + '</td>' : '') + '<td ' + tdn + '>' + (isP ? idr(o.fuel) : '-') + '</td><td ' + tdn + '><b>' + idr(o.total) + '</b>' + (isP ? '' : '<div style="font-size:10px">' + L.allin + '</div>') + '</td></tr>';
     }).join('');
     var kv = function (k, v) { return '<tr><td style="padding:3px 10px 3px 0;color:#555;font-size:12px">' + k + '</td><td style="padding:3px 0;font-size:12px"><b>' + v + '</b></td></tr>'; };
