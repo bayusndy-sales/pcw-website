@@ -8,48 +8,81 @@
     codes.push(sum % 103); codes.push(106);
     var bits = codes.map(function (k) { return PAT[k]; }).join(''), out = '', j;
     i = 0; while (i < bits.length) { if (bits.charAt(i) === '1') { j = i; while (bits.charAt(j) === '1') j++; out += '<rect x="' + (i + 10) + '" y="0" width="' + (j - i) + '" height="1"/>'; i = j; } else i++; }
-    return '<svg viewBox="0 0 ' + (bits.length + 20) + ' 1" preserveAspectRatio="none" shape-rendering="crispEdges" style="display:block;width:100%;height:22mm"><g fill="#000">' + out + '</g></svg>';
+    return '<svg viewBox="0 0 ' + (bits.length + 20) + ' 1" preserveAspectRatio="none" shape-rendering="crispEdges" style="display:block;width:100%;height:100%"><g fill="#000">' + out + '</g></svg>';
   }
   function qr(url) { try { var q = window.qrcode(0, 'M'); q.addData(url); q.make(); return q.createSvgTag({ cellSize: 2, margin: 0, scalable: true }); } catch (e) { return ''; } }
+  var ISO = {"Albania":"AL","Algeria":"DZ","American Samoa":"AS","Andorra":"AD","Angola":"AO","Anguilla":"AI","Antigua & Barbuda":"AG","Argentina":"AR","Armenia":"AM","Aruba":"AW","Australia":"AU","Austria":"AT","Azerbaijan":"AZ","Bahamas":"BS","Bahrain":"BH","Bangladesh":"BD","Barbados":"BB","Belarus":"BY","Belgium":"BE","Belize":"BZ","Benin":"BJ","Bermuda":"BM","Bhutan":"BT","Bolivia":"BO","Bonaire":"XB","Bosnia & Herzegovina":"BA","Botswana":"BW","Brazil":"BR","British Virgin Islands":"VG","Brunei":"BN","Bulgaria":"BG","Burkina Faso":"BF","Burundi":"BI","Cabo Verde":"CV","Cambodia":"KH","Cameroon":"CM","Canada":"CA","Canary Islands":"IC","Cayman Islands":"KY","Central African Republic":"CF","Chad":"TD","Chile":"CL","China":"CN","Colombia":"CO","Comoros":"KM","Congo":"CG","Congo (Dem. Rep.)":"CD","Cook Islands":"CK","Costa Rica":"CR","Cote d'Ivoire":"CI","Croatia":"HR","Curacao":"XC","Cyprus":"CY","Czech Republic":"CZ","Denmark":"DK","Djibouti":"DJ","Dominica":"DM","Dominican Republic":"DO","Ecuador":"EC","Egypt":"EG","El Salvador":"SV","Equatorial Guinea":"GQ","Eritrea":"ER","Estonia":"EE","Eswatini":"SZ","Ethiopia":"ET","Falkland Islands":"FK","Faroe Islands":"FO","Fiji":"FJ","Finland":"FI","France":"FR","French Guiana":"GF","Gabon":"GA","Gambia":"GM","Georgia":"GE","Germany":"DE","Ghana":"GH","Gibraltar":"GI","Greece":"GR","Greenland":"GL","Grenada":"GD","Guadeloupe":"GP","Guam":"GU","Guatemala":"GT","Guernsey":"GG","Guinea":"GN","Guinea-Bissau":"GW","Guyana":"GY","Haiti":"HT","Honduras":"HN","Hong Kong":"HK","Hungary":"HU","Iceland":"IS","India":"IN","Iraq":"IQ","Ireland":"IE","Italy":"IT","Jamaica":"JM","Japan":"JP","Jersey":"JE","Jordan":"JO","Kazakhstan":"KZ","Kenya":"KE","Kiribati":"KI","Kosovo":"KV","Kuwait":"KW","Kyrgyzstan":"KG","Laos":"LA","Latvia":"LV","Lebanon":"LB","Lesotho":"LS","Liberia":"LR","Libya":"LY","Liechtenstein":"LI","Lithuania":"LT","Luxembourg":"LU","Macau":"MO","Madagascar":"MG","Malawi":"MW","Malaysia (West)":"MY","Maldives":"MV","Mali":"ML","Malta":"MT","Marshall Islands":"MH","Martinique":"MQ","Mauritania":"MR","Mauritius":"MU","Mayotte":"YT","Mexico":"MX","Micronesia":"FM","Moldova":"MD","Monaco":"MC","Mongolia":"MN","Montenegro":"ME","Montserrat":"MS","Morocco":"MA","Mozambique":"MZ","Myanmar":"MM","Namibia":"NA","Nauru":"NR","Nepal":"NP","Netherlands":"NL","Nevis":"XN","New Caledonia":"NC","New Zealand":"NZ","Nicaragua":"NI","Niger":"NE","Nigeria":"NG","Niue":"NU","North Macedonia":"MK","Northern Mariana Islands":"MP","Norway":"NO","Oman":"OM","Pakistan":"PK","Palau":"PW","Panama":"PA","Papua New Guinea":"PG","Paraguay":"PY","Peru":"PE","Philippines":"PH","Poland":"PL","Portugal":"PT","Puerto Rico":"PR","Qatar":"QA","Reunion":"RE","Romania":"RO","Russia":"RU","Rwanda":"RW","Samoa":"WS","San Marino":"SM","Sao Tome & Principe":"ST","Saudi Arabia":"SA","Senegal":"SN","Serbia":"RS","Seychelles":"SC","Sierra Leone":"SL","Singapore":"SG","Slovakia":"SK","Slovenia":"SI","Solomon Islands":"SB","Somalia":"SO","Somaliland":"XS","South Africa":"ZA","South Korea":"KR","South Sudan":"SS","Spain":"ES","Sri Lanka":"LK","St. Barthelemy":"XY","St. Eustatius":"XE","St. Helena":"SH","St. Kitts":"KN","St. Lucia":"LC","St. Maarten":"XM","St. Vincent":"VC","Sudan":"SD","Suriname":"SR","Sweden":"SE","Switzerland":"CH","Tahiti (French Polynesia)":"PF","Taiwan":"TW","Tajikistan":"TJ","Tanzania":"TZ","Thailand":"TH","Timor-Leste":"TL","Togo":"TG","Tonga":"TO","Trinidad & Tobago":"TT","Tunisia":"TN","Turkey":"TR","Turkmenistan":"TM","Turks & Caicos":"TC","Tuvalu":"TV","US Virgin Islands":"VI","Uganda":"UG","Ukraine":"UA","United Arab Emirates":"AE","United Kingdom":"GB","United States":"US","Uruguay":"UY","Uzbekistan":"UZ","Vanuatu":"VU","Vatican City":"VA","Venezuela":"VE","Vietnam":"VN","Yemen":"YE","Zambia":"ZM","Zimbabwe":"ZW"};
+  var ORIGINS = [['JKT', ['jakarta', 'tangerang', 'bekasi', 'depok', 'bogor', 'sentul', 'cikarang', 'bsd', 'serpong', 'karawang']], ['SUB', ['surabaya', 'sidoarjo', 'gresik']], ['BDO', ['bandung', 'cimahi']], ['KNO', ['medan', 'deli serdang']], ['SRG', ['semarang']], ['JOG', ['yogyakarta', 'jogja', 'sleman', 'bantul']], ['DPS', ['denpasar', 'bali', 'badung', 'gianyar']], ['UPG', ['makassar']], ['BPN', ['balikpapan']], ['PLM', ['palembang']], ['BTH', ['batam']], ['MLG', ['malang']], ['SOC', ['solo', 'surakarta']], ['PNK', ['pontianak']], ['BDJ', ['banjarmasin']], ['MDC', ['manado']], ['PKU', ['pekanbaru']], ['PDG', ['padang']], ['TKG', ['bandar lampung', 'lampung']]];
+  function originCode(f) {
+    var t = ((f.Pickup_City || '') + ' ' + (f.Pickup_Address || '')).toLowerCase();
+    for (var i = 0; i < ORIGINS.length; i++) for (var j = 0; j < ORIGINS[i][1].length; j++) if (t.indexOf(ORIGINS[i][1][j]) > -1) return ORIGINS[i][0];
+    return t.trim() ? 'IDN' : 'JKT';
+  }
+  var MON = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+  function dmy(s) { var m = String(s || '').match(/(\d{4})-(\d{2})-(\d{2})/); return m ? (parseInt(m[3], 10) + ' ' + MON[parseInt(m[2], 10) - 1] + ' ' + m[1]) : '-'; }
+  function c128len(text) { return (text.length + 2) * 11 + 13; }
+  /* Label 100 x 150 mm, black on white only (prints on any printer, no colour needed). Printed on A4 with a dashed cut line. */
   var CSS = '#awbOv{position:fixed;inset:0;z-index:9999;background:rgba(10,20,40,.72);overflow:auto;padding:0 0 30px}' +
     '.awb-bar{position:sticky;top:0;z-index:2;display:flex;gap:10px;align-items:center;justify-content:center;padding:12px;background:#0b1f44;color:#fff;font:600 14px system-ui,sans-serif}' +
-    '.awb-bar button{border:0;border-radius:8px;padding:9px 16px;font:700 14px system-ui,sans-serif;cursor:pointer}' +
-    '.awb-bar .p{background:#f5a623;color:#16202f}.awb-bar .c{background:#fff;color:#16202f}' +
-    '.awb-page{width:210mm;min-height:297mm;margin:16px auto;background:#fff;color:#000;padding:12mm;box-shadow:0 8px 40px rgba(0,0,0,.4);font:13px/1.35 "Carlito",Calibri,Arial,sans-serif;position:relative;box-sizing:border-box}' +
-    '.awb-page *{box-sizing:border-box}.awb-h{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #004aad;padding-bottom:8px}' +
-    '.awb-h img{height:16mm;width:auto}.awb-co{font-size:11px;color:#333;margin-top:3px}.awb-ttl{text-align:right;font-weight:800;color:#004aad;font-size:17px;letter-spacing:.4px}' +
-    '.awb-band{background:#004aad;color:#fff;display:flex;justify-content:space-between;padding:7px 12px;font-weight:800;letter-spacing:.6px;margin-top:8px;font-size:14px}' +
-    '.awb-route{display:flex;justify-content:space-between;align-items:center;margin-top:10px}.awb-r{font-size:26px;font-weight:800;color:#00347a}.awb-r small{display:block;font-size:11px;color:#555;font-weight:600}' +
-    '.awb-pc{background:#e6eefb;border:1px solid #b9cdf0;border-radius:6px;padding:7px 14px;text-align:center;font-weight:800;color:#00347a}.awb-pc small{display:block;font-weight:600;color:#445}' +
-    '.awb-bc{margin-top:10px;text-align:center}.awb-no{font:700 25px "DejaVu Sans Mono",Consolas,monospace;letter-spacing:1px;margin-top:4px}' +
-    '.awb-ft{display:flex;gap:10px;margin-top:10px}.awb-from{width:40%;border:1px solid #b9cdf0;border-radius:6px;padding:9px 11px}.awb-to{flex:1;background:#e6eefb;border:1px solid #b9cdf0;border-radius:6px;padding:9px 12px}' +
-    '.awb-lb{font-size:10px;font-weight:800;color:#004aad;letter-spacing:.8px;margin-bottom:3px}.awb-big{font-size:20px;font-weight:800;line-height:1.2}.awb-addr{margin-top:2px}' +
-    '.awb-grid{display:grid;grid-template-columns:repeat(4,1fr);margin-top:10px;border:1px solid #b9cdf0;border-radius:6px;overflow:hidden}.awb-grid>div{padding:7px 9px;border-right:1px solid #d5e0f4;border-bottom:1px solid #d5e0f4;min-height:46px}.awb-grid b{display:block;font-size:15px}' +
-    '.awb-bt{display:flex;gap:10px;margin-top:10px}.awb-box{flex:1;border:1px solid #b9cdf0;border-radius:6px;padding:9px 11px;display:flex;gap:12px;align-items:center}.awb-box .q{width:30mm;height:30mm;flex:none}.awb-box .q svg{width:100%;height:100%;display:block}' +
-    '.awb-pod{min-height:34mm;align-items:flex-start;flex-direction:column;gap:6px}.awb-line{border-bottom:1px solid #777;height:15px;width:100%}' +
-    '.awb-foot{position:absolute;left:12mm;right:12mm;bottom:10mm;font-size:10.5px;color:#444;border-top:1px solid #ccc;padding-top:6px}' +
+    '.awb-bar button{border:0;border-radius:8px;padding:9px 16px;font:700 14px system-ui,sans-serif;cursor:pointer}.awb-bar .p{background:#f5a623;color:#16202f}.awb-bar .c{background:#fff;color:#16202f}' +
+    '.awb-page{width:210mm;height:297mm;margin:16px auto;background:#fff;color:#000;position:relative;overflow:hidden;box-shadow:0 8px 40px rgba(0,0,0,.4);font-family:"Liberation Sans",Arial,Helvetica,sans-serif}' +
+    '.awb-cut{position:absolute;left:7mm;top:7mm;width:106mm;height:156mm;border:.3mm dashed #000}' +
+    '.awb-ins{position:absolute;left:120mm;top:10mm;width:80mm;font-size:9pt;line-height:1.5}.awb-ins b{display:block;font-size:10pt;margin-bottom:2mm}' +
+    '.lab{position:absolute;left:10mm;top:10mm;width:100mm;height:150mm;border:.4mm solid #000;box-sizing:border-box;overflow:hidden}' +
+    '.lab *{box-sizing:border-box}.lab .a{position:absolute;white-space:nowrap;line-height:1}.lab .ln{position:absolute;left:0;right:0;border-top:.3mm solid #000}.lab .ln2{position:absolute;left:4mm;border-top:.3mm solid #000}' +
+    '.lab .b{font-weight:700}.lab .wrap{position:absolute;white-space:normal;overflow:hidden}' +
+    '.lab .svc{position:absolute;left:64mm;top:2mm;width:32mm;height:12mm;border:.5mm solid #000;text-align:center}.lab .svc .t{font-weight:700;font-size:16pt;margin-top:1.8mm;line-height:1}.lab .svc .s{font-size:5.8pt;margin-top:1.6mm}' +
+    '.lab .br{position:absolute;width:5mm;height:5mm;border:0 solid #000}' +
+    '.lab .band{position:absolute;left:0;right:0;top:87mm;height:8mm;background:#000;-webkit-print-color-adjust:exact;print-color-adjust:exact}' +
+    '.lab .bc{position:absolute;left:50%;transform:translateX(-50%);top:123mm;height:19mm}.lab .qr{position:absolute;left:76mm;top:97mm;width:20mm;height:20mm}.lab .qr svg{width:100%;height:100%;display:block}' +
     '@media print{body>*:not(#awbOv){display:none!important}#awbOv{position:static;background:none;overflow:visible;padding:0}.awb-bar{display:none!important}.awb-page{margin:0;box-shadow:none;page-break-after:always;break-after:page}@page{size:A4;margin:0}}';
   function load(src) { return new Promise(function (res, rej) { if (window.qrcode) return res(); var s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = rej; document.head.appendChild(s); }); }
   function page(f, o, n, tot) {
-    var ref = f.PCW_Ref, prio = /priority/i.test(f.Product || ''), pcs = tot, chg = parseFloat(f.Chargeable_Kg) || parseFloat(f.Actual_Kg) || 0, per = pcs ? (chg / pcs) : chg;
+    var base = f.PCW_Ref, ref = base + (tot > 1 ? '-' + n : ''), prio = /priority/i.test(f.Product || '');
+    var chg = parseFloat(f.Chargeable_Kg) || parseFloat(f.Actual_Kg) || 0, per = tot ? chg / tot : chg;
     var url = o.origin + o.base + 'track.html?ref=' + encodeURIComponent(ref);
-    var dest = String(f.Dest_Country || '').toUpperCase();
-    var pickup = [f.Pickup_or_Dropoff, f.Pickup_Date].filter(function (x) { return x && x !== '-'; }).join(' · ');
-    var est = prio ? '3-5 working days after pickup' : '7-14 working days after pickup';
-    var svc = prio ? 'PCW PRIORITY EXPRESS' : 'PCW ECONOMY EXPRESS';
-    var toName = esc(f.Consignee_Name) + (f.Consignee_Company ? '<br><span style="font-size:14px">' + esc(f.Consignee_Company) + '</span>' : '');
-    var g = function (l, v) { return '<div>' + l + '<b>' + esc(v == null || v === '' ? '-' : v) + '</b></div>'; };
-    return '<div class="awb-page">' +
-      '<div class="awb-h"><div><img src="' + esc(o.logo) + '" alt="PCW Freight"><div class="awb-co"><b>PT Prabaswara Catur Widantara</b> (PCW Freight)<br>Jl. Bukit Golf Hijau Raya No. 18, Sentul City, Kab. Bogor 16810, Indonesia<br>+62 811 9989 6752 · info@pcwfreight.com</div></div><div class="awb-ttl">INTERNATIONAL EXPRESS<br>AIR WAYBILL</div></div>' +
-      '<div class="awb-band"><span>' + svc + ' · DOOR TO DOOR</span><span>HANDLE WITH CARE</span></div>' +
-      '<div class="awb-route"><div class="awb-r">INDONESIA <span style="color:#f5a623">&rarr;</span> ' + esc(dest) + '<small>Origin: Jakarta area, ID · Destination: ' + esc(f.Consignee_City || dest) + '</small></div><div class="awb-pc"><small>PIECE</small><span style="font-size:22px">' + n + ' OF ' + tot + '</span><small>' + esc((f.Submitted_At || '').slice(0, 10)) + '</small></div></div>' +
-      '<div class="awb-bc">' + c128(ref) + '<div class="awb-no">' + esc(ref) + '</div></div>' +
-      '<div class="awb-ft"><div class="awb-from"><div class="awb-lb">FROM (SHIPPER)</div><b>' + esc(f.Shipper_Company || f.Shipper_Name) + '</b><div class="awb-addr">' + esc(f.Shipper_Name) + '<br>Tel: ' + esc(f.Shipper_WhatsApp || '-') + (pickup ? '<br>' + esc(pickup) : '') + '</div></div>' +
-      '<div class="awb-to"><div class="awb-lb">TO (CONSIGNEE)</div><div class="awb-big">' + toName + '</div><div class="awb-addr">' + esc(f.Consignee_Address) + '<br>' + esc([f.Consignee_City, f.Consignee_Postcode, f.Dest_Country].filter(Boolean).join(', ')) + '<br>Tel: ' + esc(f.Consignee_Phone || '-') + '</div></div></div>' +
-      '<div class="awb-grid">' + g('SERVICE', prio ? 'Priority Express' : 'Economy Express') + g('TOTAL PIECES', tot) + g('TOTAL WEIGHT (chargeable)', chg ? chg + ' kg' : '-') + g('THIS PIECE (approx.)', per ? per.toFixed(1) + ' kg' : '-') + g('DIMENSIONS (cm)', f.Dims_cm) + g('CONTENTS', f.Contents) + g('DECLARED VALUE', f.Declared_Value ? 'IDR ' + Number(f.Declared_Value).toLocaleString('id-ID') : 'Not stated') + g('EST. DELIVERY', est) + '</div>' +
-      '<div class="awb-bt"><div class="awb-box"><div class="q">' + qr(url) + '</div><div><div class="awb-lb">TRACK YOUR SHIPMENT</div>pcwfreight.com/track.html<br>Enter AWB number:<br><b style="font:700 14px \'DejaVu Sans Mono\',Consolas,monospace">' + esc(ref) + '</b></div></div>' +
-      '<div class="awb-box awb-pod"><div class="awb-lb">PROOF OF DELIVERY</div>Received by:<div class="awb-line"></div>Date / time:<div class="awb-line"></div>Signature:<div class="awb-line"></div></div></div>' +
-      '<div class="awb-foot">Attach on top of the box and do not cover the barcode. Delivery date is an estimate and starts from pickup; customs clearance may add time. Questions: WhatsApp +62 811 9989 6752 · info@pcwfreight.com · pcwfreight.com</div></div>';
+    var ctry = String(f.Dest_Country || ''), iso = (ISO[ctry] || ctry.slice(0, 2)).toUpperCase();
+    var svc = prio ? 'PRIORITY' : 'ECONOMY', code = prio ? 'PX' : 'EC', est = prio ? '3-5 WORKING DAYS' : '7-14 WORKING DAYS';
+    var pick = [f.Pickup_Date].filter(function (x) { return x && x !== '-'; })[0] || f.Submitted_At;
+    var at = function (css, cls, html) { return '<div class="a ' + (cls || '') + '" style="' + css + '">' + html + '</div>'; };
+    var y = 45.4, co = '';
+    if (f.Consignee_Company) { co = at('left:7mm;top:' + y + 'mm;font-size:9.5pt', 'b', esc(String(f.Consignee_Company).slice(0, 46))); y += 4.2; }
+
+    var adr = '<div class="wrap" style="left:7mm;top:' + y + 'mm;width:86mm;height:7.8mm;font-size:8.5pt;line-height:1.25">' + esc(f.Consignee_Address) + '</div>';
+    var cityY = y + 8.4;
+    var shipper = [f.Shipper_Name && f.Shipper_Company ? f.Shipper_Name : '', f.Pickup_Address || '', f.Shipper_WhatsApp ? 'Tel: ' + f.Shipper_WhatsApp : ''].filter(Boolean);
+    var from = at('left:4mm;top:18.6mm;font-size:5.5pt', '', 'FROM') + at('left:4mm;top:21.2mm;font-size:7pt', 'b', esc(String(f.Shipper_Company || f.Shipper_Name || '').slice(0, 44))) +
+      '<div class="wrap" style="left:4mm;top:24.4mm;width:62mm;height:10mm;font-size:6.3pt;line-height:1.35">' + shipper.map(esc).join('<br>') + '</div>';
+    return '<div class="awb-page"><div class="awb-cut"></div>' +
+      '<div class="awb-ins"><b>After printing this label</b>1. Print at 100% (do not scale to fit).<br>2. Cut along the dashed line.<br>3. Stick the label flat on top of the parcel, with the barcode fully visible.<br><br>Questions: WhatsApp +62 811 9989 6752<br>info@pcwfreight.com</div>' +
+      '<div class="lab">' +
+      '<img src="' + esc(o.logo) + '" alt="PCW" style="position:absolute;left:4mm;top:4mm;width:12mm;height:12mm">' +
+      at('left:18mm;top:4.4mm;font-size:13pt', 'b', 'PCW Freight') + at('left:18mm;top:9.6mm;font-size:6.3pt', '', 'International Express') + at('left:18mm;top:12.4mm;font-size:6.3pt', '', 'PT Prabaswara Catur Widantara') +
+      '<div class="svc"><div class="t">' + svc + '</div><div class="s">EXPRESS &nbsp;&middot;&nbsp; DOOR TO DOOR</div></div>' +
+      '<div class="ln" style="top:18mm"></div>' + from +
+      at('right:4mm;top:19.4mm;font-size:5.5pt', '', 'ORIGIN') + at('right:4mm;top:22.6mm;font-size:24pt', 'b', originCode(f)) +
+      '<div class="ln" style="top:35mm"></div>' +
+      '<div class="br" style="left:4mm;top:36.5mm;border-top-width:.6mm;border-left-width:.6mm"></div><div class="br" style="right:4mm;top:36.5mm;border-top-width:.6mm;border-right-width:.6mm"></div>' +
+      '<div class="br" style="left:4mm;top:60mm;border-bottom-width:.6mm;border-left-width:.6mm"></div><div class="br" style="right:4mm;top:60mm;border-bottom-width:.6mm;border-right-width:.6mm"></div>' +
+      at('left:7mm;top:37.2mm;font-size:5.5pt', '', 'TO') + at('left:7mm;top:39.6mm;font-size:13pt', 'b', esc(String(f.Consignee_Name || '').slice(0, 36))) + co + adr +
+      at('left:7mm;top:' + cityY + 'mm;font-size:9.5pt', 'b', esc(((f.Consignee_Postcode || '') + ' ' + (f.Consignee_City || '')).trim().toUpperCase().slice(0, 46))) +
+      at('left:7mm;top:' + (cityY + 4.2) + 'mm;font-size:9.5pt', 'b', esc(ctry.toUpperCase())) +
+      (f.Consignee_Phone ? at('right:10mm;top:' + (cityY + 4.4) + 'mm;font-size:8pt', '', 'Tel: ' + esc(f.Consignee_Phone)) : '') +
+      '<div class="ln" style="top:67mm"></div>' +
+      at('left:5mm;top:68mm;font-size:58pt', 'b', esc(iso)) + at('left:52mm;top:69mm;font-size:5.5pt', '', 'DESTINATION POSTCODE') + at('left:52mm;top:74mm;font-size:25pt', 'b', esc(String(f.Consignee_Postcode || '-').slice(0, 12))) + at('left:52mm;top:82mm;font-size:8.5pt', 'b', esc(ctry.toUpperCase().slice(0, 26))) +
+      '<div class="band"></div>' + at('left:5mm;top:89.6mm;font-size:11pt;color:#fff', 'b', code + '-' + esc(iso)) + at('right:5mm;top:90.4mm;font-size:7.5pt;color:#fff', 'b', 'TRANSIT ' + est) +
+      at('left:4mm;top:97.4mm;font-size:5.5pt', '', 'PIECE') + at('left:4mm;top:100.6mm;font-size:14pt', 'b', n + ' / ' + tot) +
+      at('left:27mm;top:97.4mm;font-size:5.5pt', '', 'WEIGHT') + at('left:27mm;top:100.6mm;font-size:14pt', 'b', per ? per.toFixed(1) + ' kg' : '-') +
+      at('left:50mm;top:97.4mm;font-size:5.5pt', '', 'DATE') + at('left:50mm;top:101.2mm;font-size:10pt', 'b', dmy(pick)) +
+      '<div class="ln2" style="top:108mm;width:68mm"></div>' +
+      '<div class="wrap" style="left:4mm;top:109.6mm;width:68mm;height:6mm;font-size:6.3pt;line-height:1.3">Contents: ' + esc(f.Contents || '-') + '</div>' +
+      at('left:4mm;top:115.6mm;font-size:6.3pt', '', 'Shipment: ' + tot + ' piece(s)' + (chg ? ', ' + chg + ' kg chargeable' : '')) +
+      '<div class="qr">' + qr(url) + '</div>' + at('left:76mm;top:118mm;width:20mm;text-align:center;font-size:5pt', '', 'SCAN TO TRACK') +
+      '<div class="ln" style="top:120.5mm"></div>' +
+      '<div class="bc" style="width:' + Math.min(88, 0.4 * (c128len(ref) + 20)) + 'mm">' + c128(ref) + '</div>' +
+      at('left:0;right:0;top:142.6mm;text-align:center;font:700 9.5pt \'Liberation Mono\',\'DejaVu Sans Mono\',Consolas,monospace', '', 'WAYBILL &nbsp;' + esc(ref)) +
+      at('left:0;right:0;top:146.6mm;text-align:center;font-size:5pt', '', 'Carried under PCW Terms &amp; Conditions: pcwfreight.com/terms. Attach flat on top of the parcel; do not cover the barcode.') +
+      '</div></div>';
   }
   window.PCWAWB = {
     open: function (f, o) {
