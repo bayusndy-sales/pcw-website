@@ -705,6 +705,10 @@ RewriteRule ^check-shipping-rates/?$ /rates.html [R=301,L]
 RewriteRule ^privacy-policy/?$ /privacy.html [R=301,L]
 RewriteRule ^terms-and-conditions/?$ /terms.html [R=301,L]
 RewriteRule ^(blogs|blog|news)(/.*)?$ / [R=301,L]
+RewriteRule ^home/?$ / [R=301,L]
+RewriteRule ^hello-world(-copy)?/?$ - [G,L]
+RewriteRule ^(wp-includes|wp-content|wp-admin|wp-json)(/.*)?$ - [G,L]
+RewriteRule ^search/ - [G,L]
 # clean addresses: /track -> track.html (query string kept)
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
