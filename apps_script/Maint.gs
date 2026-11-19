@@ -25,3 +25,26 @@ function installTriggers() {
   ScriptApp.newTrigger('healthCheck').timeBased().everyHours(1).create();
   return 'ok';
 }
+
+/** Run from the editor: compares published Priority vs Economy totals for every country at common weights.
+ *  Writes a CSV to Drive folder "PCW Reports" and logs a summary. Read-only for rates. */
+function priceAudit() {
+  const W = [0.5, 1, 2, 3, 5, 10, 15, 20, 30], rows = [['Country', 'Kg', 'Priority_IDR', 'Economy_IDR', 'Economy_minus_Priority', 'Economy_higher']];
+  const byKg = {}; let both = 0, worse = 0; const worseCountries = {};
+  countries_().forEach(function (c) {
+    W.forEach(function (kg) {
+      const r = rate_({ country: c, type: 'Parcel', kg: kg, pieces: 1 }); if (!r.ok) return;
+      const p = r.options.filter(function (o) { return o.product === 'Priority'; })[0], e = r.options.filter(function (o) { return o.product === 'Economy'; })[0];
+      if (!p || !e || p.quote || e.quote) return;
+      both++; const hi = e.total > p.total; if (hi) { worse++; (worseCountries[c] = worseCountries[c] || []).push(kg); }
+      byKg[kg] = byKg[kg] || [0, 0]; byKg[kg][0]++; if (hi) byKg[kg][1]++;
+      rows.push([c, kg, p.total, e.total, e.total - p.total, hi ? 'YES' : '']);
+    });
+  });
+  const fi = DriveApp.getFoldersByName('PCW Reports'); const f = fi.hasNext() ? fi.next() : DriveApp.createFolder('PCW Reports');
+  const name = 'PCW price audit Priority vs Economy ' + Utilities.formatDate(new Date(), TZ, 'yyyy-MM-dd') + '.csv';
+  const file = f.createFile(name, rows.map(function (r) { return r.map(function (x) { return '"' + String(x).replace(/"/g, '""') + '"'; }).join(','); }).join('\n'), MimeType.CSV);
+  const sum = 'Pairs priced both ways: ' + both + '; Economy higher than Priority: ' + worse + ' (' + Math.round(worse / Math.max(both, 1) * 1000) / 10 + '%)\nBy kg: ' +
+    W.map(function (k) { const x = byKg[k] || [0, 0]; return k + 'kg ' + x[1] + '/' + x[0]; }).join(', ') + '\nCountries affected: ' + Object.keys(worseCountries).length + '\nFile: ' + file.getUrl();
+  console.log(sum); console.log(JSON.stringify(worseCountries).slice(0, 3000)); return sum;
+}
