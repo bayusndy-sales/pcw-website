@@ -31,6 +31,10 @@ function installTriggers() {
 function priceAudit() {
   const W = [0.5, 1, 2, 3, 5, 10, 15, 20, 30], rows = [['Country', 'Kg', 'Priority_IDR', 'Economy_IDR', 'Economy_minus_Priority', 'Economy_higher']];
   const byKg = {}; let both = 0, worse = 0; const worseCountries = {};
+  // speed: memoise settings, country list and rate groups for this run (Apps Script stops runs after 6 min)
+  const s0 = settings_(), c0 = countries_(), gm = {}, g0 = group_;
+  settings_ = function () { return s0; }; countries_ = function () { return c0; };
+  group_ = function (p, t, c) { const k = p + '|' + t + '|' + c; if (!(k in gm)) gm[k] = g0(p, t, c); return gm[k]; };
   countries_().forEach(function (c) {
     W.forEach(function (kg) {
       const r = rate_({ country: c, type: 'Parcel', kg: kg, pieces: 1 }); if (!r.ok) return;
