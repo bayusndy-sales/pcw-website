@@ -319,6 +319,9 @@ function nextRef_(code) {
       if (v.indexOf(prefix) === 0) max = Math.max(max, parseInt(v.slice(prefix.length), 10) || 0);
     });
   });
+  const pr = PropertiesService.getScriptProperties(), pk = 'REF_' + prefix;
+  max = Math.max(max, parseInt(pr.getProperty(pk) || '0', 10));
+  pr.setProperty(pk, String(max + 1)); // counter never goes back, even if test rows are deleted
   return prefix + ('000' + (max + 1)).slice(-4);
 }
 
