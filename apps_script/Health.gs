@@ -15,12 +15,18 @@ function healthRun_() {
   add('Home page', function () { var r = hGet_(HEALTH_SITE + '/'); return r.getResponseCode() === 200 && /PCW Freight/.test(r.getContentText()) || 'HTTP ' + r.getResponseCode(); });
   add('Booking page has bot check', function () { var r = hGet_(HEALTH_SITE + '/book.html'); return r.getResponseCode() === 200 && /cf-turnstile/.test(r.getContentText()) || 'HTTP ' + r.getResponseCode() + ' or widget missing'; });
   add('Register page script has bot check', function () { var r = hGet_(HEALTH_SITE + '/assets/portal.js'); return r.getResponseCode() === 200 && /rgTs/.test(r.getContentText()) || 'HTTP ' + r.getResponseCode() + ' or widget missing'; });
-  add('Booking script sends bot token', function () { var r = hGet_(HEALTH_SITE + '/assets/app.js'); return r.getResponseCode() === 200 && /cf-turnstile-response/.test(r.getContentText()) && /action: 'bt'/.test(r.getContentText()) || 'token code missing'; });
+  add('Booking script sends bot token', function () { var r = hGet_(HEALTH_SITE + '/assets/app.js'); return r.getResponseCode() === 200 && /cf-turnstile-response/.test(r.getContentText()) && /action:\s*["']bt["']/.test(r.getContentText()) || 'token code missing'; });
   // Web-app logic is called directly: Apps Script calling its own /exec URL can hang.
   add('Countries list', function () { var c = countries_(); return c.length > 100 || 'got ' + c.length + ' countries'; });
   add('Rate quote (Singapore 1 kg)', function () { var j = rate_({ country: 'Singapore', type: 'Parcel', kg: 1, pieces: 1 }); return j && j.ok && j.options && j.options.length > 0 || 'got ' + JSON.stringify(j).slice(0, 100); });
   add('Bot token', function () { return /^\d+\./.test(botToken_()) || 'no token'; });
   add('Turnstile enforced', function () { var j = register_({ action: 'register', email: 'health-check@example.com' }); return j && j.error === 'bot_check_failed' || 'got ' + JSON.stringify(j).slice(0, 100); });
+  add('Website country list matches rates table', function () {
+    var m = hGet_(HEALTH_SITE + '/assets/app.js').getContentText().match(/\["Albania"[^\]]*\]/); if (!m) return 'list not found in app.js';
+    var site = JSON.parse(m[0]), live = countries_();
+    var miss = live.filter(function (c) { return site.indexOf(c) < 0; }), extra = site.filter(function (c) { return live.indexOf(c) < 0; });
+    return !miss.length && !extra.length || 'missing on website: ' + (miss.join(', ') || '-') + '; not in rates: ' + (extra.join(', ') || '-');
+  });
   add('Mail relay alive and paired', function () {
     var r = UrlFetchApp.fetch(HEALTH_SITE + '/mailrelay.php', { method: 'post', contentType: 'application/json', payload: '{}', muteHttpExceptions: true });
     return r.getResponseCode() === 403 && /"sig"/.test(r.getContentText()) || 'HTTP ' + r.getResponseCode() + ' ' + r.getContentText().slice(0, 80);

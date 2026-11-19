@@ -56,6 +56,7 @@ def page(lang, slug, title, desc, body, head_extra=''):
 <meta property="og:title" content="{html.escape(title)}"><meta property="og:description" content="{html.escape(desc)}"><meta property="og:type" content="website">
 <link rel="icon" type="image/png" sizes="32x32" href="{root}assets/favicon-32.png"><link rel="icon" type="image/png" sizes="192x192" href="{root}assets/icon-192.png"><link rel="apple-touch-icon" href="{root}assets/apple-touch-icon.png">
 <meta property="og:image" content="{SITE}assets/og-image.png"><meta name="theme-color" content="#004aad">
+<link rel="preconnect" href="https://script.google.com" crossorigin><link rel="preconnect" href="https://script.googleusercontent.com" crossorigin>
 <link rel="stylesheet" href="{root}assets/style.css?v={ASSET_V["style.css"]}">{head_extra}
 </head>
 <body data-root="{root}">
@@ -638,12 +639,27 @@ RewriteCond %{DOCUMENT_ROOT}/$1.html -f
 RewriteRule ^(.+?)/?$ /$1.html [L]
 </IfModule>
 <IfModule mod_headers.c>
+# versioned assets (?v=hash) never change: cache 1 year; pages are re-checked every visit
+<FilesMatch "\\.(js|css)$">
+Header set Cache-Control "public, max-age=31536000, immutable"
+</FilesMatch>
+<FilesMatch "\\.(html|php)$">
+Header set Cache-Control "no-cache"
+</FilesMatch>
 Header set X-Content-Type-Options "nosniff"
 Header set Referrer-Policy "strict-origin-when-cross-origin"
 Header set X-Frame-Options "SAMEORIGIN"
 </IfModule>
 """
     open(os.path.join(DIST, '.htaccess'), 'w').write(HT)
+    # minify JS in dist (src stays readable); skipped if terser is unavailable
+    try:
+        import subprocess
+        for js in ('app.js', 'portal.js', 'awb.js'):
+            fp = os.path.join(DIST, 'assets', js)
+            subprocess.run(['npx', '--yes', 'terser', fp, '-c', '-m', '-o', fp], check=True, capture_output=True, timeout=180)
+    except Exception as e:
+        print('minify skipped:', e)
     st = os.path.join(SRC, 'static')
     if os.path.isdir(st):
         for f in os.listdir(st): shutil.copy(os.path.join(st, f), DIST)

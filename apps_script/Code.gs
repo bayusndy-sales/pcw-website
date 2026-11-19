@@ -217,7 +217,12 @@ function rate_(p) {
 
 /* ---------------- tracking ---------------- */
 
-function track_(p) {
+function track_(p) { // public tracking, cached 60 s per ref and language
+  const k = 'tk_' + String(p.ref || '').trim().toUpperCase().slice(0, 40) + '_' + (p.lang === 'id' ? 'id' : 'en'), c = CacheService.getScriptCache();
+  const hit = c.get(k); if (hit) return JSON.parse(hit);
+  const r = trackRaw_(p); if (r.ok) c.put(k, JSON.stringify(r), 60); return r;
+}
+function trackRaw_(p) {
   const ref = String(p.ref || '').trim().toUpperCase();
   const lang = p.lang === 'id' ? 'id' : 'en';
   if (!/^[A-Z0-9-]{6,40}$/.test(ref)) return { ok: false, error: 'invalid_ref' };
