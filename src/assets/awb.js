@@ -35,6 +35,7 @@
     '.lab .br{position:absolute;width:5mm;height:5mm;border:0 solid #000}' +
     '.lab .band{position:absolute;left:0;right:0;top:87mm;height:8mm;background:#000;-webkit-print-color-adjust:exact;print-color-adjust:exact}' +
     '.lab .bc{position:absolute;left:50%;transform:translateX(-50%);top:123mm;height:19mm}.lab .qr{position:absolute;left:76mm;top:97mm;width:20mm;height:20mm}.lab .qr svg{width:100%;height:100%;display:block}' +
+    '.awb-cond{padding:14mm 14mm 10mm;font-size:8.6pt;line-height:1.38}.awb-cond h1{font-size:14pt;margin:0 0 1mm}.awb-cond .sub{font-size:8pt;margin:0 0 4mm}.awb-cond table{width:100%;border-collapse:collapse}.awb-cond td{border-top:.25mm solid #000;padding:1.8mm 1.5mm;vertical-align:top}.awb-cond td.k{width:36mm;font-weight:700}.awb-cond .ft{margin-top:4mm;font-size:7.8pt}' +
     '@media print{body>*:not(#awbOv){display:none!important}#awbOv{position:static;background:none;overflow:visible;padding:0}.awb-bar{display:none!important}.awb-page{margin:0;box-shadow:none;page-break-after:always;break-after:page}@page{size:A4;margin:0}}';
   function load(src) { return new Promise(function (res, rej) { if (window.qrcode) return res(); var s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = rej; document.head.appendChild(s); }); }
   function page(f, o, n, tot) {
@@ -84,6 +85,23 @@
       at('left:0;right:0;top:146.6mm;text-align:center;font-size:5pt', '', 'Carried under PCW Terms &amp; Conditions: pcwfreight.com/terms. Attach flat on top of the parcel; do not cover the barcode.') +
       '</div></div>';
   }
+  var COND = [
+    ['Who we are', 'PCW International Express is operated by PT Prabaswara Catur Widantara. Full terms: pcwfreight.com/terms. The full terms prevail over this summary.'],
+    ['Chargeable weight', 'Charges use the greater of actual weight and volumetric weight (L x W x H in cm, divided by 5000). Re-measurement in transit is final, and any difference is billed to the shipper.'],
+    ['Prohibited and restricted goods', 'The shipper must declare contents and value truthfully. Goods prohibited at origin, transit or destination are not accepted. Dangerous goods and lithium batteries need prior written approval. Shipments may be opened and inspected.'],
+    ['Duties and taxes', 'Import duties and taxes at destination are paid by the consignee, unless agreed otherwise in writing. If refused, the cost, plus return or disposal, is billed to the shipper.'],
+    ['Transit times', 'Transit times are estimates, not guarantees. Customs, weather, security checks and incomplete addresses are not grounds for compensation.'],
+    ['Liability, Priority', 'The lower of (a) the goods value proven by invoice or (b) USD 20 per kg of the lost or damaged piece.'],
+    ['Liability, Economy', 'The lower of (a) IDR 500,000 per shipment or (b) the freight paid, unless insured.'],
+    ['Insurance', 'Full-value cover can be bought at booking.'],
+    ['Not covered', 'Indirect loss (lost profit or sales), inadequate packing, false declarations, customs action and force majeure.'],
+    ['Claim deadlines', 'Damage: report in writing within 3 days (Priority) or 2 days (Economy, with unboxing video) of delivery. Loss: within 21 days of pickup (Priority) or 5 days after the estimated arrival date (Economy). Late claims cannot be processed.']
+  ];
+  function condPage(f) {
+    return '<div class="awb-page awb-cond"><h1>Conditions of Carriage, Summary</h1><div class="sub">PCW Freight International Express &middot; Waybill ' + esc(f.PCW_Ref) + '</div><table>' +
+      COND.map(function (r) { return '<tr><td class="k">' + esc(r[0]) + '</td><td>' + esc(r[1]) + '</td></tr>'; }).join('') +
+      '</table><div class="ft">This page is a summary only. By booking, the shipper accepted the full PCW Terms and Conditions in force on the booking date, published at pcwfreight.com/terms. Questions: WhatsApp +62 811 9989 6752 &middot; info@pcwfreight.com</div></div>';
+  }
   window.PCWAWB = {
     open: function (f, o) {
       o = o || {}; o.base = o.base || ''; o.origin = o.origin || location.origin;
@@ -92,8 +110,9 @@
         if (!document.getElementById('awbCss')) { var st = document.createElement('style'); st.id = 'awbCss'; st.textContent = CSS; document.head.appendChild(st); }
         var tot = Math.max(1, Math.min(50, parseInt(f.Pieces, 10) || 1)), html = '';
         for (var i = 1; i <= tot; i++) html += page(f, o, i, tot);
+        html += condPage(f);
         var ov = document.createElement('div'); ov.id = 'awbOv';
-        ov.innerHTML = '<div class="awb-bar"><span>AWB ' + esc(f.PCW_Ref) + ' - ' + tot + (tot > 1 ? ' pages' : ' page') + '</span><button class="p" type="button">Print / Save as PDF</button><button class="c" type="button">Close</button></div>' + html;
+        ov.innerHTML = '<div class="awb-bar"><span>AWB ' + esc(f.PCW_Ref) + ' - ' + (tot + 1) + ' pages (' + tot + (tot > 1 ? ' labels' : ' label') + ' + conditions) ' + '</span><button class="p" type="button">Print / Save as PDF</button><button class="c" type="button">Close</button></div>' + html;
         document.body.appendChild(ov);
         ov.querySelector('.p').onclick = function () { window.print(); };
         ov.querySelector('.c').onclick = function () { ov.remove(); };
