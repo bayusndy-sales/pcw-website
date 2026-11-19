@@ -168,6 +168,24 @@ function items_(p) {
   return out;
 }
 
+/* ---- promo: maximum discount that still keeps PCW GP at 20% or more (Settings: Promo_On, Promo_GP, Promo_Max) ---- */
+function promoMax_(prod, country, cw, total, demand, s) {
+  try {
+    if (String(s.Promo_On || 'Y').toUpperCase() === 'N' || !(total > 0)) return 0;
+    const gp = Math.max(0.20, Number(s.Promo_GP) || 0.20);
+    const cap = Number(s.Promo_Max) > 0 ? Number(s.Promo_Max) : 30;
+    const costs = chanSuggest_(prod, country, cw).costs || {};
+    let cost = Infinity;
+    if (prod === 'Economy') { if (costs.MARS > 0) cost = costs.MARS; }
+    else ['FEDEX_OWN', 'FEDEX_ICCL', 'DHL_OWN'].forEach(function (k) { if (costs[k] > 0 && costs[k] < cost) cost = costs[k]; });
+    if (!isFinite(cost)) return 0;
+    cost += (demand || 0);   // [ASSUMED] the demand surcharge is paid to the carrier at the amount charged
+    const d = 1 - cost / ((1 - gp) * total);
+    const pct = Math.min(cap, Math.floor(d * 100 / 5) * 5);
+    return pct >= 5 ? pct : 0;
+  } catch (e) { return 0; }
+}
+
 function rate_(p) {
   const s = settings_();
   const country = String(p.country || '').trim();
@@ -210,7 +228,7 @@ function rate_(p) {
     }
     const demand = prod === 'Priority' ? dem.rate * cw : 0;
     if (demand) fuel += Math.round(fuelPct * demand);
-    out.options.push({ product: prod, chargeable_kg: cw, base: base, demand: demand, fuel: fuel, total: base + demand + fuel });
+    out.options.push({ product: prod, chargeable_kg: cw, base: base, demand: demand, fuel: fuel, total: base + demand + fuel, max_disc: promoMax_(prod, country, cw, base + demand + fuel, demand, s) });
   });
   // Economy has a 1 kg basis; when it is not cheaper than Priority for this shipment, the site does not offer it
   const P = out.options[0], E = out.options[1];

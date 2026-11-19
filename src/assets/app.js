@@ -15,6 +15,7 @@
       chargeable: 'Chargeable weight', actual: 'Actual weight', vol: 'Volumetric weight', kg: 'kg',
       book: 'Book this', quote: 'Request a quote', quoteNote: 'Above our published table: we quote this personally.', notCheaper: 'For this shipment, Priority is cheaper and faster.',
       Priority: 'PCW Priority Express', Economy: 'PCW Economy Express',
+      promoUp: 'Up to {n}% off*', promoLow: 'as low as', promoPub: 'Published rate', promoCta: 'Like this rate? Open an account with us today to enjoy these shipping rates.*', promoBtn: 'Open an account', promoNote: '* Promotional offer. "Up to" is the maximum discount; the real discount depends on the destination and service, and is as agreed between you and our sales team. Prices shown are indicative.',
       notFound: 'We could not find this reference. Check the number or chat with us.', badRef: 'Please enter a valid PCW reference.',
       est: 'Estimated delivery', sending: 'Sending…', missing: 'Please complete the required fields: ',
       consent: 'Please tick the three confirmations before sending.', ecoOut: 'Economy pickup outside Jakarta is arranged by request. Please contact us by WhatsApp or email, or choose drop-off or Priority Express.',
@@ -28,6 +29,7 @@
       chargeable: 'Berat tagih (chargeable)', actual: 'Berat aktual', vol: 'Berat volumetrik', kg: 'kg',
       book: 'Booking', quote: 'Minta penawaran', quoteNote: 'Di atas tabel publikasi: kami hitungkan langsung.', notCheaper: 'Untuk kiriman ini, Priority lebih murah dan lebih cepat.',
       Priority: 'PCW Priority Express', Economy: 'PCW Economy Express',
+      promoUp: 'Diskon hingga {n}%*', promoLow: 'mulai dari', promoPub: 'Published rate', promoCta: 'Suka tarif ini? Buka akun bersama kami hari ini dan nikmati tarif pengiriman seperti ini.*', promoBtn: 'Buka akun', promoNote: '* Penawaran promosi. "Hingga" adalah diskon maksimum; diskon sebenarnya bergantung pada tujuan dan layanan, dan sesuai kesepakatan antara Anda dan tim sales kami. Harga yang ditampilkan bersifat indikatif.',
       notFound: 'Nomor referensi tidak ditemukan. Periksa kembali atau hubungi kami.', badRef: 'Mohon masukkan nomor referensi PCW yang valid.',
       est: 'Estimasi tiba', sending: 'Mengirim…', missing: 'Mohon lengkapi kolom wajib: ',
       consent: 'Mohon centang tiga pernyataan sebelum mengirim.', ecoOut: 'Pickup Economy di luar Jakarta diatur melalui permintaan. Silakan hubungi kami lewat WhatsApp atau email, atau pilih drop-off atau Priority Express.',
@@ -169,6 +171,16 @@
     extra = extra || {};
     var hasDem = r.demand_per_kg > 0;
     var cols = hasDem ? 3 : 2;
+    var promoOn = r.options.some(function (o) { return !o.quote && !o.not_cheaper && o.max_disc >= 5; });
+    function priceCell(o, isP) {
+      var allin = isP ? '' : '<div class="hint">' + T.allin + '</div>';
+      if (!(o.max_disc >= 5)) return '<span class="price">' + idr(o.total) + '</span>' + allin;
+      var low = Math.ceil(o.total * (100 - o.max_disc) / 100 / 1000) * 1000;
+      return '<div class="pslash" title="' + T.promoPub + '"><s>' + idr(o.total) + '</s></div>' +
+        '<span class="offtag">' + T.promoUp.replace('{n}', o.max_disc) + '</span>' +
+        '<div class="price">' + T.promoLow + ' ' + idr(low) + '*</div>' +
+        '<div class="pbar" role="img" aria-label="' + T.promoUp.replace('{n}', o.max_disc) + '"><i class="pay" style="width:' + (100 - o.max_disc) + '%"></i><i class="off" style="width:' + o.max_disc + '%"></i></div>' + allin;
+    }
     var rows = r.options.map(function (o) {
       var bookUrl = ROOT + (LANG === 'id' ? 'id/' : '') + 'book.html?' + ['product=' + o.product, 'country=' + encodeURIComponent(r.country), 'type=' + r.type, 'items=' + encodeURIComponent(p.items || JSON.stringify(r.items)), 'cz=' + encodeURIComponent(extra.d_zip || ''), 'cc=' + encodeURIComponent(extra.d_city || '')].join('&');
       if (o.quote) {
@@ -178,7 +190,7 @@
       var isP = o.product === 'Priority';
       return '<tr><td><strong>' + T[o.product] + '</strong><div class="hint">' + T.chargeable + ': ' + o.chargeable_kg + ' ' + T.kg + '</div></td>' +
         '<td class="n">' + (isP ? idr(o.base) : '—') + '</td>' + (hasDem ? '<td class="n">' + (isP ? idr(o.demand || 0) : '—') + '</td>' : '') + '<td class="n">' + (isP ? idr(o.fuel) : '—') + '</td>' +
-        '<td class="n"><span class="price">' + idr(o.total) + '</span>' + (isP ? '' : '<div class="hint">' + T.allin + '</div>') + '</td>' +
+        '<td class="n">' + priceCell(o, isP) + '</td>' +
         '<td><a class="btn btn-p btn-sm" href="' + bookUrl + '">' + T.book + '</a></td></tr>';
     }).join('');
     var lines = (r.items || []).map(function (it) { return it.q + ' × ' + it.kg + ' ' + T.kg + ((it.l > 0 && it.w > 0 && it.h > 0) ? ' (' + it.l + '×' + it.w + '×' + it.h + ' cm)' : ''); }).join(' · ');
@@ -190,7 +202,9 @@
     var biz = '<div class="notice info"><strong>' + (LANG === 'id' ? 'Akun bisnis mendapat tarif lebih rendah.' : 'Business accounts get lower rates.') + '</strong> ' +
       '<a class="btn btn-a btn-sm" style="margin-left:8px" href="' + waLink(LANG === 'id' ? 'Halo PCW, saya ingin tarif bisnis untuk pengiriman ke ' + r.country + '.' : 'Hello PCW, I would like a business rate for shipments to ' + r.country + '.') + '">' + (LANG === 'id' ? 'Dapatkan tarif bisnis' : 'Get your business rate') + '</a></div>';
     var dl = r.options.some(function (o) { return !o.quote; }) ? '<p style="margin:10px 0 0"><button type="button" class="btn btn-o btn-sm" data-quote-pdf>' + (LANG === 'id' ? 'Unduh penawaran (PDF)' : 'Download quote (PDF)') + '</button></p>' : '';
-    return '<div class="box" id="go">' + head + table + note + dl + biz + '</div>';
+    var regUrl = ROOT + (LANG === 'id' ? 'id/' : '') + 'register.html';
+    var promo = promoOn ? '<div class="promo-cta"><strong>' + T.promoCta + '</strong> <a class="btn btn-a btn-sm" href="' + regUrl + '">' + T.promoBtn + '</a><p class="hint" style="margin:8px 0 0">' + T.promoNote + '</p></div>' : '';
+    return '<div class="box" id="go">' + head + table + note + dl + promo + (promoOn ? '' : biz) + '</div>';
   }
 
   /* printable quote: opens the print dialog so the customer can save it as PDF (no data is sent anywhere) */

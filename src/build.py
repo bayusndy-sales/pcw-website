@@ -156,6 +156,12 @@ def home(lang):
 </div>
 </div></section>
 
+<section class="s" style="padding-bottom:0"><div class="wrap"><div class="promo-band"><div>
+<h2>{"Open an account with PCW and save up to " if E else "Buka akun di PCW dan hemat hingga "}<span class="pct">30%*</span> {"on our published rates" if E else "dari published rate kami"}</h2>
+<p>{"Regular shippers get their own business rate. Check a rate above to see how much you could save on your lane." if E else "Pengirim rutin mendapat tarif bisnis sendiri. Cek tarif di atas untuk melihat potensi hemat di rute Anda."}</p>
+<small>{"* Promotional offer. The 'up to' figure is the maximum discount; the real discount depends on the destination and service, and is as agreed between you and our sales team." if E else "* Penawaran promosi. Angka 'hingga' adalah diskon maksimum; diskon sebenarnya bergantung pada tujuan dan layanan, dan sesuai kesepakatan antara Anda dan tim sales kami."}</small></div>
+<a class="btn btn-a" href="register.html">{"Open an account" if E else "Buka akun"}</a></div></div></section>
+
 <section class="s"><div class="wrap">
 <h2>{"What are you looking for today?" if E else "Apa yang Anda cari hari ini?"}</h2>
 <div class="grid g4 tiles">
