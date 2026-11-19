@@ -1,7 +1,6 @@
 // Automatic health check: runs hourly (installTriggers) and after every deploy (run healthCheck in the editor).
 // Emails the notification address when something breaks, and again when it is fixed.
 var HEALTH_SITE = 'https://pcwfreight.com';
-var HEALTH_API = 'https://script.google.com/macros/s/AKfycbx3QvkVLyrTEZWld-RjGroQJ181qxhoGKQ7XODdqD-5IXV2bLLTdDn_Q7AxbUR4oWn3Sw/exec';
 
 function hGet_(url) { return UrlFetchApp.fetch(url, { muteHttpExceptions: true, followRedirects: true }); }
 function hJson_(res) { try { return JSON.parse(res.getContentText()); } catch (e) { return null; } }
@@ -17,13 +16,11 @@ function healthRun_() {
   add('Booking page has bot check', function () { var r = hGet_(HEALTH_SITE + '/book.html'); return r.getResponseCode() === 200 && /cf-turnstile/.test(r.getContentText()) || 'HTTP ' + r.getResponseCode() + ' or widget missing'; });
   add('Register page script has bot check', function () { var r = hGet_(HEALTH_SITE + '/assets/portal.js'); return r.getResponseCode() === 200 && /rgTs/.test(r.getContentText()) || 'HTTP ' + r.getResponseCode() + ' or widget missing'; });
   add('Booking script sends bot token', function () { var r = hGet_(HEALTH_SITE + '/assets/app.js'); return r.getResponseCode() === 200 && /cf-turnstile-response/.test(r.getContentText()) && /action: 'bt'/.test(r.getContentText()) || 'token code missing'; });
-  add('Countries list', function () { var j = hJson_(hGet_(HEALTH_API + '?action=countries')); return j && j.ok && j.countries && j.countries.length > 100 || 'got ' + (j ? (j.countries || []).length + ' countries' : 'no JSON'); });
-  add('Rate quote (Singapore 1 kg)', function () { var j = hJson_(hGet_(HEALTH_API + '?action=rate&country=Singapore&type=Parcel&kg=1&pieces=1')); return j && j.ok && j.options && j.options.length > 0 || 'got ' + JSON.stringify(j).slice(0, 100); });
-  add('Bot token', function () { var j = hJson_(hGet_(HEALTH_API + '?action=bt')); return j && j.ok && /^\d+\./.test(j.bt || '') || 'no token'; });
-  add('Turnstile enforced', function () {
-    var j = hJson_(UrlFetchApp.fetch(HEALTH_API, { method: 'post', contentType: 'text/plain;charset=utf-8', payload: JSON.stringify({ action: 'register', email: 'health-check@example.com' }), muteHttpExceptions: true }));
-    return j && j.error === 'bot_check_failed' || 'got ' + JSON.stringify(j).slice(0, 100);
-  });
+  // Web-app logic is called directly: Apps Script calling its own /exec URL can hang.
+  add('Countries list', function () { var c = countries_(); return c.length > 100 || 'got ' + c.length + ' countries'; });
+  add('Rate quote (Singapore 1 kg)', function () { var j = rate_({ country: 'Singapore', type: 'Parcel', kg: 1, pieces: 1 }); return j && j.ok && j.options && j.options.length > 0 || 'got ' + JSON.stringify(j).slice(0, 100); });
+  add('Bot token', function () { return /^\d+\./.test(botToken_()) || 'no token'; });
+  add('Turnstile enforced', function () { var j = register_({ action: 'register', email: 'health-check@example.com' }); return j && j.error === 'bot_check_failed' || 'got ' + JSON.stringify(j).slice(0, 100); });
   add('Mail relay alive and paired', function () {
     var r = UrlFetchApp.fetch(HEALTH_SITE + '/mailrelay.php', { method: 'post', contentType: 'application/json', payload: '{}', muteHttpExceptions: true });
     return r.getResponseCode() === 403 && /"sig"/.test(r.getContentText()) || 'HTTP ' + r.getResponseCode() + ' ' + r.getContentText().slice(0, 80);
