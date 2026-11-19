@@ -135,9 +135,9 @@
       var plan = ME.plan === 'member' ? t('Member rates', 'Tarif member') : t('Published rates', 'Published rate');
       root.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px"><div><h2 style="margin:0">' + esc(ME.company) + '</h2><span class="hint">' + esc(ME.name) + ' · ' + esc(ME.email) + ' · ' + plan + '</span></div><button id="so" class="btn btn-o" type="button">' + t('Sign out', 'Keluar') + '</button></div>' +
         '<div data-pane="dash"><div id="dB"></div></div>' +
-        '<div data-pane="rates"></div><div data-pane="new"></div><div data-pane="ship"></div><div data-pane="prof"></div>';
+        '<div data-pane="rates"></div><div data-pane="new"></div><div data-pane="ship"></div><div data-pane="inv"></div><div data-pane="prof"></div>';
       $('#so').onclick = function () { post({ action: 'logout', token: store('pt') }); store('pt', null); ME = null; renderLogin(); };
-      var go = tabs(root, [['dash', t('Dashboard', 'Dashboard')], ['rates', t('Rates', 'Tarif')], ['new', t('New shipment', 'Kiriman baru')], ['ship', t('Shipments', 'Kiriman')], ['prof', t('Profile', 'Profil')]], function (k) { if (k === 'dash' || k === 'ship') loadList(); });
+      var go = tabs(root, [['dash', t('Dashboard', 'Dashboard')], ['rates', t('Rates', 'Tarif')], ['new', t('New shipment', 'Kiriman baru')], ['ship', t('Shipments', 'Kiriman')], ['inv', t('Invoices', 'Tagihan')], ['prof', t('Profile', 'Profil')]], function (k) { if (k === 'dash' || k === 'ship') loadList(); if (k === 'inv') loadInv(); });
       // move tab bar right after header
       root.insertBefore(root.lastChild, root.children[1]);
       buildRates(); buildNew(); buildProfile(); window._go = go; go('dash');
@@ -147,6 +147,18 @@
         if (!r.ok) { if (r.error === 'session') return expired(); return; }
         ITEMS = r.items || []; renderDash(); renderShip();
       });
+    }
+    function loadInv() {
+      var p = $('[data-pane=inv]', root); if (!p) return;
+      p.innerHTML = '<p class="hint"><span class="spin spin-d"></span> ' + t('Loading...', 'Memuat...') + '</p>';
+      post({ action: 'inv_m', token: store('pt') }).then(function (r) {
+        if (!r.ok) { if (r.error === 'session') return expired(); p.innerHTML = notice('err', err()); return; }
+        var it = r.items || [], out = it.filter(function (i) { return i.status !== 'Paid'; }).reduce(function (a, i) { return a + (Number(i.amount) || 0); }, 0);
+        var lab = { Paid: t('Paid', 'Lunas'), Unpaid: t('Unpaid', 'Belum dibayar'), Overdue: t('Overdue', 'Jatuh tempo') }, cls = { Paid: 'ok', Unpaid: 'new', Overdue: 'bad' };
+        p.innerHTML = '<h3>' + t('Your invoices', 'Tagihan Anda') + '</h3>' + (it.length ? '<p><b>' + t('Outstanding', 'Belum dibayar') + ': ' + idr(out) + '</b></p>' : '') +
+          (it.length ? table([t('Invoice', 'Tagihan'), t('Shipment', 'Kiriman'), t('Date', 'Tanggal'), t('Amount', 'Jumlah'), t('Due', 'Jatuh tempo'), 'Status'], it.map(function (i) { return tr([esc(i.no), esc(i.ref), esc(i.date), idr(i.amount), esc(i.due), '<span class="bdg bdg-' + cls[i.status] + '">' + esc(lab[i.status]) + '</span>' + (i.paid_on ? '<div class="hint">' + esc(i.paid_on) + '</div>' : '')]); })) : '<p>' + t('No invoices yet. PCW issues an invoice after your shipment is confirmed.', 'Belum ada tagihan. PCW menerbitkan tagihan setelah kiriman Anda dikonfirmasi.') + '</p>') +
+          '<p class="hint">' + t('Payment is confirmed by PCW after your transfer. Questions about an invoice: info@pcwfreight.com.', 'Pembayaran dikonfirmasi PCW setelah transfer Anda. Pertanyaan tentang tagihan: info@pcwfreight.com.') + '</p>';
+      }).catch(function () { p.innerHTML = notice('err', err()); });
     }
     function renderDash() {
       var n = ITEMS.length, dl = ITEMS.filter(function (i) { return /deliver/i.test(i.status); }).length, tr_ = n - dl;
