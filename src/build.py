@@ -36,7 +36,7 @@ ADDR = 'Jl. Bukit Golf Hijau Raya No. 18, Sentul City, Kab. Bogor 16810, Indones
 WA_SVG = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm5.3 14.1c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .3-3.4-.7-2.9-1.2-4.7-4.1-4.8-4.3-.1-.2-1.2-1.6-1.2-3s.7-2.1 1-2.4c.3-.3.6-.3.8-.3h.6c.2 0 .4 0 .6.5l.9 2.1c.1.2.1.4 0 .6l-.4.6-.4.4c-.1.1-.3.3-.1.6.2.3.8 1.3 1.7 2.1 1.2 1 2.1 1.3 2.4 1.5.3.1.5.1.6-.1l.9-1c.2-.3.4-.2.7-.1l2 1c.3.1.5.2.5.3.1.2.1.7-.1 1.3z"/></svg>'
 
 # Cloudflare Web Analytics (cookieless). The token is public (it is in every page); empty = analytics off.
-CF_ANALYTICS_TOKEN = ''
+CF_ANALYTICS_TOKEN = 'ad77f003755d4f6db246556c703bce6f'
 def cf_beacon(slug):
     if not CF_ANALYTICS_TOKEN or slug in ('admin.html',): return ''
     return "<script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{\"token\": \"%s\"}'></script>" % CF_ANALYTICS_TOKEN
@@ -461,7 +461,7 @@ def privacy(lang):
     E = lang == 'en'
     if E:
         body = '''<h2>1. Who we are</h2><p>PT Prabaswara Catur Widantara ("PCW"), brand PCW Freight, Jl. Bukit Golf Hijau Raya No. 18, Sentul City, Kab. Bogor 16810. Contact: info@pcwfreight.com.</p>
-<h2>2. Data we collect</h2><p>Names, company, addresses, phone or WhatsApp numbers and email of the shipper and receiver; shipment contents, value, weight and size; and messages you send us.</p>
+<h2>2. Data we collect</h2><p>Names, company, addresses, phone or WhatsApp numbers and email of the shipper and receiver; shipment contents, value, weight and size; and messages you send us.</p><p>We use Cloudflare Web Analytics to count page visits. It does not use cookies and does not collect personal data.</p>
 <h2>3. Why we use it</h2><p>To quote, book, carry, clear through customs and deliver your shipment; to send you status updates and invoices; and to answer your questions.</p>
 <h2>4. Who receives it</h2><p>Only the transport, customs and delivery partners needed to complete the shipment, and authorities where the law requires it. We do not sell personal data.</p>
 <h2>5. How long we keep it</h2><p>For as long as needed for the shipment, claims, accounting and legal obligations.</p>
@@ -470,7 +470,7 @@ def privacy(lang):
 <h2>8. Changes</h2><p>We may update this policy; the date of the latest version is shown here. Version: November 2026.</p>'''
     else:
         body = '''<h2>1. Siapa kami</h2><p>PT Prabaswara Catur Widantara ("PCW"), merek PCW Freight, Jl. Bukit Golf Hijau Raya No. 18, Sentul City, Kab. Bogor 16810. Kontak: info@pcwfreight.com.</p>
-<h2>2. Data yang kami kumpulkan</h2><p>Nama, perusahaan, alamat, nomor telepon atau WhatsApp, dan email pengirim serta penerima; isi, nilai, berat, dan ukuran kiriman; serta pesan yang Anda kirim kepada kami.</p>
+<h2>2. Data yang kami kumpulkan</h2><p>Nama, perusahaan, alamat, nomor telepon atau WhatsApp, dan email pengirim serta penerima; isi, nilai, berat, dan ukuran kiriman; serta pesan yang Anda kirim kepada kami.</p><p>Kami menggunakan Cloudflare Web Analytics untuk menghitung kunjungan halaman. Layanan ini tidak menggunakan cookie dan tidak mengumpulkan data pribadi.</p>
 <h2>3. Tujuan penggunaan</h2><p>Untuk penawaran, booking, pengangkutan, kepabeanan, dan pengantaran kiriman Anda; untuk mengirim update status dan tagihan; serta untuk menjawab pertanyaan Anda.</p>
 <h2>4. Pihak yang menerima</h2><p>Hanya mitra pengangkutan, kepabeanan, dan pengantaran yang diperlukan untuk menyelesaikan kiriman, serta instansi berwenang bila diwajibkan hukum. Kami tidak menjual data pribadi.</p>
 <h2>5. Lama penyimpanan</h2><p>Selama diperlukan untuk kiriman, klaim, pembukuan, dan kewajiban hukum.</p>
