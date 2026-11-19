@@ -44,7 +44,7 @@ def page(lang, slug, title, desc, body, head_extra=''):
     canon = SITE + ('id/' if lang == 'id' else '') + ('' if slug == 'index.html' else slug)
     alt_en = SITE + ('' if slug == 'index.html' else slug); alt_id = SITE + 'id/' + ('' if slug == 'index.html' else slug)
     fs = [('international-express.html','PCW International Express'),('priority-express.html','PCW Priority Express'),('economy-express.html','PCW Economy Express'),('other-services.html', 'Other services' if lang=='en' else 'Layanan lain')]
-    fh = [('portal.html', 'Customer portal' if lang=='en' else 'Portal pelanggan'),('register.html', 'Create account' if lang=='en' else 'Buat akun'),('rates.html', 'Rates' if lang=='en' else 'Tarif'),('track.html','Track' if lang=='en' else 'Lacak kiriman'),('help.html','Help center' if lang=='en' else 'Pusat Bantuan'),('faq.html','FAQ'),('surcharges-customs.html','Surcharges & customs' if lang=='en' else 'Surcharge & kepabeanan'),('prohibited-items.html','Prohibited items' if lang=='en' else 'Barang terlarang'),('terms.html','Terms & Conditions' if lang=='en' else 'Syarat & Ketentuan'),('privacy.html','Privacy Policy' if lang=='en' else 'Kebijakan Privasi')]
+    fh = [('portal.html', 'Customer portal' if lang=='en' else 'Portal pelanggan'),('register.html', 'Create account' if lang=='en' else 'Buat akun'),('rates.html', 'Rates' if lang=='en' else 'Tarif'),('destinations.html', 'Destinations' if lang=='en' else 'Tujuan populer'),('track.html','Track' if lang=='en' else 'Lacak kiriman'),('help.html','Help center' if lang=='en' else 'Pusat Bantuan'),('faq.html','FAQ'),('surcharges-customs.html','Surcharges & customs' if lang=='en' else 'Surcharge & kepabeanan'),('prohibited-items.html','Prohibited items' if lang=='en' else 'Barang terlarang'),('terms.html','Terms & Conditions' if lang=='en' else 'Syarat & Ketentuan'),('privacy.html','Privacy Policy' if lang=='en' else 'Kebijakan Privasi')]
     flinks = lambda items: ''.join(f'<a href="{base}{h}">{n}</a>' for h, n in items)
     return f'''<!DOCTYPE html>
 <html lang="{lang}">
@@ -571,6 +571,69 @@ def admin(lang):
     return _auth_page(lang, "Admin", "Admin", "Staff only.", "Khusus staf.", "Admin", "adRoot")
 
 
+# ---------- destination landing pages (SEO) ----------
+DESTS = [  # (slug part, rate-table name, English name, Indonesian name)
+ ('united-states', 'United States', 'the United States', 'Amerika Serikat'),
+ ('singapore', 'Singapore', 'Singapore', 'Singapura'),
+ ('malaysia', 'Malaysia (West)', 'Malaysia (West)', 'Malaysia (Barat)'),
+ ('japan', 'Japan', 'Japan', 'Jepang'),
+ ('australia', 'Australia', 'Australia', 'Australia'),
+ ('saudi-arabia', 'Saudi Arabia', 'Saudi Arabia', 'Arab Saudi'),
+ ('taiwan', 'Taiwan', 'Taiwan', 'Taiwan'),
+ ('hong-kong', 'Hong Kong', 'Hong Kong', 'Hong Kong'),
+ ('south-korea', 'South Korea', 'South Korea', 'Korea Selatan'),
+ ('united-kingdom', 'United Kingdom', 'the United Kingdom', 'Inggris'),
+ ('china', 'China', 'China', 'Tiongkok'),
+ ('netherlands', 'Netherlands', 'the Netherlands', 'Belanda'),
+]
+
+def dest_page(lang, d):
+    import json as _j
+    from urllib.parse import quote as _q
+    E = lang == 'en'; slug, rname, en, idn = d; nm = en if E else idn
+    nm_c = nm[4:] if nm.startswith('the ') else nm
+    rlink = 'rates.html?country=' + _q(rname) + '&type=Parcel&items=' + _q('[{"q":1,"kg":1}]')
+    blink = 'book.html?country=' + _q(rname)
+    wat = (f'Hello PCW, I would like a quote for a shipment to {nm}.' if E else f'Halo PCW, saya ingin penawaran pengiriman ke {nm}.')
+    steps = ([("Check the rate", f"Enter the weight and size of your package to see the published price to {nm}."), ("Book online", "Fill in the sender, receiver and contents. You get a PCW reference number at once."), ("Pickup or drop-off", "Priority pickup is available anywhere in Indonesia. Economy pickup is online inside Jakarta; other cities by request."), ("We confirm and ship", "Our team confirms the final weight and price, then your shipment leaves with an air waybill and tracking.")] if E else
+             [("Cek tarif", f"Masukkan berat dan ukuran paket untuk melihat published rate ke {nm}."), ("Booking online", "Isi data pengirim, penerima, dan isi kiriman. Nomor referensi PCW langsung terbit."), ("Pickup atau drop-off", "Pickup Priority tersedia di seluruh Indonesia. Pickup Economy online di dalam Jakarta; kota lain melalui permintaan."), ("Kami konfirmasi dan kirim", "Tim kami mengonfirmasi berat dan harga final, lalu kiriman berangkat dengan air waybill dan nomor lacak.")])
+    st = ''.join(f'<div class="card"><h3 style="margin-top:0">{a}</h3><p>{b}</p></div>' for a, b in steps)
+    faq = ([(f"How much does it cost to ship to {nm}?", f"Check the rates page: enter the weight and size and you see the published price for PCW Priority Express and PCW Economy Express to {nm}. Regular shippers get their own business rates."),
+            (f"Who pays duties and taxes in {nm}?", "The receiver, unless we agree otherwise in writing."),
+            ("How is the chargeable weight calculated?", "It is the higher of the actual weight and L x W x H (cm) / 5000. Priority is rounded up to the next 0.5 kg, Economy to the next 1 kg."),
+            ("How long does delivery take?", "The transit time is given in your quote. Priority is our fastest service; Economy is the lower-cost option for non-urgent parcels.")] if E else
+           [(f"Berapa ongkos kirim ke {nm}?", f"Cek di halaman tarif: masukkan berat dan ukuran, lalu Anda melihat published rate PCW Priority Express dan PCW Economy Express ke {nm}. Pengirim rutin mendapat tarif bisnis sendiri."),
+            (f"Siapa yang membayar bea masuk dan pajak di {nm}?", "Penerima, kecuali disepakati lain secara tertulis."),
+            ("Bagaimana berat tagih dihitung?", "Yang lebih besar antara berat aktual dan P x L x T (cm) / 5000. Priority dibulatkan ke 0,5 kg berikutnya, Economy ke 1 kg berikutnya."),
+            ("Berapa lama pengirimannya?", "Waktu transit disampaikan di penawaran Anda. Priority adalah layanan tercepat kami; Economy adalah pilihan hemat untuk paket yang tidak mendesak.")])
+    fq = ''.join(f'<details class="faq"><summary>{q}</summary><p>{a}</p></details>' for q, a in faq)
+    ld = _j.dumps({"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": q, "acceptedAnswer": {"@type": "Answer", "text": a}} for q, a in faq]}, ensure_ascii=False)
+    others = ''.join(f'<a class="btn btn-o btn-sm" href="ship-to-{x[0]}.html">{((x[2][4:] if x[2].startswith("the ") else x[2]) if E else x[3])}</a>' for x in DESTS if x[0] != slug)
+    title = (f"Ship to {nm} from Indonesia" if E else f"Kirim paket ke {nm} dari Indonesia")
+    sub = (f"Door-to-door international express from anywhere in Indonesia to {nm}: documents, samples and parcels." if E else f"Pengiriman ekspres internasional door to door dari seluruh Indonesia ke {nm}: dokumen, sampel, dan paket.")
+    return head(lang, title, sub, nm_c) + f"""
+<section class="s"><div class="wrap grid g2">
+<div><h2>{"Two services to " + nm if E else "Dua layanan ke " + nm}</h2>
+<ul class="ticks"><li><strong>PCW Priority Express</strong>: {"our fastest service for documents, samples and urgent goods; pickup anywhere in Indonesia." if E else "layanan tercepat kami untuk dokumen, sampel, dan barang mendesak; pickup di seluruh Indonesia."}</li>
+<li><strong>PCW Economy Express</strong>: {"lower-cost, all-in price for non-urgent parcels." if E else "harga all-in lebih hemat untuk paket yang tidak mendesak."}</li></ul>
+<p style="display:flex;gap:10px;flex-wrap:wrap"><a class="btn btn-a" href="{rlink}">{("See the rate for 1 kg to " + nm) if E else ("Lihat tarif 1 kg ke " + nm)}</a><a class="btn btn-p" href="{blink}">{"Book" if E else "Booking"}</a><a class="btn btn-wa" href="{wa(wat)}">{L[lang]['chat']}</a></p></div>
+<div class="card"><h3>{"Before you send" if E else "Sebelum mengirim"}</h3>
+<p>{"Destination duties and taxes are paid by the receiver unless agreed otherwise. Situational surcharges (for example remote areas or special goods) are told to you before you agree." if E else "Bea masuk dan pajak di negara tujuan dibayar penerima kecuali disepakati lain. Biaya situasional (misalnya area terpencil atau barang khusus) kami informasikan sebelum Anda setuju."}</p>
+<p><a href="prohibited-items.html">{"Check the prohibited items list" if E else "Cek daftar barang terlarang"}</a> · <a href="surcharges-customs.html">{"Surcharges & customs" if E else "Surcharge & kepabeanan"}</a></p></div>
+</div></section>
+<section class="s alt"><div class="wrap"><h2>{"How it works" if E else "Cara kerjanya"}</h2><div class="grid g4 steps">{st}</div></div></section>
+<section class="s"><div class="wrap"><h2>FAQ</h2>{fq}
+<h3 style="margin-top:28px">{"Other destinations" if E else "Tujuan lainnya"}</h3><p style="display:flex;gap:8px;flex-wrap:wrap">{others}<a class="btn btn-o btn-sm" href="destinations.html">{"All destinations" if E else "Semua tujuan"}</a></p></div></section>
+<script type="application/ld+json">{ld}</script>"""
+
+def destinations(lang):
+    E = lang == 'en'
+    cards = ''.join(f'<a class="card" href="ship-to-{x[0]}.html" style="display:block"><h3 style="margin:0">{(x[2][4:] if x[2].startswith('the ') else x[2]) if E else x[3]}</h3><p class="hint" style="margin:6px 0 0">{"Priority and Economy" if E else "Priority dan Economy"}</p></a>' for x in DESTS)
+    return head(lang, "Popular destinations" if E else "Tujuan populer", "International express from Indonesia to more than 200 countries. These are the most requested." if E else "Ekspres internasional dari Indonesia ke lebih dari 200 negara. Ini yang paling banyak diminta.", "Destinations" if E else "Tujuan") + f"""
+<section class="s"><div class="wrap"><div class="grid g3">{cards}</div>
+<p style="margin-top:20px"><a class="btn btn-a" href="rates.html">{L[lang]['getrate']}</a></p></div></section>"""
+
+
 PAGES = [
  ('index.html', home, ('PCW Freight | International Express from Indonesia','PCW Freight | Ekspres Internasional dari Indonesia'), ('Door-to-door international express for documents and parcels from Indonesia. Instant published rates, online booking and tracking.','Pengiriman ekspres internasional door to door untuk dokumen dan paket dari Indonesia. Cek tarif, booking online, dan lacak kiriman.')),
  ('international-express.html', express, ('PCW International Express | PCW Freight',)*2, ('Compare PCW Priority Express and PCW Economy Express.','Bandingkan PCW Priority Express dan PCW Economy Express.')),
@@ -600,6 +663,10 @@ PAGES = [
  ('admin.html', admin, ('Admin | PCW Freight','Admin | PCW Freight'), ('Staff only.','Khusus staf.')),
  ('404.html', notfound, ('Page not found | PCW Freight','Halaman tidak ditemukan | PCW Freight'), ('Page not found.','Halaman tidak ditemukan.')),
 ]
+PAGES += [('destinations.html', destinations, ('Popular destinations | PCW Freight', 'Tujuan populer | PCW Freight'), ('International express from Indonesia to the most requested destinations.', 'Ekspres internasional dari Indonesia ke tujuan yang paling banyak diminta.'))]
+PAGES += [('ship-to-%s.html' % d[0], (lambda dd: (lambda l: dest_page(l, dd)))(d),
+           ('Ship to %s from Indonesia | PCW Freight' % d[2], 'Kirim Paket ke %s dari Indonesia | PCW Freight' % d[3]),
+           ('Door-to-door international express from Indonesia to %s. Check published rates, book online and track.' % d[2], 'Kirim dokumen dan paket dari Indonesia ke %s door to door. Cek tarif, booking online, dan lacak kiriman.' % d[3])) for d in DESTS]
 
 def build():
     if os.path.exists(DIST): shutil.rmtree(DIST)
