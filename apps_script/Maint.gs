@@ -20,7 +20,8 @@ function backupSheet() {
 }
 // Run once from the editor to schedule the nightly backup (about 02:30 Jakarta time).
 function installTriggers() {
-  ScriptApp.getProjectTriggers().forEach(function (t) { if (t.getHandlerFunction() === 'backupSheet') ScriptApp.deleteTrigger(t); });
+  ScriptApp.getProjectTriggers().forEach(function (t) { const h = t.getHandlerFunction(); if (h === 'backupSheet' || h === 'healthCheck') ScriptApp.deleteTrigger(t); });
   ScriptApp.newTrigger('backupSheet').timeBased().atHour(2).nearMinute(30).everyDays(1).inTimezone(TZ).create();
+  ScriptApp.newTrigger('healthCheck').timeBased().everyHours(1).create();
   return 'ok';
 }
