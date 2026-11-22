@@ -189,15 +189,15 @@
       if (o.not_cheaper) return '<tr><td><strong>' + T[o.product] + '</strong><div class="hint">' + T.chargeable + ': ' + o.chargeable_kg + ' ' + T.kg + '</div></td><td colspan="' + (cols + 2) + '" class="hint">' + T.notCheaper + '</td></tr>';
       var isP = o.product === 'Priority';
       return '<tr><td><strong>' + T[o.product] + '</strong><div class="hint">' + T.chargeable + ': ' + o.chargeable_kg + ' ' + T.kg + '</div></td>' +
-        '<td class="n">' + (isP ? idr(o.base) : '—') + '</td>' + (hasDem ? '<td class="n">' + (isP ? idr(o.demand || 0) : '—') + '</td>' : '') + '<td class="n">' + (isP ? idr(o.fuel) : '—') + '</td>' +
-        '<td class="n">' + priceCell(o, isP) + '</td>' +
+        '<td class="n" data-l="' + T.base + '">' + (isP ? idr(o.base) : '—') + '</td>' + (hasDem ? '<td class="n" data-l="' + T.demand + '">' + (isP ? idr(o.demand || 0) : '—') + '</td>' : '') + '<td class="n" data-l="' + T.fuel + '">' + (isP ? idr(o.fuel) : '—') + '</td>' +
+        '<td class="n tot" data-l="' + T.total + '">' + priceCell(o, isP) + '</td>' +
         '<td><a class="btn btn-p btn-sm" href="' + bookUrl + '">' + T.book + '</a></td></tr>';
     }).join('');
     var lines = (r.items || []).map(function (it) { return it.q + ' × ' + it.kg + ' ' + T.kg + ((it.l > 0 && it.w > 0 && it.h > 0) ? ' (' + it.l + '×' + it.w + '×' + it.h + ' cm)' : ''); }).join(' · ');
     var head = '<div class="pub">' + 'Published rate' + ' · ' + (LANG === 'id' ? 'Indonesia → ' : 'Indonesia → ') + esc(r.country) + ' · ' + (r.type === 'Document' ? (LANG === 'id' ? 'Dokumen' : 'Document') : (LANG === 'id' ? 'Paket' : 'Parcel')) + '</div>' +
       '<div class="hint">' + esc(lines) + '</div>' +
       '<div class="hint">' + T.actual + ': ' + r.actual_kg + ' ' + T.kg + (r.volumetric_kg ? ' · ' + T.vol + ': ' + r.volumetric_kg + ' ' + T.kg : '') + '</div>';
-    var table = '<table class="rates"><thead><tr><th>' + T.product + '</th><th class="n">' + T.base + '</th>' + (hasDem ? '<th class="n">' + T.demand + '</th>' : '') + '<th class="n">' + T.fuel + '</th><th class="n">' + T.total + '</th><th></th></tr></thead><tbody>' + rows + '</tbody></table>';
+    var table = '<div class="tscroll"><table class="rates"><thead><tr><th>' + T.product + '</th><th class="n">' + T.base + '</th>' + (hasDem ? '<th class="n">' + T.demand + '</th>' : '') + '<th class="n">' + T.fuel + '</th><th class="n">' + T.total + '</th><th></th></tr></thead><tbody>' + rows + '</tbody></table></div>';
     var note = hasDem ? '<p class="hint">' + T.demandNote.replace('{r}', Number(r.demand_per_kg).toLocaleString('id-ID')).replace('{d}', esc(r.demand_until)) + '</p>' : '';
     var biz = '<div class="notice info"><strong>' + (LANG === 'id' ? 'Akun bisnis mendapat tarif lebih rendah.' : 'Business accounts get lower rates.') + '</strong> ' +
       '<a class="btn btn-a btn-sm" style="margin-left:8px" href="' + waLink(LANG === 'id' ? 'Halo PCW, saya ingin tarif bisnis untuk pengiriman ke ' + r.country + '.' : 'Hello PCW, I would like a business rate for shipments to ' + r.country + '.') + '">' + (LANG === 'id' ? 'Dapatkan tarif bisnis' : 'Get your business rate') + '</a></div>';

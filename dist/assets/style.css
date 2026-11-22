@@ -206,3 +206,19 @@ footer .legal{border-top:1px solid #26366b;margin-top:28px;padding-top:16px;font
 .promo-band{background:linear-gradient(90deg,#004aad,#00347a);color:#fff;border-radius:var(--radius);padding:18px 22px;display:flex;gap:16px;align-items:center;justify-content:space-between;flex-wrap:wrap}
 .promo-band h2{margin:0;color:#fff;font-size:22px}.promo-band p{margin:4px 0 0;opacity:.92}.promo-band small{display:block;opacity:.8;margin-top:6px}
 .promo-band .pct{background:var(--accent);color:#3d2a00;font-weight:900;border-radius:999px;padding:3px 12px;white-space:nowrap}
+
+/* rates: no sideways overflow on phones */
+.tscroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.box,.notice,.promo-cta,.pub{min-width:0;overflow-wrap:anywhere}
+@media (max-width:640px){
+  table.rates,table.rates tbody,table.rates tr,table.rates td{display:block;width:100%}
+  table.rates thead{display:none}
+  table.rates tr{border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin:12px 0;background:#fff}
+  table.rates td{border:0;padding:5px 0;text-align:left}
+  table.rates td.n{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;text-align:right;white-space:normal}
+  table.rates td.n::before{content:attr(data-l);font-size:13px;font-weight:700;color:var(--muted);text-align:left;flex:none}
+  table.rates td.n.tot{display:block;border-top:1px solid var(--line);margin-top:4px;padding-top:8px;font-weight:800;text-align:right}
+  table.rates td.n.tot::before{display:block;text-align:left;margin-bottom:4px}
+  table.rates td .btn{display:block;text-align:center;margin-top:6px}
+  .notice .btn,.promo-cta .btn{display:block;margin:8px 0 0!important;text-align:center}
+}
