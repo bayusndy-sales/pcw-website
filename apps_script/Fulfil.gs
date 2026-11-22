@@ -40,7 +40,7 @@ function ulList_(b) {
       ref: r[0], submitted: fMs_(r[ix('Submitted_At')]), date: dt_(r[ix('Submitted_At')]), product: r[ix('Product')], dest: r[ix('Dest_Country')], pieces: r[ix('Pieces')], kg: r[ix('Actual_Kg')], chg: r[ix('Chargeable_Kg')],
       customer: String(r[ix('Shipper_Company')] || r[ix('Shipper_Name')]), mode: r[ix('Pickup_or_Dropoff')], pickup_req: fDate_(r[ix('Pickup_Date')]), pickup_city: r[ix('Pickup_City')], to: String(r[ix('Consignee_Name')]),
       status: st[k] ? st[k].s : 'Booking request', stage: stage, channel: o.Channel, vendor_awb: o.Vendor_AWB, vendor_ref: o.Vendor_Booking_Ref, pickup_conf: fDate_(o.Pickup_Date), window: o.Pickup_Window,
-      issue: o.Issue, has_file: !!o.AWB_File_Id, code: o.Pickup_Code, awb_done: o.PCW_AWB_Done === 'Y', since: since, done: !!delivered
+      pay_mode: r[ix('Payment_Mode')] || '', pay_status: r[ix('Payment_Status')] || '', issue: o.Issue, has_file: !!o.AWB_File_Id, code: o.Pickup_Code, awb_done: o.PCW_AWB_Done === 'Y', since: since, done: !!delivered
     };
   });
   return { ok: true, items: items, channels: FUL_CH };
@@ -63,7 +63,9 @@ function ulGet_(b) {
     Object.keys(sg.costs).forEach(function (k) { sg.gp[k] = sell > 0 ? Math.round((sell - sg.costs[k]) / sell * 1000) / 10 : null; });
     const fa = fuelAge_(); sg.fuel_age = fa.age; sg.fuel_updated = fa.date;
   }
-  return { ok: true, fields: f, ful: fo, events: ev, channels: FUL_CH, role: u.role, margin: margin, suggest: sg };
+  const au = f.Shipper_Email ? uGet_(String(f.Shipper_Email).trim().toLowerCase()) : null;
+  const acc = au ? { type: au.acct || 'Legacy', terms: au.terms || 'Legacy', docs: au.docs || '' } : null;
+  return { ok: true, fields: f, ful: fo, events: ev, channels: FUL_CH, role: u.role, margin: margin, suggest: sg, acc: acc };
 }
 
 function ordSync_(ref, kv) {
@@ -85,6 +87,7 @@ function ulAct_(b) {
     const d = a2Rows_(); let bk = null; const H = d.hdr;
     d.rows.forEach(function (r) { if (String(r[0]).toUpperCase() === ref) bk = r; }); if (!bk) return { ok: false, error: 'not_found' };
     const mode = String(bk[H.indexOf('Pickup_or_Dropoff')] || '');
+    if (op === 'requested' || op === 'booked') { const gate = payGate_(bk, H); if (gate) return { ok: false, error: gate }; }
     const f = fRows_(); let cur = f.map[ref]; let rowNo;
     if (!cur) { rowNo = f.sh.getLastRow() + 1; const nv = FUL_HDR.map(function () { return ''; }); nv[0] = ref; nv[2] = 'To assign'; nv[19] = new Date(); f.sh.getRange(rowNo, 1, 1, FUL_HDR.length).setValues([nv]); cur = { row: rowNo, v: nv }; }
     rowNo = cur.row; const o = fObj_(cur.v); const now = new Date(), who = u.email.split('@')[0];

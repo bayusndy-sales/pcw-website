@@ -37,7 +37,7 @@ function doGet(e) {
 function doPost(e) {
   try {
     const body = JSON.parse((e && e.postData && e.postData.contents) || '{}');
-    delete body.__member; delete body.__disc; delete body.__pub; const ar = authRoute_(body) || admRoute_(body) || admRoute2_(body) || ulRoute_(body); if (ar) return json_(ar); if (body.action === 'book') return json_(book_(body)); if (body.action === 'portal_login') return json_(portalLogin_(body)); if (body.action === 'portal_list') return json_(portalList_(body)); if (body.action === 'portal_book') return json_(portalBook_(body));
+    delete body.__member; delete body.__disc; delete body.__pub; delete body.__ts; delete body.__pay; const ar = authRoute_(body) || accRoute_(body) || admRoute_(body) || admRoute2_(body) || ulRoute_(body); if (ar) return json_(ar); if (body.action === 'book') return json_(book_(body)); if (body.action === 'portal_login') return json_(portalLogin_(body)); if (body.action === 'portal_list') return json_(portalList_(body)); if (body.action === 'portal_book') return json_(portalBook_(body));
     return json_({ ok: false, error: 'unknown_action' });
   } catch (err) {
     console.error(err);
@@ -406,6 +406,7 @@ function book_(b) {
     if (outside) notes.push('PICKUP OUTSIDE JAKARTA: confirm pickup cost');
     if (b.__member) notes.push('PORTAL MEMBER BOOKING (' + safe_(b.shipper_company) + '): price per member agreement, not published rate' + (b.__disc ? ' (' + Math.round(b.__disc * 100) + '% off published)' : '')); else if (quote) notes.push('ABOVE PUBLISHED TABLE: quote needed');
 
+    webPayHdr_(); const pay = b.__pay && b.__pay.mode ? b.__pay : { mode: 'Prepaid', status: 'Unpaid' };
     sh_(TABS.web).appendRow([
       ref, now, b.lang === 'id' ? 'id' : 'en', prod, r.type, safe_(r.country), r.pieces, r.actual_kg, safe_(dims),
       opt ? opt.chargeable_kg : '', safe_(b.contents), safe_(b.declared_value, 40),
@@ -413,7 +414,7 @@ function book_(b) {
       safe_(b.pickup_address), safe_(pickupCity), safe_(b.pickup_postcode, 20), safe_(b.pickup_date, 20),
       outsideRaw ? 'Y' : 'N', safe_(b.consignee_name), safe_(b.consignee_company), safe_(b.consignee_address),
       safe_(b.consignee_city), safe_(b.consignee_postcode, 20), safe_(b.consignee_phone, 30), safe_(b.consignee_email),
-      quote ? '' : opt.total, 'Y', 'Y', 'Y', safe_(notes.join(' | '))
+      quote ? '' : opt.total, 'Y', 'Y', 'Y', safe_(notes.join(' | ')), pay.mode, pay.status
     ]);
 
     const orders = sh_(TABS.orders);
@@ -437,7 +438,7 @@ function book_(b) {
   return {
     ok: true, ref: ref, product: prod, quote: quote,
     chargeable_kg: opt ? opt.chargeable_kg : null, est_total: quote ? null : opt.total,
-    pickup_outside_jakarta: outside
+    pickup_outside_jakarta: outside, pay_mode: (b.__pay && b.__pay.mode) || 'Prepaid'
   };
 }
 
@@ -456,6 +457,7 @@ function notify_(ref, prod, r, opt, quote, outside, b, email, s) {
           'Destination: ' + r.country,
           'Pieces / actual kg / chargeable kg: ' + r.pieces + ' / ' + r.actual_kg + ' / ' + (opt ? opt.chargeable_kg : '-'),
           'Published estimate: ' + price,
+          'Payment: ' + ((b.__pay && b.__pay.mode) || 'Prepaid') + ((!b.__pay || b.__pay.mode === 'Prepaid') ? ' (do NOT request or book with the vendor until payment is marked as received)' : ''),
           'Shipper: ' + b.shipper_name + ' ' + (b.shipper_company || '') + ' | ' + email + ' | ' + normPhone_(b.shipper_whatsapp),
           'Pickup: ' + (b.pickup_or_dropoff || '') + ' ' + (b.pickup_city || '') + (outside ? ' (OUTSIDE JAKARTA - confirm pickup cost)' : ''),
           '',
@@ -463,7 +465,7 @@ function notify_(ref, prod, r, opt, quote, outside, b, email, s) {
         ].join('\n')
       });
     }
-    const id = b.lang === 'id';
+    const id = b.lang === 'id'; const pre = !(b.__pay && b.__pay.mode && b.__pay.mode !== 'Prepaid');
     sendMail_({
       to: email, name: 'PCW Freight',
       subject: (id ? 'Permintaan booking diterima: ' : 'Booking request received: ') + ref,
@@ -472,7 +474,7 @@ function notify_(ref, prod, r, opt, quote, outside, b, email, s) {
         '', 'Nomor referensi: ' + ref,
         'Layanan: PCW ' + PRODUCT_NAME[prod], 'Tujuan: ' + r.country,
         'Estimasi (published rate): ' + price,
-        '', 'Tim kami akan mengonfirmasi berat, harga final, dan jadwal pickup sebelum pengiriman.',
+        '', (pre ? 'PEMBAYARAN DI MUKA: mohon transfer setelah booking. Kiriman Anda kami proses (termasuk pemesanan ke jaringan pengangkut) setelah pembayaran kami terima. Tanpa pembayaran, kiriman tidak diproses. Bank Mandiri 1040006147347 a.n. PT Prabaswara Catur Widantara. Cantumkan nomor referensi ' + ref + ' pada berita transfer.' : 'Pembayaran sesuai termin yang disepakati.'), '', 'Tim kami akan mengonfirmasi berat, harga final, dan jadwal pickup sebelum pengiriman.',
         'Lacak kiriman: https://pcwfreight.com/track?ref=' + ref,
         'WhatsApp: +62 811 9989 6752', '', 'PCW Freight - PT Prabaswara Catur Widantara'
       ] : [
@@ -480,7 +482,7 @@ function notify_(ref, prod, r, opt, quote, outside, b, email, s) {
         '', 'Reference: ' + ref,
         'Service: PCW ' + PRODUCT_NAME[prod], 'Destination: ' + r.country,
         'Estimate (published rate): ' + price,
-        '', 'Our team will confirm final weight, price and pickup before shipping.',
+        '', (pre ? 'PAYMENT UPFRONT: please transfer after booking. We process your shipment (including booking with the carrier network) only after we receive payment. Without payment the shipment is not processed. Bank Mandiri 1040006147347, account name PT Prabaswara Catur Widantara. Write reference ' + ref + ' in the transfer note.' : 'Payment follows the terms agreed with you.'), '', 'Our team will confirm final weight, price and pickup before shipping.',
         'Track: https://pcwfreight.com/track?ref=' + ref,
         'WhatsApp: +62 811 9989 6752', '', 'PCW Freight - PT Prabaswara Catur Widantara'
       ]).join('\n')

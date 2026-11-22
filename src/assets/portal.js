@@ -25,9 +25,18 @@
     cannot_disable_self: t('You cannot disable your own account.', 'Anda tidak dapat menonaktifkan akun sendiri.'),
     economy_pickup_outside_jakarta: t('Economy pickup outside Jakarta is arranged by request.', 'Pickup Economy di luar Jakarta diatur melalui permintaan.'),
     po_box_not_accepted: t('PO Box addresses cannot be delivered.', 'Alamat PO Box tidak dapat dikirimi.'),
+    invalid_account_type: t('Please choose Company or Personal.', 'Pilih Perusahaan atau Perorangan.'),
+    invalid_npwp: t('NPWP must be 15 or 16 digits.', 'NPWP harus 15 atau 16 digit.'),
+    invalid_nib: t('Please enter a valid NIB number.', 'Masukkan nomor NIB yang valid.'),
+    docs_required: t('Please upload the required document', 'Mohon unggah dokumen yang diwajibkan'),
+    bad_type: t('Documents must be PDF, PNG or JPG', 'Dokumen harus PDF, PNG, atau JPG'),
+    bad_file: t('This file looks damaged or is not a real PDF, PNG or JPG', 'File ini rusak atau bukan PDF, PNG, atau JPG yang valid'),
+    too_big: t('File too big (maximum 3 MB)', 'File terlalu besar (maksimal 3 MB)'),
+    docs_consent_required: t('Please tick the document consent box.', 'Mohon centang persetujuan dokumen.'),
+    personal_prepaid_only: t('Personal accounts pay upfront.', 'Akun perorangan membayar di muka.'),
     country_not_listed: t('This destination is not on the published list. Contact us for a quote.', 'Tujuan ini belum ada di daftar. Hubungi kami untuk penawaran.')
   };
-  function err(r) { return ERR[r && r.error] || (r && r.error === 'missing_fields' ? ERR.missing_fields : t('Something went wrong. Try again or contact us on WhatsApp.', 'Terjadi kendala. Coba lagi atau hubungi kami lewat WhatsApp.')); }
+  function err(r) { var m = ERR[r && r.error]; if (m) return m + (r.kind ? ' (' + r.kind + ')' : '') + (/^(docs_required|bad_type|bad_file|too_big)$/.test(r.error) ? '.' : ''); return t('Something went wrong. Try again or contact us on WhatsApp.', 'Terjadi kendala. Coba lagi atau hubungi kami lewat WhatsApp.'); }
   function fld(n, label, typ, req, extra) { return '<div><label' + (req === false ? '' : ' class="req"') + '>' + label + '</label><input name="' + n + '" type="' + (typ || 'text') + '"' + (req === false ? '' : ' required') + ' ' + (extra || '') + '></div>'; }
   function opts(list, sel) { return list.map(function (c) { return '<option value="' + esc(c) + '"' + (c === sel ? ' selected' : '') + '>' + esc(c) + '</option>'; }).join(''); }
   function badge(s) { var k = /deliver|terkirim|diterima/i.test(s) ? 'ok' : /cancel|batal|return|retur|hold|tahan/i.test(s) ? 'bad' : /transit|picked|pickup|jemput|customs|bea|out for|diantar|perjalanan|paid|dibayar|booked/i.test(s) ? 'go' : 'new'; return '<span class="bdg bdg-' + k + '">' + esc(s) + '</span>'; }
@@ -36,6 +45,11 @@
   var SCR = document.currentScript, SV = (SCR && SCR.getAttribute('data-v')) || '1';
   function awbOpen(f) { var js = (ROOT || '') + 'assets/'; return new Promise(function (res, rej) { if (window.PCWAWB) return res(); var s = document.createElement('script'); s.src = js + 'awb.js?v=' + SV; s.onload = res; s.onerror = rej; document.head.appendChild(s); }).then(function () { return window.PCWAWB.open(f, { base: BASE, origin: location.origin, logo: location.origin + '/assets/logo_black.png', qrSrc: (ROOT || '') + 'assets/qr.js?v=' + SV }); }).catch(function () { toast(t('Could not open the AWB. Please try again.', 'AWB tidak dapat dibuka. Coba lagi.'), 'bad'); }); }
   function timeline(ev) { if (!ev || !ev.length) return '<p class="hint">' + t('No tracking updates yet. Our team will update the status after pickup.', 'Belum ada pembaruan status. Tim kami akan memperbarui setelah pickup.') + '</p>'; return '<ol class="tl">' + ev.slice().reverse().map(function (e, i) { return '<li' + (i === 0 ? ' class="cur"' : '') + '><b>' + esc(e.status) + '</b><span class="hint"> ' + esc(e.time) + (e.location ? ' · ' + esc(e.location) : '') + '</span>' + (e.note ? '<div>' + esc(e.note) + '</div>' : '') + '</li>'; }).join('') + '</ol>'; }
+  var DOC_OK = /^(application\/pdf|image\/png|image\/jpeg)$/;
+  function fileFld(name, label) { return '<div><label class="req">' + label + '</label><input type="file" name="f_' + name + '" accept=".pdf,.png,.jpg,.jpeg,application/pdf,image/png,image/jpeg"><p class="hint" style="margin:4px 0 0">' + t('PDF, PNG or JPG, maximum 3 MB.', 'PDF, PNG, atau JPG, maksimal 3 MB.') + '</p></div>'; }
+  function readDoc(form, kind) { return new Promise(function (res, rej) { var inp = form.elements['f_' + kind], f = inp && inp.files && inp.files[0]; if (!f) return rej({ error: 'docs_required', kind: kind }); if (f.size > 3 * 1024 * 1024) return rej({ error: 'too_big', kind: kind }); if (!DOC_OK.test(f.type)) return rej({ error: 'bad_type', kind: kind }); var fr = new FileReader(); fr.onload = function () { res({ kind: kind, mime: f.type, name: f.name, data: String(fr.result).split(',')[1] }); }; fr.onerror = function () { rej({ error: 'bad_file', kind: kind }); }; fr.readAsDataURL(f); }); }
+  function readDocs(form, kinds) { return Promise.all(kinds.map(function (k) { return readDoc(form, k); })); }
+  function bankBox(ref, amount) { return '<div class="box" style="margin:10px 0"><h4 style="margin:0 0 6px">' + t('How to pay', 'Cara pembayaran') + '</h4><p style="margin:0">' + (amount ? t('Amount (estimate; any weight difference is billed after weighing): ', 'Jumlah (estimasi; selisih berat ditagihkan setelah penimbangan): ') + '<b>' + idr(amount) + '</b><br>' : t('We will confirm the amount to pay by WhatsApp or email.', 'Kami akan mengonfirmasi jumlah yang harus dibayar lewat WhatsApp atau email.') + '<br>') + t('Bank transfer to:', 'Transfer bank ke:') + '<br><b>Bank Mandiri</b> <b>1040006147347</b><br>' + t('Account name: ', 'a.n. ') + '<b>PT Prabaswara Catur Widantara</b></p><p class="hint" style="margin:6px 0 0">' + t('Write reference ', 'Tulis referensi ') + '<b>' + esc(ref) + '</b>' + t(' in the transfer note. We process your shipment only after we receive your payment.', ' pada berita transfer. Kiriman Anda kami proses hanya setelah pembayaran kami terima.') + '</p></div>'; }
   function wl(text) { return 'https://wa.me/' + WA + '?text=' + encodeURIComponent(text); }
   var TH = 'text-align:left;padding:8px;border-bottom:2px solid #ccd;white-space:nowrap', TD = 'padding:8px;border-bottom:1px solid #e3e6ee;vertical-align:top';
   function table(cols, rows) { return '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:.92rem"><thead><tr>' + cols.map(function (c) { return '<th style="' + TH + '">' + c + '</th>'; }).join('') + '</tr></thead><tbody>' + rows.join('') + '</tbody></table></div>'; }
@@ -51,16 +65,35 @@
   /* ---------- REGISTER ---------- */
   var rg = $('#rgRoot');
   if (rg) {
+    var rcard = function (v, title, sub, on) { return '<label class="box" style="margin:0;cursor:pointer;display:block"><input type="radio" name="account_type" value="' + v + '"' + (on ? ' checked' : '') + ' style="margin-right:6px"><b>' + title + '</b><br><span class="hint">' + sub + '</span></label>'; };
     rg.innerHTML = '<div id="rgMsg"></div>' +
-      '<form id="rgForm" class="box" style="max-width:560px" novalidate><h2 style="margin-top:0">' + t('Create your account', 'Buat akun Anda') + '</h2>' +
+      '<form id="rgForm" class="box" style="max-width:640px" novalidate><h2 style="margin-top:0">' + t('Create your account', 'Buat akun Anda') + '</h2>' +
       '<input class="hp" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">' +
-      fld('company', t('Company or full name', 'Nama perusahaan atau nama lengkap'), 'text', true, 'autocomplete="organization"') +
-      '<div style="margin-top:14px">' + fld('name', t('Contact name', 'Nama kontak'), 'text', true, 'autocomplete="name"') + '</div>' +
+      '<p style="margin:0 0 8px"><b>' + t('Account type', 'Jenis akun') + '</b></p>' +
+      '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px;margin-bottom:6px">' + rcard('Company', t('Company (PT or CV)', 'Perusahaan (PT atau CV)'), t('NIB and NPWP required. You may ask for invoice terms.', 'Wajib NIB dan NPWP. Dapat mengajukan termin tagihan.'), true) + rcard('Personal', t('Personal', 'Perorangan'), t('KTP and NPWP required. You pay upfront after booking.', 'Wajib KTP dan NPWP. Bayar di muka setelah booking.'), false) + '</div>' +
+      '<div data-for="Company">' +
+        '<div style="margin-top:14px"><label class="req">' + t('Legal entity', 'Bentuk badan usaha') + '</label><select name="legal_entity"><option value="PT">PT</option><option value="CV">CV</option></select></div>' +
+        '<div style="margin-top:14px">' + fld('company', t('Company name (as on your NIB)', 'Nama perusahaan (sesuai NIB)'), 'text', true, 'autocomplete="organization"') + '</div>' +
+        '<div class="row r2" style="margin-top:14px">' + fld('nib_no', t('NIB number', 'Nomor NIB'), 'text', true, 'inputmode="numeric"') + fld('npwp_no', t('Company NPWP number', 'Nomor NPWP perusahaan'), 'text', true, 'inputmode="numeric"') + '</div>' +
+        '<div class="row r2" style="margin-top:14px">' + fileFld('NIB', t('Upload NIB', 'Unggah NIB')) + fileFld('NPWP_C', t('Upload company NPWP', 'Unggah NPWP perusahaan')) + '</div>' +
+        '<div class="box" style="margin-top:14px"><b>' + t('Payment type', 'Jenis pembayaran') + '</b>' +
+          '<label class="check"><input type="radio" name="pay_pref" value="Prepaid" checked><span>' + t('Cash upfront: pay by bank transfer after booking.', 'Bayar di muka: transfer bank setelah booking.') + '</span></label>' +
+          '<label class="check"><input type="radio" name="pay_pref" value="Invoice"><span>' + t('Invoicing: pay after we invoice you (subject to PCW approval).', 'Tagihan (invoice): bayar setelah kami menerbitkan tagihan (dengan persetujuan PCW).') + '</span></label>' +
+          '<div id="rgDays" class="hidden" style="margin-top:8px"><label>' + t('Proposed payment term', 'Usulan termin pembayaran') + '</label><select name="credit_days"><option value="7">' + t('7 days', '7 hari') + '</option><option value="14" selected>' + t('14 days', '14 hari') + '</option><option value="30">' + t('30 days', '30 hari') + '</option></select></div>' +
+          '<p class="hint" style="margin:8px 0 0">' + t('Invoice terms are not automatic. PCW reviews your documents first. Until PCW approves invoicing in writing, you pay upfront.', 'Termin tagihan tidak otomatis. PCW meninjau dokumen Anda terlebih dahulu. Sampai PCW menyetujui tagihan secara tertulis, Anda membayar di muka.') + '</p></div>' +
+        '<div style="margin-top:14px">' + fld('name', t('Contact person', 'Nama kontak'), 'text', true, 'autocomplete="name"') + '</div>' +
+      '</div>' +
+      '<div data-for="Personal" class="hidden">' +
+        '<div style="margin-top:14px">' + fld('pname', t('Full name (as on your KTP)', 'Nama lengkap (sesuai KTP)'), 'text', true, 'autocomplete="name"') + '</div>' +
+        '<div class="row r2" style="margin-top:14px">' + fileFld('KTP', t('Upload KTP', 'Unggah KTP')) + fileFld('NPWP_P', t('Upload NPWP', 'Unggah NPWP')) + '</div>' +
+        '<div class="notice warn" style="margin-top:14px"><b>' + t('Pay upfront.', 'Bayar di muka.') + '</b> ' + t('After you book, we create your PCW AWB and you transfer the payment. We do not process your shipment before we receive your payment.', 'Setelah Anda booking, kami membuat PCW AWB dan Anda mentransfer pembayaran. Kami tidak memproses kiriman Anda sebelum pembayaran kami terima.') + '</div>' +
+      '</div>' +
       '<div style="margin-top:14px">' + fld('email', 'Email', 'email', true, 'autocomplete="email"') + '</div>' +
       '<div style="margin-top:14px">' + fld('phone', t('WhatsApp number', 'Nomor WhatsApp'), 'tel', true, 'placeholder="0811…" autocomplete="tel"') + '</div>' +
       '<div style="margin-top:14px">' + fld('password', 'Password', 'password', true, 'minlength="10" autocomplete="new-password"') + '<p class="hint">' + t('At least 10 characters.', 'Minimal 10 karakter.') + '</p></div>' +
       '<div>' + fld('password2', t('Repeat password', 'Ulangi password'), 'password', true, 'autocomplete="new-password"') + '</div>' +
-      '<label class="check" style="margin-top:14px"><input type="checkbox" name="terms"><span>' + t('I accept the <a href="terms.html" target="_blank">Terms &amp; Conditions</a>.', 'Saya menyetujui <a href="terms.html" target="_blank">Syarat &amp; Ketentuan</a>.') + '</span></label>' +
+      '<label class="check" style="margin-top:14px"><input type="checkbox" name="docs_consent"><span>' + t('I agree that PCW stores my documents (NIB, NPWP or KTP) privately to verify my identity and assess my account. See the <a href="privacy.html" target="_blank">Privacy Policy</a>.', 'Saya setuju PCW menyimpan dokumen saya (NIB, NPWP, atau KTP) secara privat untuk verifikasi identitas dan penilaian akun. Lihat <a href="privacy.html" target="_blank">Kebijakan Privasi</a>.') + '</span></label>' +
+      '<label class="check"><input type="checkbox" name="terms"><span>' + t('I accept the <a href="terms.html" target="_blank">Terms &amp; Conditions</a>.', 'Saya menyetujui <a href="terms.html" target="_blank">Syarat &amp; Ketentuan</a>.') + '</span></label>' +
       '<label class="check"><input type="checkbox" name="privacy"><span>' + t('I agree to the <a href="privacy.html" target="_blank">Privacy Policy</a>.', 'Saya setuju dengan <a href="privacy.html" target="_blank">Kebijakan Privasi</a>.') + '</span></label>' +
       '<div id="rgTs" style="margin-top:14px"></div>' +
       '<button class="btn btn-a" type="submit" style="margin-top:14px;padding:14px;width:100%">' + t('Create account', 'Buat akun') + '</button>' +
@@ -75,17 +108,31 @@
     (function () { var sc = document.createElement('script'); sc.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?onload=pcwTs&render=explicit'; sc.async = true; document.head.appendChild(sc); })();
     function tsTok() { try { return window.turnstile && TSW !== null ? (window.turnstile.getResponse(TSW) || '') : ''; } catch (x) { return ''; } }
     function tsReset() { try { if (window.turnstile && TSW !== null) window.turnstile.reset(TSW); } catch (x) {} }
+    function rgType() { var c = rf.querySelector('[name=account_type]:checked'); return c ? c.value : 'Company'; }
+    function rgSync() { var ty = rgType(); $$('[data-for]', rf).forEach(function (g) { g.classList.toggle('hidden', g.getAttribute('data-for') !== ty); }); var inv = rf.querySelector('[name=pay_pref]:checked'); $('#rgDays', rf).classList.toggle('hidden', !(ty === 'Company' && inv && inv.value === 'Invoice')); }
+    $$('[name=account_type],[name=pay_pref]', rf).forEach(function (r) { r.addEventListener('change', rgSync); }); rgSync();
     rf.addEventListener('submit', function (ev) {
-      ev.preventDefault(); var e = rf.elements, btn = $('[type=submit]', rf); rm.innerHTML = '';
+      ev.preventDefault(); var e = rf.elements, btn = $('[type=submit]', rf), ty = rgType(); rm.innerHTML = '';
+      var need = $$('[data-for="' + ty + '"] input[required]', rf).concat($$('#rgForm > div > input[required], #rgForm > div > div > input[required]', rf).filter(function (x) { return !x.closest('[data-for]'); }));
+      for (var k = 0; k < need.length; k++) { if (!String(need[k].value || '').trim()) { rm.innerHTML = notice('err', ERR.missing_fields); need[k].focus(); return; } }
       if (e.password.value !== e.password2.value) { rm.innerHTML = notice('err', t('Passwords do not match.', 'Password tidak sama.')); return; }
+      if (!e.docs_consent.checked) { rm.innerHTML = notice('err', ERR.docs_consent_required); return; }
       if (!e.terms.checked || !e.privacy.checked) { rm.innerHTML = notice('err', ERR.consent_required); return; }
-      busy(btn, true, t('Sending…', 'Mengirim…'));
-      post({ action: 'register', website: e.website.value, company: e.company.value.trim(), name: e.name.value.trim(), email: e.email.value.trim(), phone: e.phone.value.trim(), password: e.password.value, terms_accepted: true, privacy_consent: true, turnstile: tsTok() }).then(function (r) {
+      var kinds = ty === 'Company' ? ['NIB', 'NPWP_C'] : ['KTP', 'NPWP_P'];
+      busy(btn, true, t('Reading files…', 'Membaca file…'));
+      readDocs(rf, kinds).then(function (docs) {
+        docs = docs.map(function (d) { return { kind: d.kind.replace(/_[CP]$/, ''), mime: d.mime, name: d.name, data: d.data }; });
+        busy(btn, true, t('Sending…', 'Mengirim…'));
+        var nm = ty === 'Personal' ? e.pname.value.trim() : e.name.value.trim();
+        var body = { action: 'register', website: e.website.value, account_type: ty, company: ty === 'Personal' ? nm : e.company.value.trim(), name: nm, email: e.email.value.trim(), phone: e.phone.value.trim(), password: e.password.value, terms_accepted: true, privacy_consent: true, docs_consent: true, turnstile: tsTok(), docs: docs };
+        if (ty === 'Company') { body.legal_entity = e.legal_entity.value; body.nib_no = e.nib_no.value.trim(); body.npwp_no = e.npwp_no.value.trim(); body.pay_pref = rf.querySelector('[name=pay_pref]:checked').value; body.credit_days = e.credit_days.value; }
+        return post(body);
+      }).then(function (r) {
         busy(btn, false);
         if (!r.ok) { tsReset(); rm.innerHTML = notice('err', err(r)); return; }
         remail = e.email.value.trim().toLowerCase(); rf.classList.add('hidden'); rv.classList.remove('hidden');
         $('#rgSent').textContent = t('We sent a 6-digit code to ', 'Kami mengirim kode 6 digit ke ') + remail + t('. It is valid for 30 minutes. Check your spam folder if needed.', '. Berlaku 30 menit. Cek folder spam bila perlu.');
-      }).catch(function () { busy(btn, false); rm.innerHTML = notice('err', err()); });
+      }).catch(function (x) { busy(btn, false); tsReset(); rm.innerHTML = notice('err', x && x.error ? err(x) : err()); });
     });
     rv.addEventListener('submit', function (ev) {
       ev.preventDefault(); var btn = $('[type=submit]', rv); rm.innerHTML = ''; busy(btn, true);
@@ -93,7 +140,7 @@
         busy(btn, false);
         if (!r.ok) { rm.innerHTML = notice('err', err(r)); return; }
         rv.classList.add('hidden'); var d = $('#rgDone'); d.classList.remove('hidden');
-        d.innerHTML = '<h2 style="margin-top:0">' + t('Account ready', 'Akun siap') + '</h2><p>' + t('Your account is active. Sign in to check rates, book and track shipments.', 'Akun Anda aktif. Masuk untuk cek tarif, booking, dan lacak kiriman.') + '</p><a class="btn btn-a" href="portal.html">' + t('Sign in', 'Masuk') + '</a>';
+        d.innerHTML = '<h2 style="margin-top:0">' + t('Account ready', 'Akun siap') + '</h2><p>' + t('Your email is verified and your documents are with our team for review. You can sign in now to check rates and book. We process shipments after your documents are approved and, for upfront payment, after we receive your payment.', 'Email Anda terverifikasi dan dokumen Anda sedang ditinjau tim kami. Anda dapat masuk sekarang untuk cek tarif dan booking. Kiriman diproses setelah dokumen disetujui dan, untuk pembayaran di muka, setelah pembayaran kami terima.') + '</p><a class="btn btn-a" href="portal.html">' + t('Sign in', 'Masuk') + '</a>';
       }).catch(function () { busy(btn, false); rm.innerHTML = notice('err', err()); });
     });
   }
@@ -131,9 +178,19 @@
       $('#rd').addEventListener('submit', function (ev) { ev.preventDefault(); var f = ev.target; post({ action: 'reset_do', email: em, code: f.elements.code.value.trim(), password: f.elements.password.value }).then(function (r) { if (!r.ok) { $('#rm2').innerHTML = notice('err', err(r)); return; } renderLogin(notice('ok', t('Password updated. Please sign in.', 'Password diperbarui. Silakan masuk.'))); }).catch(function () { $('#rm2').innerHTML = notice('err', err()); }); });
     }
     function expired() { store('pt', null); ME = null; renderLogin(notice('warn', t('Session expired. Please sign in again.', 'Sesi berakhir. Silakan masuk lagi.'))); }
+    function acctBar() {
+      var a = (ME && ME.acc) || {}, h = '';
+      if (a.docs_status === 'Pending') h += notice('info', t('Your documents are under review. We process shipments after they are approved.', 'Dokumen Anda sedang ditinjau. Kiriman diproses setelah dokumen disetujui.'));
+      if (a.docs_status === 'Rejected') h += notice('err', t('Your documents were not accepted', 'Dokumen Anda belum dapat diterima') + (a.docs_note ? ': ' + esc(a.docs_note) : '') + '. ' + t('Please upload them again in Profile.', 'Silakan unggah ulang di Profil.'));
+      if (a.account_type === 'Personal' || a.pay_terms === 'Prepaid') h += notice('warn', '<b>' + t('Pay upfront.', 'Bayar di muka.') + '</b> ' + t('After you book, we create your PCW AWB and you transfer the payment. We do not process your shipment before we receive your payment.', 'Setelah Anda booking, kami membuat PCW AWB dan Anda mentransfer pembayaran. Kami tidak memproses kiriman Anda sebelum pembayaran kami terima.') + (a.account_type !== 'Personal' && a.pay_pref === 'Invoice' ? '<br>' + t('Invoice terms requested (' + (a.credit_days || '14') + ' days): waiting for PCW approval.', 'Termin tagihan diajukan (' + (a.credit_days || '14') + ' hari): menunggu persetujuan PCW.') : ''));
+      if (a.pay_terms === 'Invoice') h += notice('ok', t('Invoice terms approved: ', 'Termin tagihan disetujui: ') + esc(a.credit_days || '') + t(' days after the invoice date.', ' hari setelah tanggal tagihan.'));
+      return h;
+    }
+    function payModal(ref, est) { modal('<h3 style="margin-top:0">' + t('Pay for ', 'Bayar untuk ') + esc(ref) + '</h3>' + bankBox(ref, est)); }
     function renderApp() {
       var plan = ME.plan === 'member' ? t('Member rates', 'Tarif member') : t('Published rates', 'Published rate');
       root.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px"><div><h2 style="margin:0">' + esc(ME.company) + '</h2><span class="hint">' + esc(ME.name) + ' · ' + esc(ME.email) + ' · ' + plan + '</span></div><button id="so" class="btn btn-o" type="button">' + t('Sign out', 'Keluar') + '</button></div>' +
+        '<div id="acctBar">' + acctBar() + '</div>' +
         '<div data-pane="dash"><div id="dB"></div></div>' +
         '<div data-pane="rates"></div><div data-pane="new"></div><div data-pane="ship"></div><div data-pane="inv"></div><div data-pane="prof"></div>';
       $('#so').onclick = function () { post({ action: 'logout', token: store('pt') }); store('pt', null); ME = null; renderLogin(); };
@@ -171,6 +228,7 @@
     }
     function bindShip(sc) {
       $$('[data-d]', sc).forEach(function (b) { b.onclick = function () { openShip(b.getAttribute('data-d')); }; });
+      $$('[data-pay]', sc).forEach(function (b) { b.onclick = function () { payModal(b.getAttribute('data-pay'), Number(b.getAttribute('data-est')) || 0); }; });
       $$('[data-awb]', sc).forEach(function (b) { b.onclick = function () { busy(b, true, 'AWB'); post({ action: 'awb_m', token: store('pt'), ref: b.getAttribute('data-awb') }).then(function (r) { busy(b, false); if (r.error === 'session') return expired(); if (!r.ok) return toast(t('Shipment not found.', 'Kiriman tidak ditemukan.'), 'bad'); awbOpen(r.fields); }).catch(function () { busy(b, false); toast(err(), 'bad'); }); }; });
     }
     function openShip(ref) {
@@ -188,8 +246,8 @@
     }
     function shipTable(items) {
       if (!items.length) return '<p>' + t('No shipments yet.', 'Belum ada kiriman.') + '</p>';
-      return table([t('Ref', 'Ref'), t('Date', 'Tanggal'), t('Service', 'Layanan'), t('Destination', 'Tujuan'), 'Kg', t('Receiver', 'Penerima'), 'Status', ''],
-        items.map(function (i) { return tr([esc(i.ref), esc(i.date), esc(i.product), esc(i.dest), esc(i.kg), esc(i.to), badge(i.status), '<button class="btn btn-o btn-sm" type="button" data-d="' + esc(i.ref) + '">' + t('Details', 'Detail') + '</button> <button class="btn btn-o btn-sm" type="button" data-awb="' + esc(i.ref) + '">AWB</button>']); }));
+      return table([t('Ref', 'Ref'), t('Date', 'Tanggal'), t('Service', 'Layanan'), t('Destination', 'Tujuan'), 'Kg', t('Receiver', 'Penerima'), 'Status', t('Payment', 'Pembayaran'), ''],
+        items.map(function (i) { var pm = i.pay_mode === 'Prepaid' ? (i.pay_status === 'Paid' ? '<span class="bdg bdg-ok">' + t('Paid', 'Lunas') + '</span>' : '<span class="bdg bdg-bad">' + t('Awaiting payment', 'Menunggu pembayaran') + '</span><br><button class="btn btn-a btn-sm" type="button" style="margin-top:4px" data-pay="' + esc(i.ref) + '" data-est="' + esc(i.est || '') + '">' + t('How to pay', 'Cara bayar') + '</button>') : (i.pay_mode ? '<span class="hint">' + t('On account', 'Tagihan') + '</span>' : '<span class="hint">-</span>'); return tr([esc(i.ref), esc(i.date), esc(i.product), esc(i.dest), esc(i.kg), esc(i.to), badge(i.status), pm, '<button class="btn btn-o btn-sm" type="button" data-d="' + esc(i.ref) + '">' + t('Details', 'Detail') + '</button> <button class="btn btn-o btn-sm" type="button" data-awb="' + esc(i.ref) + '">AWB</button>']); }));
     }
     function renderShip() {
       var p = $('[data-pane=ship]', root); if (!p) return;
@@ -257,7 +315,7 @@
           busy(btn, false);
           if (!r.ok) { if (r.error === 'session') return expired(); out.innerHTML = notice('err', r.error === 'missing_fields' ? t('Please complete: ', 'Lengkapi: ') + esc((r.fields || []).join(', ')) : err(r)); return; }
           var pr = r.est_total ? '<br>' + t('Estimate (excl. situational surcharges): ', 'Estimasi (belum termasuk surcharge situasional): ') + idr(r.est_total) + ' · ' + t('chargeable ', 'berat tagih ') + r.chargeable_kg + ' kg' : '';
-          out.innerHTML = notice('ok', '<strong>' + t('Booking received. Reference: ', 'Booking diterima. Nomor referensi: ') + esc(r.ref) + '</strong>' + pr + '<br>' + t('Our team confirms the final price after weighing, then issues the AWB.', 'Harga final dikonfirmasi tim kami setelah penimbangan; AWB diterbitkan oleh PCW.'));
+          out.innerHTML = notice('ok', '<strong>' + t('Booking received. Reference: ', 'Booking diterima. Nomor referensi: ') + esc(r.ref) + '</strong>' + pr + '<br>' + t('Our team confirms the final price after weighing, then issues the AWB.', 'Harga final dikonfirmasi tim kami setelah penimbangan; AWB diterbitkan oleh PCW.') + (r.pay_mode === 'Prepaid' ? bankBox(r.ref, r.est_total) : ''));
           f.reset(); loadList();
         }).catch(function () { busy(btn, false); out.innerHTML = notice('err', err()); });
       });
@@ -272,6 +330,15 @@
       p.innerHTML = '<div class="row r2"><form id="pf" class="box"><h3 style="margin-top:0">' + t('Profile', 'Profil') + '</h3><div id="pm"></div>' + fld('name', t('Contact name', 'Nama kontak'), 'text', true, 'value="' + esc(ME.name) + '"') + '<div style="margin-top:14px">' + fld('phone', t('WhatsApp number', 'Nomor WhatsApp'), 'tel', true, 'value="' + esc(ME.phone) + '"') + '</div>' +
         '<p class="hint">' + t('Company and email can be changed through our team.', 'Perusahaan dan email dapat diubah melalui tim kami.') + '</p><button class="btn btn-a" type="submit">' + t('Save', 'Simpan') + '</button></form>' +
         '<form id="cf" class="box"><h3 style="margin-top:0">' + t('Change password', 'Ganti password') + '</h3><div id="cm"></div>' + fld('current', t('Current password', 'Password saat ini'), 'password', true, 'autocomplete="current-password"') + '<div style="margin-top:14px">' + fld('password', t('New password (min 10)', 'Password baru (min 10)'), 'password', true, 'minlength="10" autocomplete="new-password"') + '</div><button class="btn btn-a" type="submit" style="margin-top:14px">' + t('Update password', 'Perbarui password') + '</button></form></div>';
+      (function () {
+        var a = ME.acc || {}, co = a.account_type !== 'Personal', kinds = co ? ['NIB', 'NPWP'] : ['KTP', 'NPWP'];
+        p.insertAdjacentHTML('beforeend', '<div class="box" style="margin-top:16px"><h3 style="margin-top:0">' + t('Account and payment', 'Akun dan pembayaran') + '</h3><div id="acm"></div>' +
+          '<p>' + t('Account type: ', 'Jenis akun: ') + '<b>' + (co ? t('Company', 'Perusahaan') + (a.legal_entity ? ' (' + esc(a.legal_entity) + ')' : '') : t('Personal', 'Perorangan')) + '</b><br>' + t('Payment: ', 'Pembayaran: ') + '<b>' + (a.pay_terms === 'Invoice' ? t('Invoice, ', 'Tagihan, ') + esc(a.credit_days || '') + t(' days', ' hari') : a.pay_terms === 'Legacy' || !a.pay_terms ? t('As agreed with PCW', 'Sesuai kesepakatan dengan PCW') : t('Upfront (bank transfer after booking)', 'Di muka (transfer bank setelah booking)')) + '</b><br>' + t('Documents: ', 'Dokumen: ') + '<b>' + esc(a.docs_status ? ({ Pending: t('Under review', 'Sedang ditinjau'), Approved: t('Approved', 'Disetujui'), Rejected: t('Not accepted', 'Belum diterima') })[a.docs_status] || a.docs_status : '-') + '</b></p>' +
+          (co && a.pay_terms === 'Prepaid' ? '<form id="tq" class="row r2" style="align-items:end"><div><label>' + t('Ask PCW for invoice terms', 'Ajukan termin tagihan ke PCW') + '</label><select name="credit_days"><option value="7">' + t('7 days', '7 hari') + '</option><option value="14" selected>' + t('14 days', '14 hari') + '</option><option value="30">' + t('30 days', '30 hari') + '</option></select></div><div><button class="btn btn-o" type="submit">' + t('Send request', 'Kirim permintaan') + '</button></div></form><p class="hint">' + t('PCW approves invoice terms in writing. Until then you pay upfront.', 'PCW menyetujui termin tagihan secara tertulis. Sampai saat itu Anda membayar di muka.') + '</p>' : '') +
+          '<form id="dq" style="margin-top:12px"><h4 style="margin:0 0 6px">' + t('Replace documents', 'Ganti dokumen') + '</h4><div class="row r2">' + kinds.map(function (k) { return fileFld(k, k === 'NIB' ? 'NIB' : k === 'KTP' ? 'KTP' : (co ? t('Company NPWP', 'NPWP perusahaan') : 'NPWP')); }).join('') + '</div><button class="btn btn-o" type="submit" style="margin-top:10px">' + t('Upload documents', 'Unggah dokumen') + '</button></form></div>');
+        if ($('#tq')) $('#tq').addEventListener('submit', function (ev) { ev.preventDefault(); post({ action: 'terms_req', token: store('pt'), credit_days: ev.target.elements.credit_days.value }).then(function (r) { if (r.error === 'session') return expired(); $('#acm').innerHTML = r.ok ? notice('ok', t('Request sent. PCW will contact you.', 'Permintaan terkirim. PCW akan menghubungi Anda.')) : notice('err', err(r)); if (r.ok) { ME.acc.pay_pref = 'Invoice'; ME.acc.credit_days = ev.target.elements.credit_days.value; $('#acctBar').innerHTML = acctBar(); } }); });
+        $('#dq').addEventListener('submit', function (ev) { ev.preventDefault(); var f = ev.target, btn = $('[type=submit]', f); busy(btn, true); readDocs(f, kinds).then(function (docs) { return post({ action: 'docs_m', token: store('pt'), docs: docs }); }).then(function (r) { busy(btn, false); if (r.error === 'session') return expired(); $('#acm').innerHTML = r.ok ? notice('ok', t('Documents uploaded. They are under review.', 'Dokumen terunggah. Sedang ditinjau.')) : notice('err', err(r)); if (r.ok) { ME.acc.docs_status = 'Pending'; $('#acctBar').innerHTML = acctBar(); f.reset(); } }).catch(function (x) { busy(btn, false); $('#acm').innerHTML = notice('err', x && x.error ? err(x) : err()); }); });
+      })();
       $('#pf').addEventListener('submit', function (ev) { ev.preventDefault(); var f = ev.target; post({ action: 'profile', token: store('pt'), name: f.elements.name.value, phone: f.elements.phone.value }).then(function (r) { if (r.error === 'session') return expired(); $('#pm').innerHTML = r.ok ? notice('ok', t('Saved.', 'Tersimpan.')) : notice('err', err(r)); if (r.ok) { ME.name = f.elements.name.value; ME.phone = f.elements.phone.value; } }); });
       $('#cf').addEventListener('submit', function (ev) { ev.preventDefault(); var f = ev.target; post({ action: 'chpw', token: store('pt'), current: f.elements.current.value, password: f.elements.password.value }).then(function (r) { if (r.error === 'session') return expired(); $('#cm').innerHTML = r.ok ? notice('ok', t('Password updated.', 'Password diperbarui.')) : notice('err', err(r)); if (r.ok) f.reset(); }); });
     }
@@ -282,7 +349,7 @@
   /* ---------- ADMIN ---------- */
   var ad = $('#adRoot');
   if (ad) {
-    var AU = null, STAT = [], USERS = [], BK = [], INV = [];
+    var AU = null, STAT = [], USERS = [], BK = [], INV = [], ACC = {};
     function aTok() { return store('at'); }
     function aPost(b) { b.token = aTok(); return post(b).then(function (r) { if (r && r.error === 'session') { aExpired(); throw new Error('session'); } return r; }); }
     function aMsg(id, ok, text) { var e = $(id); if (e) e.innerHTML = notice(ok ? 'ok' : 'err', esc(text)); }
@@ -386,7 +453,9 @@
     }
     function loadBkQuiet() { aPost({ action: 'adm_bookings_all' }).then(function (r) { if (r.ok) { BK = r.items; var p = pane('bk'); if ($('#bq', p)) { var keep = $('#bd', p).innerHTML; renderBk(); } } }); }
     /* Customers */
-    function loadUsers() { aPost({ action: 'adm_users' }).then(function (r) { if (r.ok) { USERS = r.users; renderUsers(); } }).catch(function () {}); }
+    function loadUsers() { aPost({ action: 'adm_users' }).then(function (r) { if (r.ok) { USERS = r.users; renderUsers(); aPost({ action: 'adm_acc' }).then(function (x) { if (x.ok) { ACC = x.map || {}; renderUsers(); } }).catch(function () {}); } }).catch(function () {}); }
+    function accOf(u) { return ACC[String(u.email).toLowerCase()] || {}; }
+    function accCell(u) { var a = accOf(u); return '<b>' + esc(a.account_type || 'Legacy') + (a.entity ? ' ' + esc(a.entity) : '') + '</b><br>' + esc(a.terms || 'Legacy (no payment gate)') + (a.terms === 'Invoice' && a.days ? ' ' + esc(a.days) + 'd' : '') + (a.pref === 'Invoice' && a.terms !== 'Invoice' ? '<br><span style="color:#b45309;font-weight:700">Invoice requested ' + esc(a.days || '') + 'd</span>' : '') + '<br>Docs: ' + (a.docs === 'Approved' ? '<span style="color:#166534;font-weight:700">Approved</span>' : a.docs === 'Rejected' ? '<span style="color:#b91c1c;font-weight:700">Rejected</span>' : esc(a.docs || '-')); }
     function renderUsers() {
       var p = pane('us');
       if (!$('#uq', p)) {
@@ -400,22 +469,38 @@
       }
       var q = $('#uq', p).value.toLowerCase(), s = $('#us', p).value;
       var list = USERS.map(function (u, i) { u._i = i; return u; }).filter(function (u) { return (!s || u.status === s) && (!q || (u.company + ' ' + u.name + ' ' + u.email).toLowerCase().indexOf(q) > -1); });
-      $('#ul', p).innerHTML = '<p class="hint">' + list.length + ' of ' + USERS.length + ' customers</p>' + table(['Customer', 'Contact', 'Status', 'Rate profile', 'Last login', ''], list.map(function (u) {
+      $('#ul', p).innerHTML = '<p class="hint">' + list.length + ' of ' + USERS.length + ' customers</p>' + table(['Customer', 'Contact', 'Account', 'Status', 'Rate profile', 'Last login', ''], list.map(function (u) {
         var st = ['Pending', 'Active', 'Disabled', 'Invite'].map(function (x) { return '<option' + (x === u.status ? ' selected' : '') + '>' + x + '</option>'; }).join('');
-        return tr(['<strong>' + esc(u.company) + '</strong><br>' + esc(u.email) + (u.role === 'SuperAdmin' ? ' · <em>SuperAdmin</em>' : ''), esc(u.name) + '<br>' + esc(u.phone), '<select data-i="' + u._i + '" data-f="st">' + st + '</select>', '<input data-i="' + u._i + '" data-f="rate" value="' + esc(u.rate) + '" style="width:110px">', esc(u.last),
+        return tr(['<strong>' + esc(u.company) + '</strong><br>' + esc(u.email) + (u.role === 'SuperAdmin' ? ' · <em>SuperAdmin</em>' : ''), esc(u.name) + '<br>' + esc(u.phone), accCell(u), '<select data-i="' + u._i + '" data-f="st">' + st + '</select>', '<input data-i="' + u._i + '" data-f="rate" value="' + esc(u.rate) + '" style="width:110px">', esc(u.last),
           '<button class="btn btn-a btn-sm" type="button" data-save="' + u._i + '">Save</button> <button class="btn btn-o btn-sm" type="button" data-more="' + u._i + '">Details</button>']);
       }));
       $$('[data-save]', p).forEach(function (b) { b.onclick = function () { var i = b.getAttribute('data-save'), u = USERS[i]; aPost({ action: 'adm_user_set', email: u.email, status: $('[data-f=st][data-i="' + i + '"]', p).value, rate: $('[data-f=rate][data-i="' + i + '"]', p).value }).then(function (x) { aMsg('#um', x.ok, x.ok ? 'Saved ' + u.email : aErr(x)); if (x.ok) loadUsers(); }); }; });
       $$('[data-more]', p).forEach(function (b) { b.onclick = function () { userDetail(USERS[b.getAttribute('data-more')]); }; });
     }
+    function accDetail(u) {
+      var a = accOf(u); if (!a.account_type && !a.terms && !a.docs) return '<div class="notice info" style="margin:10px 0">Legacy account: no account type, documents or payment gate. Set the payment terms below to bring it under the new rules.</div>' + termsForm(u, a);
+      return '<div class="box" style="margin:10px 0"><h4 style="margin:0 0 8px">Account, documents and payment</h4><p style="margin:0 0 8px"><b>' + esc(a.account_type) + (a.entity ? ' (' + esc(a.entity) + ')' : '') + '</b>' + (a.nib ? ' &middot; NIB ' + esc(a.nib) : '') + (a.npwp ? ' &middot; NPWP ' + esc(a.npwp) : '') + '</p>' +
+        '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">' + (a.account_type === 'Personal' ? ['KTP', 'NPWP'] : ['NIB', 'NPWP']).map(function (k) { return '<button type="button" class="btn btn-o btn-sm" data-dv="' + k + '">View ' + k + '</button>'; }).join('') + '<span class="hint" style="align-self:center">Documents status: <b>' + esc(a.docs || '-') + '</b>' + (a.docs_at ? ' (uploaded ' + esc(a.docs_at) + ')' : '') + (a.docs_note ? ' &middot; note: ' + esc(a.docs_note) : '') + '</span></div>' +
+        '<form id="uds" style="display:flex;gap:8px;flex-wrap:wrap;align-items:end"><div style="flex:1;min-width:200px"><label>Rejection reason (required to reject)</label><input name="note" maxlength="200"></div><button type="button" class="btn btn-a btn-sm" data-ds="Approved">Approve documents</button><button type="button" class="btn btn-o btn-sm" data-ds="Rejected">Reject documents</button></form></div>' + termsForm(u, a);
+    }
+    function termsForm(u, a) {
+      var personal = a.account_type === 'Personal';
+      return '<form id="utf" class="box" style="margin:10px 0"><h4 style="margin:0 0 8px">Payment terms</h4><p class="hint" style="margin:0 0 8px">Current: <b>' + esc(a.terms || 'Legacy (no payment gate)') + '</b>' + (a.pref === 'Invoice' && a.terms !== 'Invoice' ? ' &middot; customer asked for invoice terms (' + esc(a.days || '') + ' days)' : '') + '. Prepaid = vendor booking is blocked until you mark payment received. Personal accounts are always Prepaid.</p><div class="row r3" style="align-items:end"><div><label>Terms</label><select name="terms"><option value="Prepaid"' + (a.terms === 'Prepaid' ? ' selected' : '') + '>Prepaid (cash upfront)</option>' + (personal ? '' : '<option value="Invoice"' + (a.terms === 'Invoice' ? ' selected' : '') + '>Invoice (credit)</option>') + '</select></div><div><label>Days (Invoice)</label><select name="credit_days">' + [7, 14, 30, 45, 60].map(function (n) { return '<option' + (String(a.days || '14') === String(n) ? ' selected' : '') + '>' + n + '</option>'; }).join('') + '</select></div><div><button class="btn btn-a btn-sm" type="submit">Save terms</button></div></div><div style="margin-top:8px"><label>Internal note (optional)</label><input name="note" maxlength="200"></div></form>';
+    }
+    function accBind(u, d) {
+      $$('[data-dv]', d).forEach(function (b) { b.onclick = function () { var w = window.open('', '_blank'); aPost({ action: 'adm_doc_view', email: u.email, kind: b.getAttribute('data-dv') }).then(function (x) { if (!x.ok) { if (w) w.close(); aMsg('#udm', false, x.error === 'no_file' ? 'No file on record.' : aErr(x)); return; } var bin = atob(x.data), arr = new Uint8Array(bin.length); for (var i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i); var url = URL.createObjectURL(new Blob([arr], { type: x.mime })); if (w) w.location = url; else window.open(url, '_blank'); }).catch(function () { if (w) w.close(); }); }; });
+      $$('[data-ds]', d).forEach(function (b) { b.onclick = function () { aPost({ action: 'adm_docs_set', email: u.email, status: b.getAttribute('data-ds'), note: $('#uds [name=note]', d).value }).then(function (x) { aMsg('#udm', x.ok, x.ok ? 'Documents ' + b.getAttribute('data-ds').toLowerCase() + '. The customer was emailed.' : (x.error === 'need_note' ? 'Write the rejection reason first.' : aErr(x))); if (x.ok) loadUsers(); }); }; });
+      if ($('#utf', d)) $('#utf', d).addEventListener('submit', function (ev) { ev.preventDefault(); var f = ev.target.elements; aPost({ action: 'adm_terms_set', email: u.email, terms: f.terms.value, credit_days: f.credit_days.value, note: f.note.value }).then(function (x) { aMsg('#udm', x.ok, x.ok ? 'Payment terms saved. The customer was emailed.' : (x.error === 'personal_prepaid_only' ? 'Personal accounts must stay Prepaid.' : aErr(x))); if (x.ok) loadUsers(); }); });
+    }
     function userDetail(u) {
       var d = $('#ud', pane('us'));
       aPost({ action: 'adm_user_bookings', email: u.email }).then(function (r) {
-        d.innerHTML = '<div class="box" style="margin-top:16px"><div style="display:flex;justify-content:space-between"><h3 style="margin:0">' + esc(u.company) + '</h3><button id="uclose" class="btn btn-o btn-sm" type="button">Close</button></div><div id="udm"></div>' +
+        d.innerHTML = '<div class="box" style="margin-top:16px"><div style="display:flex;justify-content:space-between"><h3 style="margin:0">' + esc(u.company) + '</h3><button id="uclose" class="btn btn-o btn-sm" type="button">Close</button></div><div id="udm"></div>' + accDetail(u) +
           '<form id="ue" class="row r3" style="margin-top:12px">' + fld('company', 'Company', 'text', true, 'value="' + esc(u.company) + '"') + fld('name', 'Contact name', 'text', true, 'value="' + esc(u.name) + '"') + fld('phone', 'WhatsApp', 'tel', false, 'value="' + esc(u.phone) + '"') + '<div style="grid-column:1/-1"><label>Internal notes</label><input name="notes" value=""></div><div><button class="btn btn-a btn-sm" type="submit">Save details</button> <button id="urs" class="btn btn-o btn-sm" type="button">Send password reset code</button></div></form>' +
           '<h4 style="margin:16px 0 6px">Shipments (' + r.items.length + ')</h4>' + (r.items.length ? table(['Ref', 'Date', 'Service', 'Destination', 'Kg', 'Price', 'Status'], r.items.map(function (b) { return tr([esc(b.ref), esc(b.date), esc(b.product), esc(b.dest), esc(b.kg), b.final ? Number(b.final).toLocaleString('id-ID') : esc(b.est), esc(b.status)]); })) : '<p class="hint">No shipments yet.</p>') + '</div>';
         d.scrollIntoView({ behavior: 'smooth' });
         $('#uclose').onclick = function () { d.innerHTML = ''; };
+        accBind(u, d);
         $('#ue').addEventListener('submit', function (ev) { ev.preventDefault(); var b = { action: 'adm_user_edit', email: u.email }; new FormData(ev.target).forEach(function (v, k) { b[k] = v; }); if (!b.notes) delete b.notes; aPost(b).then(function (x) { aMsg('#udm', x.ok, x.ok ? 'Saved.' : aErr(x)); if (x.ok) loadUsers(); }); });
         $('#urs').onclick = function () { aPost({ action: 'adm_user_reset', email: u.email }).then(function (x) { aMsg('#udm', x.ok, x.ok ? 'Reset code emailed to ' + u.email + ' (valid 24 hours).' : aErr(x)); }); };
       }).catch(function () {});
@@ -461,7 +546,7 @@
       list.sort(function (a, b) { return (a.issue ? 0 : 1) - (b.issue ? 0 : 1) || a.since - b.since; });
       $('#fl', p).innerHTML = '<p class="hint">' + list.length + ' booking(s). Oldest waiting first; red or amber time means it is waiting too long.</p>' + table(['Ref / customer', 'Service / destination', 'Handover', 'Channel', 'Stage', 'Vendor AWB', ''], list.map(function (i) {
         var ho = i.mode === 'Pickup' ? 'Pickup ' + esc(i.pickup_conf || i.pickup_req || '') + '<br><span class="hint">' + esc(i.pickup_city) + '</span>' : esc(i.mode || '-');
-        return tr(['<strong>' + esc(i.ref) + '</strong><br>' + esc(i.customer) + (i.issue ? '<br><span style="color:#b91c1c;font-weight:700">&#9888; ' + esc(i.issue) + '</span>' : ''), esc(i.product) + '<br>' + esc(i.dest) + ' <span class="hint">' + esc(i.pieces) + ' pc / ' + esc(i.chg || i.kg) + ' kg</span>', ho,
+        return tr(['<strong>' + esc(i.ref) + '</strong><br>' + esc(i.customer) + (i.pay_mode === 'Prepaid' ? (i.pay_status === 'Paid' ? '<br><span style="color:#166534;font-weight:700">Paid</span>' : '<br><span style="color:#b91c1c;font-weight:700">UNPAID: do not book with vendor</span>') : '') + (i.issue ? '<br><span style="color:#b91c1c;font-weight:700">&#9888; ' + esc(i.issue) + '</span>' : ''), esc(i.product) + '<br>' + esc(i.dest) + ' <span class="hint">' + esc(i.pieces) + ' pc / ' + esc(i.chg || i.kg) + ' kg</span>', ho,
           i.channel && FLCH[i.channel] ? esc(FLCH[i.channel].label) : '<span class="hint">Not assigned</span>', badge(i.stage) + '<br><span style="' + slaStyle(i) + '">' + (i.stage === 'Confirmed' ? esc(i.pickup_conf || '') : ago(i.since)) + '</span>', esc(i.vendor_awb || ''),
           '<button class="btn btn-a btn-sm" type="button" data-fo="' + esc(i.ref) + '">Open</button>']);
       }));
@@ -489,7 +574,7 @@
     }
     function copyTxt(t, btn) { var done = function () { if (btn) { var o = btn.textContent; btn.textContent = 'Copied'; setTimeout(function () { btn.textContent = o; }, 1200); } }; if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(done, function () { fallbackCopy(t); done(); }); else { fallbackCopy(t); done(); } }
     function fallbackCopy(t) { var a = document.createElement('textarea'); a.value = t; document.body.appendChild(a); a.select(); try { document.execCommand('copy'); } catch (e) {} a.remove(); }
-    function flErr(r) { return ({ need_channel: 'Choose a booking channel first.', not_needed: 'This channel does not need a request message.', locked: 'This step is already past that stage. Use Back one step if you need to change it.', invalid_awb: 'Enter a valid vendor tracking number (5 to 40 letters, numbers, spaces or dashes).', duplicate_awb: 'This vendor number is already used on ' + (r && r.ref) + '.', need_booked: 'Mark the booking as booked first.', need_date: 'Enter the pickup date as YYYY-MM-DD.', need_code: 'Enter the vendor pickup code.', need_file: 'Upload the vendor AWB file (PDF, PNG or JPG).', bad_type: 'The file must be a PDF, PNG or JPG.', too_big: 'The file is too big. Maximum 4 MB.', no_file: 'No vendor AWB file on record yet.', invalid: 'Invalid value.', not_found: 'Booking not found.' })[r && r.error] || aErr(r); }
+    function flErr(r) { return ({ need_channel: 'Choose a booking channel first.', not_needed: 'This channel does not need a request message.', locked: 'This step is already past that stage. Use Back one step if you need to change it.', invalid_awb: 'Enter a valid vendor tracking number (5 to 40 letters, numbers, spaces or dashes).', duplicate_awb: 'This vendor number is already used on ' + (r && r.ref) + '.', need_booked: 'Mark the booking as booked first.', need_date: 'Enter the pickup date as YYYY-MM-DD.', need_code: 'Enter the vendor pickup code.', need_file: 'Upload the vendor AWB file (PDF, PNG or JPG).', bad_type: 'The file must be a PDF, PNG or JPG.', too_big: 'The file is too big. Maximum 4 MB.', no_file: 'No vendor AWB file on record yet.', invalid: 'Invalid value.', not_found: 'Booking not found.', payment_required: 'Blocked: this is a prepaid booking and payment has not been received. The owner marks payment received first.', docs_required: 'Blocked: the customer documents are not approved yet (Admin > Customers).', not_prepaid: 'This booking is not prepaid.' })[r && r.error] || aErr(r); }
     function openFl(ref) {
       FLREF = ref; var p = pane('fl'), d = $('#fd', p);
       aPost({ action: 'ful_get', ref: ref }).then(function (r) {
@@ -528,6 +613,8 @@
               '<form id="fcf" class="box" style="margin-top:12px"><h4 style="margin:0 0 8px">Pickup or vendor details changed?</h4><div class="row r2">' + fld('vendor_awb', 'Vendor AWB number', 'text', true, 'value="' + esc(u.Vendor_AWB) + '"') + fld('pickup_code', 'Vendor pickup code', 'text', f.Pickup_or_Dropoff === 'Pickup', 'value="' + esc(u.Pickup_Code) + '"') + '</div><div class="row r2" style="margin-top:10px">' + fld('pickup_date', 'Pickup date', 'date', false, 'value="' + esc(String(u.Pickup_Date).slice(0, 10)) + '"') + fld('window', 'Time window', 'text', false, 'value="' + esc(u.Pickup_Window) + '"') + '</div><div style="margin-top:10px">' + fld('awbfile', 'Replace the vendor AWB file (optional)', 'file', false, 'accept=".pdf,.png,.jpg,.jpeg,application/pdf,image/png,image/jpeg"') + '</div><button class="btn btn-o btn-sm" type="submit" style="margin-top:10px">Save changes</button></form>';
           }
         }
+        var PM = f.Payment_Mode || '', PS = f.Payment_Status || '';
+        if (PM) act = '<div class="box" style="margin-bottom:14px"><h4 style="margin:0 0 8px">Payment</h4>' + (PM === 'Prepaid' ? (PS === 'Paid' ? '<div class="notice ok" style="margin:0">Payment received ' + esc(f.Payment_At || '') + ' by ' + esc(f.Payment_By || '') + (f.Payment_Note ? ' (' + esc(f.Payment_Note) + ')' : '') + '</div>' : '<div class="notice err" style="margin:0"><strong>Unpaid.</strong> Prepaid booking: do not request or book with the vendor until payment is received.</div>') : '<div class="hint">Mode: ' + esc(PM) + (PM === 'Legacy' ? ' (no payment gate)' : ' (invoice terms)') + '</div>') + (r.acc ? '<div class="hint" style="margin-top:6px">Account: ' + esc(r.acc.type) + ' &middot; terms ' + esc(r.acc.terms) + ' &middot; documents ' + esc(r.acc.docs || '-') + (r.acc.docs && r.acc.docs !== 'Approved' ? ' <b style="color:#b91c1c">(must be Approved before booking)</b>' : '') + '</div>' : '') + (r.role === 'SuperAdmin' && PM === 'Prepaid' ? '<form id="fpay" style="display:flex;gap:8px;flex-wrap:wrap;align-items:end;margin-top:8px"><div style="flex:1;min-width:200px"><input name="note" placeholder="Transfer date / bank reference (optional)" maxlength="200"></div>' + (PS === 'Paid' ? '<button class="btn btn-o btn-sm" type="button" data-pv="N">Mark as unpaid</button>' : '<button class="btn btn-a btn-sm" type="button" data-pv="Y">Mark payment received</button>') + '</form>' : (PM === 'Prepaid' && PS !== 'Paid' ? '<p class="hint">Only the owner can mark payment as received.</p>' : '')) + '</div>' + act;
         var mgn = ''; if (r.margin) { var M = r.margin, idr = function (n) { return 'Rp ' + Math.round(n).toLocaleString('id-ID'); }; mgn = '<div class="box" style="margin-top:14px"><h4 style="margin:0 0 8px">Margin (owner only)</h4>' + (M.gp === null ? '<p class="hint">Enter the vendor cost to see the margin. Selling price: ' + (M.price ? idr(M.price) : 'not set') + '.</p>' : '<div class="notice ' + (M.pct < 20 ? 'err' : 'ok') + '" style="margin:0">Selling ' + idr(M.price) + ' &minus; vendor cost ' + idr(M.cost) + ' = <strong>gross profit ' + idr(M.gp) + ' (' + M.pct + '%)</strong>' + (M.pct < 20 ? ' &middot; below the 20% minimum' : '') + '</div><p class="hint">GP% = (selling &minus; cost) / selling. Selling = final price if set, else the estimate.</p>') + '</div>'; }
         var common = '<div class="box" style="margin-top:14px"><h4 style="margin:0 0 8px">PCW AWB</h4><label style="display:flex;gap:8px;align-items:center;font-weight:600"><input type="checkbox" id="fawbd"' + (u.PCW_AWB_Done === 'Y' ? ' checked' : '') + '> PCW AWB printed / attached to the parcel</label><button type="button" class="btn btn-o btn-sm" id="fawb" style="margin-top:8px">Open PCW AWB</button></div>' +
           '<div class="box" style="margin-top:12px"><h4 style="margin:0 0 8px">Problem or note</h4>' + (u.Issue ? '<div class="notice err">&#9888; ' + esc(u.Issue) + ' <button type="button" class="btn btn-o btn-sm" id="fclr" style="margin-left:8px">Clear issue</button></div>' : '') +
@@ -540,6 +627,7 @@
         d.scrollIntoView({ behavior: 'smooth' });
         var run = function (b, okMsg, keep) { aPost(Object.assign({ action: 'ful_act', ref: ref }, b)).then(function (x) { if (x.ok) { loadFl(); openFl(ref); setTimeout(function () { aMsg('#fdm', true, okMsg || 'Saved.'); }, 400); } else aMsg('#fdm', false, flErr(x)); }); };
         $('#fclose').onclick = function () { d.innerHTML = ''; };
+        $$('[data-pv]', d).forEach(function (b) { b.onclick = function () { aPost({ action: 'adm_pay_set', ref: ref, value: b.getAttribute('data-pv'), note: $('#fpay [name=note]', d).value }).then(function (x) { if (x.ok) { loadFl(); openFl(ref); setTimeout(function () { aMsg('#fdm', true, b.getAttribute('data-pv') === 'Y' ? 'Payment recorded. The customer sees Paid. You can now book with the vendor.' : 'Marked as unpaid.'); }, 400); } else aMsg('#fdm', false, flErr(x)); }); }; });
         $$('[data-cp]', d).forEach(function (b) { b.onclick = function () { copyTxt(b.getAttribute('data-cp'), b); }; });
         $$('[data-ch]', d).forEach(function (b) { b.onclick = function () { run({ op: 'assign', channel: b.getAttribute('data-ch') }, 'Channel set.'); }; });
         if ($('#fchg')) $('#fchg').onclick = function (e) { e.preventDefault(); var c = prompt('Channel code: ' + Object.keys(FLCH).join(', '), ch); if (c && FLCH[c]) run({ op: 'assign', channel: c }, 'Channel changed.'); };
